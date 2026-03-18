@@ -1,11 +1,22 @@
 import type { Metadata } from "next";
+import { Outfit, Space_Grotesk } from "next/font/google";
 import "./globals.css";
-import { ReduxProvider } from "@/components/providers/redux-provider";
+
+import { AppProviders } from "@/components/providers/app-providers";
+
+const outfit = Outfit({
+  variable: "--font-outfit",
+  subsets: ["latin"],
+});
+
+const spaceGrotesk = Space_Grotesk({
+  variable: "--font-space-grotesk",
+  subsets: ["latin"],
+});
 
 export const metadata: Metadata = {
-  title: "Shoper | Multi-Tenant Ecommerce Platform",
-  description:
-    "Launch custom ecommerce dashboards and storefronts for jewellery, watches, eyewear, and more.",
+  title: "Shoper - Multi-Tenant Ecommerce Platform",
+  description: "Create your own ecommerce store dashboard and launch with your custom slug.",
 };
 
 export default function RootLayout({
@@ -15,8 +26,8 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body>
-        <ReduxProvider>{children}</ReduxProvider>
+      <body className={`${outfit.variable} ${spaceGrotesk.variable}`}>
+        <AppProviders>{children}</AppProviders>
       </body>
     </html>
   );

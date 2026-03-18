@@ -1,126 +1,60 @@
-import { NextRequest } from "next/server";
-import { isValidObjectId } from "mongoose";
-import { productSchema } from "@/lib/validators";
-import { connectDB } from "@/lib/db";
-import { ProductModel } from "@/models/Product";
-import { getAdminSession } from "@/lib/server-auth";
-import { errorResponse, successResponse } from "@/lib/response";
-import { slugify, uniqueSlug } from "@/lib/utils";
+import { NextResponse } from "next/server";
 
-type Params = {
-  params: Promise<{ id: string }>;
-};
+import { connectToDatabase } from "@/lib/mongodb";
+import { requireAdmin } from "@/lib/api-auth";
+import { productSchema } from "@/lib/validations";
+import { Product } from "@/models/product";
 
-export async function GET(_: NextRequest, context: Params) {
-  try {
-    const session = await getAdminSession();
-    if (!session) {
-      return errorResponse("Unauthorized", 401);
-    }
+export async function PUT(
+  request: Request,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  await connectToDatabase();
 
-    const { id } = await context.params;
-    if (!isValidObjectId(id)) {
-      return errorResponse("Invalid product id", 400);
-    }
+  const auth = await requireAdmin();
+  if (auth.error) return auth.error;
 
-    await connectDB();
+  const body = await request.json();
+  const parsed = productSchema.safeParse(body);
 
-    const product = await ProductModel.findOne({
-      _id: id,
-      storeId: session.payload.storeId,
-    }).lean();
-
-    if (!product) {
-      return errorResponse("Product not found", 404);
-    }
-
-    return successResponse({ product });
-  } catch (error) {
-    return errorResponse(error instanceof Error ? error.message : "Failed to fetch product", 500);
+  if (!parsed.success) {
+    return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
   }
+
+  const routeParams = await params;
+
+  const product = await Product.findOneAndUpdate(
+    { _id: routeParams.id, storeId: auth.payload.storeId },
+    parsed.data,
+    { new: true }
+  );
+
+  if (!product) {
+    return NextResponse.json({ error: "Product not found" }, { status: 404 });
+  }
+
+  return NextResponse.json({ product });
 }
 
-export async function PUT(request: NextRequest, context: Params) {
-  try {
-    const session = await getAdminSession();
-    if (!session) {
-      return errorResponse("Unauthorized", 401);
-    }
+export async function DELETE(
+  _request: Request,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  await connectToDatabase();
 
-    const { id } = await context.params;
-    if (!isValidObjectId(id)) {
-      return errorResponse("Invalid product id", 400);
-    }
+  const auth = await requireAdmin();
+  if (auth.error) return auth.error;
 
-    const body = await request.json();
-    const parsed = productSchema.safeParse(body);
+  const routeParams = await params;
 
-    if (!parsed.success) {
-      return errorResponse("Invalid product data", 422, parsed.error.flatten());
-    }
+  const deleted = await Product.findOneAndDelete({
+    _id: routeParams.id,
+    storeId: auth.payload.storeId,
+  });
 
-    await connectDB();
-
-    const baseSlug = slugify(parsed.data.name) || uniqueSlug("product");
-    let finalSlug = baseSlug;
-
-    while (
-      await ProductModel.exists({
-        _id: { $ne: id },
-        storeId: session.payload.storeId,
-        slug: finalSlug,
-      })
-    ) {
-      finalSlug = uniqueSlug(baseSlug);
-    }
-
-    const product = await ProductModel.findOneAndUpdate(
-      {
-        _id: id,
-        storeId: session.payload.storeId,
-      },
-      {
-        ...parsed.data,
-        slug: finalSlug,
-      },
-      { new: true },
-    );
-
-    if (!product) {
-      return errorResponse("Product not found", 404);
-    }
-
-    return successResponse({ product });
-  } catch (error) {
-    return errorResponse(error instanceof Error ? error.message : "Failed to update product", 500);
+  if (!deleted) {
+    return NextResponse.json({ error: "Product not found" }, { status: 404 });
   }
-}
 
-export async function DELETE(_: NextRequest, context: Params) {
-  try {
-    const session = await getAdminSession();
-    if (!session) {
-      return errorResponse("Unauthorized", 401);
-    }
-
-    const { id } = await context.params;
-    if (!isValidObjectId(id)) {
-      return errorResponse("Invalid product id", 400);
-    }
-
-    await connectDB();
-
-    const product = await ProductModel.findOneAndDelete({
-      _id: id,
-      storeId: session.payload.storeId,
-    });
-
-    if (!product) {
-      return errorResponse("Product not found", 404);
-    }
-
-    return successResponse({ message: "Product deleted" });
-  } catch (error) {
-    return errorResponse(error instanceof Error ? error.message : "Failed to delete product", 500);
-  }
+  return NextResponse.json({ ok: true });
 }

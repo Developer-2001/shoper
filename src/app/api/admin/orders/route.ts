@@ -1,26 +1,16 @@
-import { connectDB } from "@/lib/db";
-import { getAdminSession } from "@/lib/server-auth";
-import { errorResponse, successResponse } from "@/lib/response";
-import { OrderModel } from "@/models/Order";
+import { NextResponse } from "next/server";
+
+import { connectToDatabase } from "@/lib/mongodb";
+import { requireAdmin } from "@/lib/api-auth";
+import { Order } from "@/models/order";
 
 export async function GET() {
-  try {
-    const session = await getAdminSession();
-    if (!session) {
-      return errorResponse("Unauthorized", 401);
-    }
+  await connectToDatabase();
 
-    await connectDB();
+  const auth = await requireAdmin();
+  if (auth.error) return auth.error;
 
-    const orders = await OrderModel.find({
-      storeId: session.payload.storeId,
-    })
-      .sort({ createdAt: -1 })
-      .populate("customerId", "name email mobile")
-      .lean();
+  const orders = await Order.find({ storeId: auth.payload.storeId }).sort({ createdAt: -1 }).lean();
 
-    return successResponse({ orders });
-  } catch (error) {
-    return errorResponse(error instanceof Error ? error.message : "Failed to fetch orders", 500);
-  }
+  return NextResponse.json({ orders });
 }

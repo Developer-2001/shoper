@@ -1,27 +1,51 @@
 import { NextResponse, type NextRequest } from "next/server";
 
-const ADMIN_COOKIE = "shoper_admin_token";
+import { verifyAdminToken } from "@/lib/jwt";
 
-export function proxy(request: NextRequest) {
+const publicAdminRoutes = new Set(["/admin/login", "/admin/register"]);
+
+export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
+  const token = request.cookies.get("shoper_admin_token")?.value;
 
-  const isAdminAuthRoute = pathname === "/admin/login" || pathname === "/admin/signup";
-  const isAdminDashboardRoute = pathname.startsWith("/admin") && !isAdminAuthRoute;
-  const hasAdminToken = Boolean(request.cookies.get(ADMIN_COOKIE)?.value);
+  const isAdminPage = pathname.startsWith("/admin");
+  const isAdminApi = pathname.startsWith("/api/admin");
 
-  if (isAdminDashboardRoute && !hasAdminToken) {
-    const loginUrl = new URL("/admin/login", request.url);
-    loginUrl.searchParams.set("next", pathname);
-    return NextResponse.redirect(loginUrl);
+  if (!isAdminPage && !isAdminApi) {
+    return NextResponse.next();
   }
 
-  if (isAdminAuthRoute && hasAdminToken) {
-    return NextResponse.redirect(new URL("/admin/home", request.url));
+  if (publicAdminRoutes.has(pathname)) {
+    if (!token) return NextResponse.next();
+
+    try {
+      await verifyAdminToken(token);
+      return NextResponse.redirect(new URL("/admin/home", request.url));
+    } catch {
+      return NextResponse.next();
+    }
   }
 
-  return NextResponse.next();
+  if (!token) {
+    if (isAdminApi) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    return NextResponse.redirect(new URL("/admin/login", request.url));
+  }
+
+  try {
+    await verifyAdminToken(token);
+    return NextResponse.next();
+  } catch {
+    if (isAdminApi) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    return NextResponse.redirect(new URL("/admin/login", request.url));
+  }
 }
 
 export const config = {
-  matcher: ["/admin/:path*"],
+  matcher: ["/admin/:path*", "/api/admin/:path*"],
 };

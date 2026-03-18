@@ -1,61 +1,52 @@
-import { NextRequest } from "next/server";
-import { connectDB } from "@/lib/db";
-import { getAdminSession } from "@/lib/server-auth";
-import { errorResponse, successResponse } from "@/lib/response";
-import { StoreModel } from "@/models/Store";
-import { storeConfigSchema } from "@/lib/validators";
+import { NextResponse } from "next/server";
+
+import { connectToDatabase } from "@/lib/mongodb";
+import { requireAdmin } from "@/lib/api-auth";
+import { storeConfigSchema } from "@/lib/validations";
+import { Store } from "@/models/store";
 
 export async function GET() {
-  try {
-    const session = await getAdminSession();
-    if (!session) {
-      return errorResponse("Unauthorized", 401);
-    }
+  await connectToDatabase();
 
-    await connectDB();
+  const auth = await requireAdmin();
+  if (auth.error) return auth.error;
 
-    const store = await StoreModel.findById(session.payload.storeId).lean();
-
-    if (!store) {
-      return errorResponse("Store not found", 404);
-    }
-
-    return successResponse({ store });
-  } catch (error) {
-    return errorResponse(error instanceof Error ? error.message : "Failed to fetch store", 500);
+  const store = await Store.findById(auth.payload.storeId).lean();
+  if (!store) {
+    return NextResponse.json({ error: "Store not found" }, { status: 404 });
   }
+
+  return NextResponse.json({ store });
 }
 
-export async function PUT(request: NextRequest) {
-  try {
-    const session = await getAdminSession();
-    if (!session) {
-      return errorResponse("Unauthorized", 401);
-    }
+export async function PUT(request: Request) {
+  await connectToDatabase();
 
-    const body = await request.json();
-    const parsed = storeConfigSchema.safeParse(body);
+  const auth = await requireAdmin();
+  if (auth.error) return auth.error;
 
-    if (!parsed.success) {
-      return errorResponse("Invalid store config data", 422, parsed.error.flatten());
-    }
+  const body = await request.json();
+  const parsed = storeConfigSchema.safeParse(body);
 
-    await connectDB();
-
-    const store = await StoreModel.findByIdAndUpdate(
-      session.payload.storeId,
-      {
-        ...parsed.data,
-      },
-      { new: true },
-    ).lean();
-
-    if (!store) {
-      return errorResponse("Store not found", 404);
-    }
-
-    return successResponse({ store });
-  } catch (error) {
-    return errorResponse(error instanceof Error ? error.message : "Failed to update store", 500);
+  if (!parsed.success) {
+    return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
   }
+
+  const store = await Store.findByIdAndUpdate(
+    auth.payload.storeId,
+    {
+      businessName: parsed.data.companyName,
+      logoText: parsed.data.logoText,
+      about: parsed.data.about,
+      address: parsed.data.address,
+      contactEmail: parsed.data.contactEmail,
+      contactPhone: parsed.data.contactPhone,
+      socialLinks: parsed.data.socialLinks,
+      theme: parsed.data.theme,
+      footerLinks: parsed.data.footerLinks,
+    },
+    { new: true }
+  ).lean();
+
+  return NextResponse.json({ store });
 }

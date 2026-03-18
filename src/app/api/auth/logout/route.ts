@@ -1,10 +1,9 @@
-import { AUTH_COOKIES, authCookieOptions } from "@/lib/auth";
-import { successResponse } from "@/lib/response";
+import { NextResponse } from "next/server";
+
+import { clearAdminCookie } from "@/lib/session";
 
 export async function POST() {
-  const response = successResponse({ message: "Logged out" });
-
-  response.cookies.set(AUTH_COOKIES.admin, "", { ...authCookieOptions, maxAge: 0 });
-
+  const response = NextResponse.json({ ok: true });
+  clearAdminCookie(response);
   return response;
 }

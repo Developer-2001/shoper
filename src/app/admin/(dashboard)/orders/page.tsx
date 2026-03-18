@@ -1,83 +1,81 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { http } from "@/lib/http";
-import { formatCurrency } from "@/lib/utils";
 
-type OrderItem = {
+import { AdminTopbar } from "@/components/admin/admin-topbar";
+
+type Order = {
   _id: string;
-  totalAmount: number;
+  orderNumber: string;
+  customer: { customerName: string; email: string; mobile: string };
+  shipping: { shippingAddress: string; city: string; state: string; postalCode: string };
+  items: { name: string; quantity: number; price: number }[];
+  subtotal: number;
   status: string;
-  createdAt: string;
-  shippingAddress: string;
-  customerId?: {
-    name?: string;
-    email?: string;
-    mobile?: string;
-  } | null;
 };
 
-export default function AdminOrdersPage() {
-  const [orders, setOrders] = useState<OrderItem[]>([]);
-  const [currency, setCurrency] = useState("INR");
+export default function OrdersPage() {
+  const [orders, setOrders] = useState<Order[]>([]);
+  const [expanded, setExpanded] = useState<string | null>(null);
 
   useEffect(() => {
     async function load() {
-      const [orderData, storeData] = await Promise.all([
-        http<{ orders: OrderItem[] }>("/api/admin/orders"),
-        http<{ store: { currency: string } }>("/api/admin/store"),
-      ]);
-
-      setOrders(orderData.orders);
-      setCurrency(storeData.store.currency);
+      const response = await fetch("/api/admin/orders");
+      if (!response.ok) return;
+      const data = await response.json();
+      setOrders(data.orders);
     }
 
     load();
   }, []);
 
   return (
-    <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-      <h2 className="mb-4 text-lg font-semibold text-slate-900">Orders</h2>
+    <div>
+      <AdminTopbar title="Orders" subtitle="View customer and shipping details with expand/collapse." />
 
-      <div className="overflow-x-auto">
-        <table className="min-w-full text-left text-sm">
-          <thead className="border-b border-slate-200 text-xs uppercase tracking-wide text-slate-500">
-            <tr>
-              <th className="px-2 py-3">Customer</th>
-              <th className="px-2 py-3">Amount</th>
-              <th className="px-2 py-3">Status</th>
-              <th className="px-2 py-3">Date</th>
-              <th className="px-2 py-3">Address</th>
-            </tr>
-          </thead>
-          <tbody>
-            {orders.length === 0 ? (
-              <tr>
-                <td className="px-2 py-4 text-slate-500" colSpan={5}>
-                  No orders found yet.
-                </td>
-              </tr>
-            ) : (
-              orders.map((order) => (
-                <tr key={order._id} className="border-b border-slate-100">
-                  <td className="px-2 py-3">
-                    <p className="font-medium text-slate-900">{order.customerId?.name ?? "Customer"}</p>
-                    <p className="text-xs text-slate-500">{order.customerId?.email ?? "-"}</p>
-                  </td>
-                  <td className="px-2 py-3 font-medium text-slate-800">
-                    {formatCurrency(order.totalAmount, currency)}
-                  </td>
-                  <td className="px-2 py-3 capitalize text-slate-700">{order.status}</td>
-                  <td className="px-2 py-3 text-slate-600">
-                    {new Date(order.createdAt).toLocaleDateString()}
-                  </td>
-                  <td className="px-2 py-3 text-slate-600">{order.shippingAddress}</td>
-                </tr>
-              ))
-            )}
-          </tbody>
-        </table>
+      <div className="space-y-4">
+        {orders.map((order) => (
+          <article key={order._id} className="rounded-2xl border border-slate-200 bg-white p-5">
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <div>
+                <p className="font-bold text-slate-900">{order.orderNumber}</p>
+                <p className="text-sm text-slate-600">
+                  {order.customer.customerName} - {order.customer.email}
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setExpanded((prev) => (prev === order._id ? null : order._id))}
+                className="rounded-xl border border-slate-300 px-4 py-2 text-sm"
+              >
+                {expanded === order._id ? "Collapse" : "Expand"}
+              </button>
+            </div>
+
+            {expanded === order._id ? (
+              <div className="mt-4 grid gap-4 text-sm text-slate-700 md:grid-cols-2">
+                <div>
+                  <p className="font-semibold">Shipping</p>
+                  <p>{order.shipping.shippingAddress}</p>
+                  <p>
+                    {order.shipping.city}, {order.shipping.state} {order.shipping.postalCode}
+                  </p>
+                  <p className="mt-2">Mobile: {order.customer.mobile}</p>
+                </div>
+                <div>
+                  <p className="font-semibold">Items</p>
+                  {order.items.map((item, index) => (
+                    <p key={`${order._id}-${index}`}>
+                      {item.name} x {item.quantity} = {item.price * item.quantity}
+                    </p>
+                  ))}
+                  <p className="mt-2 font-bold">Subtotal: {order.subtotal}</p>
+                </div>
+              </div>
+            ) : null}
+          </article>
+        ))}
       </div>
-    </section>
+    </div>
   );
 }

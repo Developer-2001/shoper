@@ -1,23 +1,33 @@
-import { model, models, Schema, type InferSchemaType } from "mongoose";
+import { model, models, Schema, type Types } from "mongoose";
 
-const productSchema = new Schema(
+export type ProductDocument = {
+  _id: Types.ObjectId;
+  storeId: Types.ObjectId;
+  name: string;
+  description: string;
+  images: string[];
+  price: number;
+  currency: string;
+  category: string;
+  discountPercentage: number;
+  inStock: number;
+  isPublished: boolean;
+};
+
+const ProductSchema = new Schema<ProductDocument>(
   {
     storeId: { type: Schema.Types.ObjectId, ref: "Store", required: true, index: true },
     name: { type: String, required: true },
-    slug: { type: String, required: true },
-    description: { type: String, required: true },
-    images: { type: [String], required: true, default: [] },
+    description: { type: String, default: "" },
+    images: { type: [String], required: true },
     price: { type: Number, required: true },
     currency: { type: String, required: true, default: "INR" },
     category: { type: String, required: true },
-    discount: { type: Number, default: 0 },
-    isActive: { type: Boolean, default: true },
+    discountPercentage: { type: Number, default: 0 },
+    inStock: { type: Number, default: 0 },
+    isPublished: { type: Boolean, default: true },
   },
-  { timestamps: true },
+  { timestamps: true }
 );
 
-productSchema.index({ storeId: 1, slug: 1 }, { unique: true });
-
-export type ProductDocument = InferSchemaType<typeof productSchema>;
-
-export const ProductModel = models.Product || model("Product", productSchema);
+export const Product = models.Product || model<ProductDocument>("Product", ProductSchema);
