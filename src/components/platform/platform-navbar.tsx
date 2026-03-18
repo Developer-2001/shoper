@@ -1,10 +1,12 @@
+import { Store } from "lucide-react";
 import Link from "next/link";
 
 export function PlatformNavbar() {
   return (
-    <header className="sticky top-0 z-40 border-b border-slate-200/60 bg-white/90 backdrop-blur">
-      <div className="mx-auto flex w-full max-w-7xl items-center justify-between px-6 py-4">
-        <Link href="/" className="text-2xl font-black tracking-tight text-slate-900">
+    <header className="sticky top-0 z-40 border-slate-200/60 bg-[radial-gradient(circle_at_10%_20%,#cffafe_0%,#ffffff_35%,#f8fafc_70%)] backdrop-blur">
+      <div className="mx-auto flex w-full max-w-7xl items-center justify-between px-6 py-3.5">
+        <Link href="/" className="flex items-center gap-2 text-lg font-black tracking-tight  text-slate-900">
+          <Store className="size-5 " />
           Shoper
         </Link>
 
@@ -23,15 +25,15 @@ export function PlatformNavbar() {
         <div className="flex items-center gap-3">
           <Link
             href="/admin/login"
-            className="rounded-full border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-800"
+            className="rounded-full border border-slate-300 px-4 py-2 text-sm font-medium text-slate-800"
           >
-            Admin Login
+            Log in
           </Link>
           <Link
             href="/admin/register"
-            className="rounded-full bg-slate-900 px-4 py-2 text-sm font-semibold text-white"
+            className="rounded-full bg-slate-900 px-4 py-2 text-sm font-medium text-white"
           >
-            Get Started
+            Start for free
           </Link>
         </div>
       </div>

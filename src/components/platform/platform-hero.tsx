@@ -23,7 +23,7 @@ export function PlatformHero() {
           </p>
           <div className="mt-8 flex flex-wrap gap-3">
             <Link href="/admin/register" className="rounded-full bg-slate-900 px-6 py-3 font-semibold text-white">
-              Start free
+              Start for free
             </Link>
             <Link href="/pricing" className="rounded-full border border-slate-300 px-6 py-3 font-semibold text-slate-800">
               View pricing
