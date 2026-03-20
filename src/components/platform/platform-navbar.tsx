@@ -3,8 +3,8 @@ import Link from "next/link";
 
 export function PlatformNavbar() {
   return (
-    <header className="sticky top-0 z-40 border-slate-200/60 bg-[radial-gradient(circle_at_10%_20%,#cffafe_0%,#ffffff_35%,#f8fafc_70%)] backdrop-blur">
-      <div className="mx-auto flex w-full max-w-7xl items-center justify-between px-6 py-3.5">
+    <header className="sticky top-0 z-40 border-slate-200/60 bg-[radial-gradient(circle_at_10%_20%,#defcff_0%,#ffffff_35%,#f8fafc_70%)] backdrop-blur">
+      <div className="mx-auto flex w-full max-w-7xl items-center justify-between px-6 py-3">
         <Link href="/" className="flex items-center gap-2 text-lg font-black tracking-tight  text-slate-900">
           <Store className="size-5 " />
           Shoper
