@@ -33,7 +33,7 @@ export function PlatformHero() {
 
         <div className="grid gap-4">
           <Image
-            className="h-[250px] w-full rounded-3xl object-cover"
+            className="h-62.5 w-full rounded-3xl object-cover"
             src="https://images.unsplash.com/photo-1522312346375-d1a52e2b99b3?q=80&w=1200&auto=format&fit=crop"
             alt="Store owner managing online shop"
             width={1200}
@@ -42,7 +42,7 @@ export function PlatformHero() {
           />
           <div className="grid gap-4 sm:grid-cols-2">
             <Image
-              className="h-[180px] w-full rounded-3xl object-cover"
+              className="h-45 w-full rounded-3xl object-cover"
               src="https://images.unsplash.com/photo-1441984904996-e0b6ba687e04?q=80&w=900&auto=format&fit=crop"
               alt="Fashion storefront"
               width={900}
@@ -50,7 +50,7 @@ export function PlatformHero() {
               sizes="(max-width: 640px) 100vw, 25vw"
             />
             <Image
-              className="h-[180px] w-full rounded-3xl object-cover"
+              className="h-45 w-full rounded-3xl object-cover"
               src="https://images.unsplash.com/photo-1441986300917-64674bd600d8?q=80&w=900&auto=format&fit=crop"
               alt="Ecommerce shipment"
               width={900}

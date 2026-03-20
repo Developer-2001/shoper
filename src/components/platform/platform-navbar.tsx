@@ -1,13 +1,14 @@
 import { Store } from "lucide-react";
 import Link from "next/link";
+import Logo from "./logo";
 
 export function PlatformNavbar() {
   return (
-    <header className="sticky top-0 z-40 border-slate-200/60 bg-[radial-gradient(circle_at_10%_20%,#defcff_0%,#ffffff_35%,#f8fafc_70%)] backdrop-blur">
+    <header className="sticky top-0 z-40 border-b border-slate-200/60 bg-[radial-gradient(circle_at_10%_20%,#d2f7fa_0%,#ffffff_35%,#f8fafc_70%)] backdrop-blur">
       <div className="mx-auto flex w-full max-w-7xl items-center justify-between px-6 py-3">
-        <Link href="/" className="flex items-center gap-2 text-lg font-black tracking-tight  text-slate-900">
-          <Store className="size-5 " />
-          Shoper
+        <Link href="/" className="flex items-center gap-1 text-lg font-black tracking-tight  text-slate-900">
+          <Logo className="w-10 h-10 " bagColor="#000000" markColor="#FFFFFF" />
+          <span className="text-2xl italic">Shoper</span>
         </Link>
 
         <nav className="hidden items-center gap-7 text-sm font-medium text-slate-700 md:flex">
