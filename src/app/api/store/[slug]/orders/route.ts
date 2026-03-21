@@ -2,9 +2,9 @@ import { NextResponse } from "next/server";
 
 import { connectToDatabase } from "@/lib/mongodb";
 import { checkoutSchema } from "@/lib/validations";
-import { Store } from "@/models/store";
-import { Product } from "@/models/product";
-import { Order } from "@/models/order";
+import { Store } from "@/models/Store";
+import { Product } from "@/models/Product";
+import { Order } from "@/models/Order";
 
 function createOrderNumber() {
   const stamp = Date.now().toString().slice(-7);

@@ -3,8 +3,8 @@ import { notFound } from "next/navigation";
 import { StorefrontNavbar } from "@/components/storefront/storefront-navbar";
 import { ProductDetailClient } from "@/components/storefront/product-detail-client";
 import { connectToDatabase } from "@/lib/mongodb";
-import { Store } from "@/models/store";
-import { Product } from "@/models/product";
+import { Store } from "@/models/Store";
+import { Product } from "@/models/Product";
 
 export default async function ProductDetailsPage({
   params,

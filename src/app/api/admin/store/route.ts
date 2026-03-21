@@ -3,7 +3,7 @@ import { NextResponse } from "next/server";
 import { connectToDatabase } from "@/lib/mongodb";
 import { requireAdmin } from "@/lib/api-auth";
 import { storeConfigSchema } from "@/lib/validations";
-import { Store } from "@/models/store";
+import { Store } from "@/models/Store";
 
 export async function GET() {
   await connectToDatabase();

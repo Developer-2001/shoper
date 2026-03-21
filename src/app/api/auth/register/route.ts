@@ -5,7 +5,7 @@ import { connectToDatabase } from "@/lib/mongodb";
 import { signAdminToken } from "@/lib/jwt";
 import { setAdminCookie } from "@/lib/session";
 import { registerSchema } from "@/lib/validations";
-import { Store } from "@/models/store";
+import { Store } from "@/models/Store";
 import { AdminUser } from "@/models/admin-user";
 
 export async function POST(request: Request) {

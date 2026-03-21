@@ -1,8 +1,8 @@
 import { notFound } from "next/navigation";
 
 import { connectToDatabase } from "@/lib/mongodb";
-import { Store } from "@/models/store";
-import { Product } from "@/models/product";
+import { Store } from "@/models/Store";
+import { Product } from "@/models/Product";
 import { StorefrontClient } from "@/components/storefront/storefront-client";
 
 export default async function StoreBySlugPage({ params }: { params: Promise<{ slug: string }> }) {

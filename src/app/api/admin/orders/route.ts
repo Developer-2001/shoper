@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 
 import { connectToDatabase } from "@/lib/mongodb";
 import { requireAdmin } from "@/lib/api-auth";
-import { Order } from "@/models/order";
+import { Order } from "@/models/Order";
 
 export async function GET() {
   await connectToDatabase();
