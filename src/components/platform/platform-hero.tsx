@@ -9,7 +9,7 @@ const sections = [
 
 export function PlatformHero() {
   return (
-    <section className="relative overflow-hidden bg-[radial-gradient(circle_at_10%_20%,#cffafe_0%,#ffffff_35%,#f8fafc_70%)]">
+    <section className="relative overflow-hidden bg-transparent">
       <div className="mx-auto grid w-full max-w-7xl gap-10 px-6 pb-14 pt-16 lg:grid-cols-2 lg:items-center">
         <div>
           <p className="inline-flex rounded-full bg-teal-100 px-4 py-1 text-sm font-semibold text-teal-900">

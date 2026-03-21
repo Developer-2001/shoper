@@ -6,7 +6,7 @@ import { PlatformNavbar } from "@/components/platform/platform-navbar";
 
 export default function HomePage() {
   return (
-    <div className="min-h-screen bg-slate-50">
+    <div className="min-h-screen bg-[radial-gradient(circle_at_10%_20%,#cffafe_0%,#ffffff_35%,#f8fafc_70%)]">
       <PlatformNavbar />
       <PlatformHero />
       <section id="themes" className="mx-auto w-full max-w-7xl px-6 pb-16">

@@ -1,10 +1,9 @@
-import { Store } from "lucide-react";
 import Link from "next/link";
 import Logo from "./logo";
 
 export function PlatformNavbar() {
   return (
-    <header className="sticky top-0 z-40 border-b border-slate-200/60 bg-[radial-gradient(circle_at_10%_20%,#d2f7fa_0%,#ffffff_35%,#f8fafc_70%)] backdrop-blur">
+    <header className="sticky top-0 z-40 border-b border-slate-200/50 bg-transparent backdrop-blur">
       <div className="mx-auto flex w-full max-w-7xl items-center justify-between px-6 py-3">
         <Link href="/" className="flex items-center gap-1 text-lg font-black tracking-tight  text-slate-900">
           <Logo className="w-10 h-10 " bagColor="#000000" markColor="#FFFFFF" />
