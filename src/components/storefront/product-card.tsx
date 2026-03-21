@@ -33,7 +33,7 @@ export function ProductCard({ slug, product }: ProductCardProps) {
         price: finalPrice,
         currency: product.currency,
         quantity: 1,
-      })
+      }),
     );
   }
 
@@ -50,11 +50,16 @@ export function ProductCard({ slug, product }: ProductCardProps) {
         />
       </Link>
       <div className="p-4">
-        <Link href={`/${slug}/product/${product._id}`} className="font-semibold text-slate-900">
+        <Link
+          href={`/${slug}/product/${product._id}`}
+          className="font-semibold text-slate-900"
+        >
           {product.name}
         </Link>
         <div className="mt-2 flex items-center gap-2">
-          <p className="text-lg font-bold text-slate-900">{formatMoney(finalPrice, product.currency)}</p>
+          <p className="text-lg font-bold text-slate-900">
+            {formatMoney(finalPrice, product.currency)}
+          </p>
           {product.discountPercentage > 0 ? (
             <p className="text-sm text-slate-500 line-through">
               {formatMoney(product.price, product.currency)}
@@ -64,7 +69,7 @@ export function ProductCard({ slug, product }: ProductCardProps) {
         <button
           type="button"
           onClick={addItem}
-          className="mt-4 w-full rounded-xl bg-slate-900 py-2 font-semibold text-white"
+          className="mt-4 w-full rounded-xl bg-slate-900 py-2 font-semibold text-white cursor-pointer transition hover:bg-slate-800 active:bg-slate-900 "
         >
           Add to cart
         </button>

@@ -56,7 +56,7 @@ export function StorefrontClient({ slug, store, products }: StorefrontClientProp
           <Image
             src={store.theme.heroImage}
             alt={store.businessName}
-            className="h-[320px] w-full rounded-3xl object-cover"
+            className="h-80 w-full rounded-3xl object-cover"
             width={1200}
             height={900}
             sizes="(max-width: 1024px) 100vw, 50vw"
@@ -90,6 +90,7 @@ export function StorefrontClient({ slug, store, products }: StorefrontClientProp
       </section>
 
       <DynamicStoreFooter
+      slug={slug}
         companyName={store.businessName}
         about={store.about}
         address={store.address}

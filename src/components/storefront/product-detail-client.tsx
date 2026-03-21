@@ -60,7 +60,7 @@ export function ProductDetailClient({ slug, product }: ProductProps) {
               })
             )
           }
-          className="mt-6 rounded-xl bg-slate-900 px-6 py-3 font-semibold text-white"
+          className="mt-6 rounded-xl bg-slate-900 px-6 py-3 font-semibold text-white cursor-pointer transition hover:bg-slate-800 active:bg-slate-900"
         >
           Add to cart
         </button>
