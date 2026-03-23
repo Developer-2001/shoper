@@ -1,0 +1,34 @@
+"use client";
+
+import { useCartStorage } from "@/hooks/useCartStorage";
+import { Theme2Navbar } from "@/themes/theme2/navbar";
+import { Theme2Footer } from "@/themes/theme2/footer";
+import { Theme2CartItems } from "@/themes/theme2/cart-items";
+import type { ThemeCartProps } from "@/themes/types";
+
+export function Theme2CartPage({ slug, store }: ThemeCartProps) {
+  useCartStorage();
+
+  return (
+    <div className="min-h-screen bg-[linear-gradient(180deg,#fff8e7_0%,#fff 45%)] text-amber-950">
+      <Theme2Navbar slug={slug} logoText={store.logoText || store.businessName} accent={store.theme.accent} />
+
+      <main className="mx-auto w-full max-w-7xl px-6 py-10">
+        <h1 className="text-4xl font-black uppercase">Your Cart</h1>
+        <div className="mt-6">
+          <Theme2CartItems slug={slug} />
+        </div>
+      </main>
+
+      <Theme2Footer
+        slug={slug}
+        companyName={store.businessName}
+        about={store.about}
+        address={store.address}
+        contactEmail={store.contactEmail}
+        contactPhone={store.contactPhone}
+        footerLinks={store.footerLinks || []}
+      />
+    </div>
+  );
+}

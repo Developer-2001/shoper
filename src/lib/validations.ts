@@ -1,5 +1,7 @@
 import { z } from "zod";
 
+import { DEFAULT_THEME_LAYOUT, THEME_LAYOUTS } from "@/themes/theme-config";
+
 export const registerSchema = z.object({
   businessName: z.string().min(2),
   businessEmail: z.string().email(),
@@ -10,6 +12,7 @@ export const registerSchema = z.object({
     .string()
     .min(2)
     .regex(/^[a-z0-9-]+$/),
+  themeLayout: z.enum(THEME_LAYOUTS).default(DEFAULT_THEME_LAYOUT),
   password: z.string().min(6),
 });
 
@@ -46,12 +49,14 @@ export const storeConfigSchema = z.object({
     .default({ instagram: "", facebook: "", x: "", youtube: "" }),
   theme: z
     .object({
+      layout: z.enum(THEME_LAYOUTS).default(DEFAULT_THEME_LAYOUT),
       primary: z.string().default("#0f172a"),
       accent: z.string().default("#14b8a6"),
       heroImage: z.string().url(),
       sliderImages: z.array(z.string().url()).default([]),
     })
     .default({
+      layout: DEFAULT_THEME_LAYOUT,
       primary: "#0f172a",
       accent: "#14b8a6",
       heroImage: "https://images.unsplash.com/photo-1512436991641-6745cdb1723f",

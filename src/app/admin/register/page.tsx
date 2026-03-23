@@ -12,6 +12,11 @@ const currencyOptions = [
   { value: "USD", label: "United States (USD)" },
 ];
 
+const themeOptions = [
+  { value: "theme1", label: "Theme 1 (Default)" },
+  { value: "theme2", label: "Theme 2" },
+];
+
 export default function AdminRegisterPage() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
@@ -23,6 +28,7 @@ export default function AdminRegisterPage() {
     ownerName: "",
     currency: "INR",
     slug: "",
+    themeLayout: "theme1",
     password: "",
   });
 
@@ -124,6 +130,21 @@ export default function AdminRegisterPage() {
             placeholder="slug"
             className="rounded-xl border border-slate-300 px-4 py-2"
           />
+
+          <select
+            required
+            value={form.themeLayout}
+            onChange={(event) =>
+              setForm((prev) => ({ ...prev, themeLayout: event.target.value }))
+            }
+            className="rounded-xl border border-slate-300 px-4 py-2"
+          >
+            {themeOptions.map((option) => (
+              <option key={option.value} value={option.value}>
+                {option.label}
+              </option>
+            ))}
+          </select>
 
           <input
             required

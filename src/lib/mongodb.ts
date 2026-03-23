@@ -31,7 +31,7 @@ export async function connectToDatabase() {
   }
 
   if (!cached.promise) {
-    cached.promise = mongoose.connect(getMongoUri(), { dbName: "eshoper" });
+    cached.promise = mongoose.connect(getMongoUri(), { dbName: "shoper" });
   }
 
   cached.conn = await cached.promise;

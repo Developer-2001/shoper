@@ -3,7 +3,7 @@ import { notFound } from "next/navigation";
 import { connectToDatabase } from "@/lib/mongodb";
 import { Store } from "@/models/Store";
 import { Product } from "@/models/Product";
-import { StorefrontClient } from "@/components/storefront/storefront-client";
+import { StoreThemeHome } from "@/themes/store-theme-renderer";
 
 export default async function StoreBySlugPage({ params }: { params: Promise<{ slug: string }> }) {
   await connectToDatabase();
@@ -21,7 +21,7 @@ export default async function StoreBySlugPage({ params }: { params: Promise<{ sl
     .lean();
 
   return (
-    <StorefrontClient
+    <StoreThemeHome
       slug={routeParams.slug}
       store={JSON.parse(JSON.stringify(store))}
       products={JSON.parse(JSON.stringify(products))}

@@ -18,7 +18,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
   }
 
-  const { businessName, businessEmail, mobile, ownerName, currency, slug, password } = parsed.data;
+  const { businessName, businessEmail, mobile, ownerName, currency, slug, themeLayout, password } = parsed.data;
 
   const existingStore = await Store.findOne({
     $or: [{ slug }, { businessEmail }, { mobile }],
@@ -42,9 +42,11 @@ export async function POST(request: Request) {
     address: "",
     footerLinks: [
       { label: "Home", href: `/${slug}` },
+      { label: "Products", href: `/${slug}/products` },
       { label: "Cart", href: `/${slug}/cart` },
     ],
     theme: {
+      layout: themeLayout,
       primary: "#0f172a",
       accent: "#14b8a6",
       heroImage:

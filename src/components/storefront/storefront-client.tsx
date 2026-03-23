@@ -24,6 +24,7 @@ type StorefrontClientProps = {
     };
     footerLinks: { label: string; href: string }[];
     theme: {
+      layout?: string;
       primary: string;
       accent: string;
       heroImage: string;
@@ -81,9 +82,17 @@ export function StorefrontClient({ slug, store, products }: StorefrontClientProp
       </section>
 
       <section className="mx-auto w-full max-w-7xl px-6 py-10">
-        <h2 className="text-3xl font-bold text-slate-900">Products</h2>
+        <div className="flex items-end justify-between gap-4">
+          <h2 className="text-3xl font-bold text-slate-900">Products</h2>
+          <a
+            href={`/${slug}/products`}
+            className="text-sm font-semibold text-slate-700 underline-offset-2 hover:underline"
+          >
+            View all products
+          </a>
+        </div>
         <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          {products.map((product) => (
+          {products.slice(0, 8).map((product) => (
             <ProductCard key={product._id} slug={slug} product={product} />
           ))}
         </div>

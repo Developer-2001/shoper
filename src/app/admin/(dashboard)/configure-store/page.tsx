@@ -15,6 +15,7 @@ const defaultForm = {
   facebook: "",
   x: "",
   youtube: "",
+  themeLayout: "theme1",
   primary: "#0f172a",
   accent: "#14b8a6",
   heroImage: "",
@@ -44,6 +45,7 @@ export default function ConfigureStorePage() {
         facebook: store.socialLinks?.facebook || "",
         x: store.socialLinks?.x || "",
         youtube: store.socialLinks?.youtube || "",
+        themeLayout: store.theme?.layout || "theme1",
         primary: store.theme?.primary || "#0f172a",
         accent: store.theme?.accent || "#14b8a6",
         heroImage: store.theme?.heroImage || "",
@@ -75,6 +77,7 @@ export default function ConfigureStorePage() {
         youtube: form.youtube,
       },
       theme: {
+        layout: form.themeLayout,
         primary: form.primary,
         accent: form.accent,
         heroImage: form.heroImage,
@@ -111,8 +114,25 @@ export default function ConfigureStorePage() {
       <AdminTopbar title="Configure Store" subtitle="Control branding, footer, contacts and slider assets." />
 
       <form onSubmit={handleSubmit} className="rounded-2xl border border-slate-200 bg-white p-5">
+        <div className="mb-3 grid gap-3 md:max-w-xs">
+          <label className="text-sm font-semibold text-slate-700" htmlFor="themeLayout">
+            Theme layout
+          </label>
+          <select
+            id="themeLayout"
+            value={form.themeLayout}
+            onChange={(event) => setForm((prev) => ({ ...prev, themeLayout: event.target.value }))}
+            className="rounded-xl border border-slate-300 px-4 py-2"
+          >
+            <option value="theme1">Theme 1 (Default)</option>
+            <option value="theme2">Theme 2</option>
+          </select>
+        </div>
+
         <div className="grid gap-3 md:grid-cols-2">
-          {Object.keys(form).map((key) => (
+          {Object.keys(form)
+            .filter((key) => key !== "themeLayout")
+            .map((key) => (
             <input
               key={key}
               value={form[key as keyof typeof form]}
@@ -121,7 +141,7 @@ export default function ConfigureStorePage() {
               className="rounded-xl border border-slate-300 px-4 py-2"
               required={["companyName", "logoText", "contactEmail", "heroImage"].includes(key)}
             />
-          ))}
+            ))}
         </div>
         <button
           disabled={saving}

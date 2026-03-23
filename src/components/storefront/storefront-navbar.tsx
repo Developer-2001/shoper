@@ -1,6 +1,9 @@
+"use client";
+
 import Link from "next/link";
 import { ShoppingCart } from "lucide-react";
 
+import { useAppSelector } from "@/hooks/useRedux";
 
 export function StorefrontNavbar({
   logoText,
@@ -9,10 +12,15 @@ export function StorefrontNavbar({
   logoText: string;
   slug: string;
 }) {
-  const cartCount = 3; // This should be dynamically fetched from your cart state
+  const cartCount = useAppSelector((state) =>
+    state.cart.items
+      .filter((item) => item.slug === slug)
+      .reduce((count, item) => count + item.quantity, 0)
+  );
+
   return (
     <header className="sticky top-0 z-30 border-b border-slate-200/60 bg-white/95 backdrop-blur">
-      <div className=" grid grid-cols-3 w-full  items-center justify-evenly gap-4 px-8 py-3">
+      <div className="grid w-full grid-cols-3 items-center justify-evenly gap-4 px-8 py-3">
         <Link
           href={`/${slug}`}
           className="min-w-28 text-xl font-black text-slate-900"
@@ -20,10 +28,14 @@ export function StorefrontNavbar({
           {logoText}
         </Link>
 
-        <input
-          className="min-w-20 rounded-full border border-slate-300 px-4 py-2 text-sm outline-none focus:border-slate-900"
-          placeholder="Search products"
-        />
+        <div className="flex items-center justify-center gap-5 text-sm font-semibold text-slate-700">
+          <Link href={`/${slug}`} className="transition hover:text-slate-900">
+            Home
+          </Link>
+          <Link href={`/${slug}/products`} className="transition hover:text-slate-900">
+            Products
+          </Link>
+        </div>
 
         <div className="flex items-center justify-end gap-4">
           <Link

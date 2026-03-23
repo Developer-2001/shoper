@@ -1,5 +1,11 @@
 import { model, models, Schema, type Types } from "mongoose";
 
+import {
+  DEFAULT_THEME_LAYOUT,
+  THEME_LAYOUTS,
+  type ThemeLayout,
+} from "@/themes/theme-config";
+
 export type StoreDocument = {
   _id: Types.ObjectId;
   businessName: string;
@@ -20,6 +26,7 @@ export type StoreDocument = {
     youtube?: string;
   };
   theme: {
+    layout: ThemeLayout;
     primary: string;
     accent: string;
     heroImage: string;
@@ -48,6 +55,11 @@ const StoreSchema = new Schema<StoreDocument>(
       youtube: { type: String, default: "" },
     },
     theme: {
+      layout: {
+        type: String,
+        enum: THEME_LAYOUTS,
+        default: DEFAULT_THEME_LAYOUT,
+      },
       primary: { type: String, default: "#0f172a" },
       accent: { type: String, default: "#14b8a6" },
       heroImage: {

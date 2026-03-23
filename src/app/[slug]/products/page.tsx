@@ -3,13 +3,9 @@ import { notFound } from "next/navigation";
 import { connectToDatabase } from "@/lib/mongodb";
 import { Store } from "@/models/Store";
 import { Product } from "@/models/Product";
-import { StoreThemeProductDetail } from "@/themes/store-theme-renderer";
+import { StoreThemeProducts } from "@/themes/store-theme-renderer";
 
-export default async function ProductDetailsPage({
-  params,
-}: {
-  params: Promise<{ slug: string; productId: string }>;
-}) {
+export default async function ProductsPage({ params }: { params: Promise<{ slug: string }> }) {
   await connectToDatabase();
 
   const routeParams = await params;
@@ -20,20 +16,15 @@ export default async function ProductDetailsPage({
     notFound();
   }
 
-  const product = await Product.findOne({
-    _id: routeParams.productId,
-    storeId: store._id,
-  }).lean();
-
-  if (!product) {
-    notFound();
-  }
+  const products = await Product.find({ storeId: store._id, isPublished: true })
+    .sort({ createdAt: -1 })
+    .lean();
 
   return (
-    <StoreThemeProductDetail
+    <StoreThemeProducts
       slug={routeParams.slug}
       store={JSON.parse(JSON.stringify(store))}
-      product={JSON.parse(JSON.stringify(product))}
+      products={JSON.parse(JSON.stringify(products))}
     />
   );
 }
