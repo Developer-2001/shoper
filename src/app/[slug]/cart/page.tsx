@@ -10,7 +10,7 @@ export default async function CartPage({ params }: { params: Promise<{ slug: str
   const routeParams = await params;
   const store = await Store.findOne({ slug: routeParams.slug }).lean();
 
-  if (!store) {
+  if (!store || store.status === "inactive") {
     notFound();
   }
 

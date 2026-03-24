@@ -6,6 +6,7 @@ import Link from "next/link";
 import { removeFromCart, updateCartQty } from "@/store/slices/cartSlice";
 import { useAppDispatch, useAppSelector } from "@/hooks/useRedux";
 import { formatMoney } from "@/utils/currency";
+import { isVideoUrl } from "@/utils/media";
 
 export function Theme2CartItems({ slug }: { slug: string }) {
   const dispatch = useAppDispatch();
@@ -27,14 +28,18 @@ export function Theme2CartItems({ slug }: { slug: string }) {
       <div className="space-y-4">
         {items.map((item) => (
           <div key={item.productId} className="flex gap-4 rounded-3xl border border-amber-200 bg-white p-4">
-            <Image
-              src={item.image}
-              alt={item.name}
-              className="h-24 w-24 rounded-2xl object-cover"
-              width={96}
-              height={96}
-              sizes="96px"
-            />
+            {isVideoUrl(item.image) ? (
+              <video src={item.image} className="h-24 w-24 rounded-2xl object-cover" muted controls />
+            ) : (
+              <Image
+                src={item.image}
+                alt={item.name}
+                className="h-24 w-24 rounded-2xl object-cover"
+                width={96}
+                height={96}
+                sizes="96px"
+              />
+            )}
 
             <div className="flex-1">
               <p className="font-bold text-amber-950">{item.name}</p>

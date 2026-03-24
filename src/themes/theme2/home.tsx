@@ -8,6 +8,7 @@ import { Theme2Navbar } from "@/themes/theme2/navbar";
 import { Theme2Footer } from "@/themes/theme2/footer";
 import { Theme2ProductCard } from "@/themes/theme2/product-card";
 import type { ThemeHomeProps } from "@/themes/types";
+import { isVideoUrl } from "@/utils/media";
 
 export function Theme2Home({ slug, store, products }: ThemeHomeProps) {
   useCartStorage();
@@ -44,30 +45,54 @@ export function Theme2Home({ slug, store, products }: ThemeHomeProps) {
           </div>
         </div>
 
-        <Image
-          src={store.theme.heroImage}
-          alt={store.businessName}
-          width={1200}
-          height={900}
-          className="h-[420px] w-full rounded-[2rem] border border-amber-200 object-cover shadow-[0_40px_80px_-60px_rgba(146,64,14,0.9)]"
-          sizes="(max-width: 1024px) 100vw, 45vw"
-        />
+        {store.theme.heroImage ? (
+          isVideoUrl(store.theme.heroImage) ? (
+            <video
+              src={store.theme.heroImage}
+              className="h-[420px] w-full rounded-[2rem] border border-amber-200 object-cover shadow-[0_40px_80px_-60px_rgba(146,64,14,0.9)]"
+              controls
+              autoPlay
+              muted
+            />
+          ) : (
+            <Image
+              src={store.theme.heroImage}
+              alt={store.businessName}
+              width={1200}
+              height={900}
+              className="h-[420px] w-full rounded-[2rem] border border-amber-200 object-cover shadow-[0_40px_80px_-60px_rgba(146,64,14,0.9)]"
+              sizes="(max-width: 1024px) 100vw, 45vw"
+            />
+          )
+        ) : (
+          <div className="grid h-[420px] w-full place-items-center rounded-[2rem] border border-dashed border-amber-300 text-amber-600">No hero media</div>
+        )}
       </section>
 
       {store.theme.sliderImages?.length ? (
         <section className="mx-auto w-full max-w-7xl px-6">
           <div className="flex snap-x gap-4 overflow-x-auto pb-2">
-            {store.theme.sliderImages.map((image, index) => (
-              <Image
-                key={`${slug}-theme2-${index}`}
-                src={image}
-                alt={`showcase-${index + 1}`}
-                width={1100}
-                height={760}
-                className="h-52 w-[85%] min-w-[85%] snap-start rounded-3xl border border-amber-200 object-cover md:h-64 md:w-[48%] md:min-w-[48%]"
-                sizes="(max-width: 768px) 85vw, 48vw"
-              />
-            ))}
+            {store.theme.sliderImages.map((media, index) =>
+              isVideoUrl(media) ? (
+                <video
+                  key={`${slug}-theme2-${index}`}
+                  src={media}
+                  className="h-52 w-[85%] min-w-[85%] snap-start rounded-3xl border border-amber-200 object-cover md:h-64 md:w-[48%] md:min-w-[48%]"
+                  controls
+                  muted
+                />
+              ) : (
+                <Image
+                  key={`${slug}-theme2-${index}`}
+                  src={media}
+                  alt={`showcase-${index + 1}`}
+                  width={1100}
+                  height={760}
+                  className="h-52 w-[85%] min-w-[85%] snap-start rounded-3xl border border-amber-200 object-cover md:h-64 md:w-[48%] md:min-w-[48%]"
+                  sizes="(max-width: 768px) 85vw, 48vw"
+                />
+              )
+            )}
           </div>
         </section>
       ) : null}

@@ -34,6 +34,10 @@ export async function POST(
     return NextResponse.json({ error: "Store not found" }, { status: 404 });
   }
 
+  if (store.status === "inactive") {
+    return NextResponse.json({ error: "Store is inactive" }, { status: 403 });
+  }
+
   const body = await request.json();
   const parsed = checkoutSchema.safeParse(body);
 

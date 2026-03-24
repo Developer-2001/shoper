@@ -6,6 +6,7 @@ import Link from "next/link";
 import { addToCart } from "@/store/slices/cartSlice";
 import { useAppDispatch } from "@/hooks/useRedux";
 import { formatMoney, salePrice } from "@/utils/currency";
+import { isVideoUrl } from "@/utils/media";
 import type { StorefrontProduct } from "@/themes/types";
 
 type Theme2ProductCardProps = {
@@ -16,6 +17,7 @@ type Theme2ProductCardProps = {
 export function Theme2ProductCard({ slug, product }: Theme2ProductCardProps) {
   const dispatch = useAppDispatch();
   const finalPrice = salePrice(product.price, product.discountPercentage);
+  const firstMedia = product.images[0] || "/file.svg";
 
   function addItem() {
     dispatch(
@@ -23,7 +25,7 @@ export function Theme2ProductCard({ slug, product }: Theme2ProductCardProps) {
         slug,
         productId: product._id,
         name: product.name,
-        image: product.images[0],
+        image: firstMedia,
         price: finalPrice,
         currency: product.currency,
         quantity: 1,
@@ -34,14 +36,18 @@ export function Theme2ProductCard({ slug, product }: Theme2ProductCardProps) {
   return (
     <article className="group overflow-hidden rounded-3xl border border-amber-200 bg-white shadow-[0_16px_40px_-30px_rgba(146,64,14,0.6)]">
       <Link href={`/${slug}/product/${product._id}`}>
-        <Image
-          className="h-56 w-full object-cover transition duration-500 group-hover:scale-105"
-          src={product.images[0]}
-          alt={product.name}
-          width={900}
-          height={700}
-          sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
-        />
+        {isVideoUrl(firstMedia) ? (
+          <video className="h-56 w-full object-cover" src={firstMedia} muted controls />
+        ) : (
+          <Image
+            className="h-56 w-full object-cover transition duration-500 group-hover:scale-105"
+            src={firstMedia}
+            alt={product.name}
+            width={900}
+            height={700}
+            sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+          />
+        )}
       </Link>
       <div className="space-y-3 p-5">
         <Link href={`/${slug}/product/${product._id}`} className="line-clamp-2 text-lg font-bold text-amber-950">

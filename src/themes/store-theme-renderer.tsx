@@ -26,7 +26,7 @@ function normalizeStoreTheme<T extends { store: ThemeHomeProps["store"] }>(props
     accent: props.store.theme?.accent || "#14b8a6",
     heroImage:
       props.store.theme?.heroImage ||
-      "https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?q=80&w=1200&auto=format&fit=crop",
+      "/globe.svg",
     sliderImages: props.store.theme?.sliderImages || [],
   };
 
@@ -82,3 +82,4 @@ export function StoreThemeCheckout(input: ThemeCheckoutProps) {
 
   return <Theme1CheckoutPage {...props} />;
 }
+

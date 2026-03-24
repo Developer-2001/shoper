@@ -26,13 +26,14 @@ export default function AdminLoginPage() {
 
     setLoading(false);
 
+    const data = await response.json();
+
     if (!response.ok) {
-      const data = await response.json();
       setError(data.error || "Login failed");
       return;
     }
 
-    router.push("/admin/home");
+    router.push(data.role === "platform_admin" ? "/admin/platform" : "/admin/home");
   }
 
   return (

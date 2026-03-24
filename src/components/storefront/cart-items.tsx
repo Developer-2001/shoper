@@ -5,6 +5,7 @@ import Image from "next/image";
 import { removeFromCart, updateCartQty } from "@/store/slices/cartSlice";
 import { useAppDispatch, useAppSelector } from "@/hooks/useRedux";
 import { formatMoney } from "@/utils/currency";
+import { isVideoUrl } from "@/utils/media";
 
 export function CartItems({ slug }: { slug: string }) {
   const dispatch = useAppDispatch();
@@ -22,14 +23,18 @@ export function CartItems({ slug }: { slug: string }) {
       <div className="space-y-4">
         {items.map((item) => (
           <div key={item.productId} className="flex gap-4 rounded-2xl border border-slate-200 bg-white p-4">
-            <Image
-              src={item.image}
-              alt={item.name}
-              className="h-20 w-20 rounded-xl object-cover"
-              width={80}
-              height={80}
-              sizes="80px"
-            />
+            {isVideoUrl(item.image) ? (
+              <video src={item.image} className="h-20 w-20 rounded-xl object-cover" muted controls />
+            ) : (
+              <Image
+                src={item.image}
+                alt={item.name}
+                className="h-20 w-20 rounded-xl object-cover"
+                width={80}
+                height={80}
+                sizes="80px"
+              />
+            )}
             <div className="flex-1">
               <p className="font-semibold text-slate-900">{item.name}</p>
               <p className="text-slate-600">{formatMoney(item.price, item.currency)}</p>

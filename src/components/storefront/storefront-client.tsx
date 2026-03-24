@@ -6,6 +6,7 @@ import { useCartStorage } from "@/hooks/useCartStorage";
 import { ProductCard } from "@/components/storefront/product-card";
 import { StorefrontNavbar } from "@/components/storefront/storefront-navbar";
 import { DynamicStoreFooter } from "@/components/storefront/dynamic-store-footer";
+import { isVideoUrl } from "@/utils/media";
 
 type StorefrontClientProps = {
   slug: string;
@@ -54,29 +55,41 @@ export function StorefrontClient({ slug, store, products }: StorefrontClientProp
             <h1 className="text-5xl font-black leading-tight text-slate-900">{store.businessName}</h1>
             <p className="mt-4 text-lg text-slate-700">{store.about || "Discover our latest collections."}</p>
           </div>
-          <Image
-            src={store.theme.heroImage}
-            alt={store.businessName}
-            className="h-80 w-full rounded-3xl object-cover"
-            width={1200}
-            height={900}
-            sizes="(max-width: 1024px) 100vw, 50vw"
-          />
+          {store.theme.heroImage ? (
+            isVideoUrl(store.theme.heroImage) ? (
+              <video src={store.theme.heroImage} className="h-80 w-full rounded-3xl object-cover" controls autoPlay muted />
+            ) : (
+              <Image
+                src={store.theme.heroImage}
+                alt={store.businessName}
+                className="h-80 w-full rounded-3xl object-cover"
+                width={1200}
+                height={900}
+                sizes="(max-width: 1024px) 100vw, 50vw"
+              />
+            )
+          ) : (
+            <div className="grid h-80 w-full place-items-center rounded-3xl border border-dashed border-slate-300 text-slate-400">No hero media</div>
+          )}
         </div>
 
         {store.theme.sliderImages?.length ? (
           <div className="mx-auto grid w-full max-w-7xl gap-4 px-6 pb-10 md:grid-cols-3">
-            {store.theme.sliderImages.slice(0, 3).map((image, index) => (
-              <Image
-                key={`${slug}-${index}`}
-                src={image}
-                alt={`slide-${index}`}
-                className="h-44 w-full rounded-2xl object-cover"
-                width={1000}
-                height={700}
-                sizes="(max-width: 768px) 100vw, 33vw"
-              />
-            ))}
+            {store.theme.sliderImages.slice(0, 3).map((media, index) =>
+              isVideoUrl(media) ? (
+                <video key={`${slug}-${index}`} src={media} className="h-44 w-full rounded-2xl object-cover" controls muted />
+              ) : (
+                <Image
+                  key={`${slug}-${index}`}
+                  src={media}
+                  alt={`slide-${index}`}
+                  className="h-44 w-full rounded-2xl object-cover"
+                  width={1000}
+                  height={700}
+                  sizes="(max-width: 768px) 100vw, 33vw"
+                />
+              )
+            )}
           </div>
         ) : null}
       </section>

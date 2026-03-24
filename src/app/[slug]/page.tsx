@@ -12,7 +12,7 @@ export default async function StoreBySlugPage({ params }: { params: Promise<{ sl
 
   const store = await Store.findOne({ slug: routeParams.slug }).lean();
 
-  if (!store) {
+  if (!store || store.status === "inactive") {
     notFound();
   }
 

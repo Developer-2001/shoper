@@ -2,30 +2,74 @@
 
 import Image from "next/image";
 import Link from "next/link";
+import { useMemo, useState } from "react";
 
 import { addToCart } from "@/store/slices/cartSlice";
 import { useAppDispatch } from "@/hooks/useRedux";
 import { useCartStorage } from "@/hooks/useCartStorage";
 import { formatMoney, salePrice } from "@/utils/currency";
+import { isVideoUrl } from "@/utils/media";
 import type { ThemeProductDetailProps } from "@/themes/types";
 
 export function Theme2ProductDetail({ slug, product }: ThemeProductDetailProps) {
   const dispatch = useAppDispatch();
   useCartStorage();
 
+  const mediaList = useMemo(() => product.images.slice(0, 5), [product.images]);
+  const [activeIndex, setActiveIndex] = useState(0);
+  const activeMedia = mediaList[activeIndex] || product.images[0] || "/file.svg";
+
   const finalPrice = salePrice(product.price, product.discountPercentage);
 
   return (
     <article className="grid gap-8 rounded-3xl border border-amber-200 bg-white p-6 shadow-[0_30px_60px_-50px_rgba(120,53,15,0.8)] lg:grid-cols-[1.05fr_1fr] lg:p-10">
       <div>
-        <Image
-          src={product.images[0]}
-          alt={product.name}
-          className="h-[440px] w-full rounded-2xl object-cover"
-          width={1200}
-          height={900}
-          sizes="(max-width: 1024px) 100vw, 55vw"
-        />
+        <div className="overflow-hidden rounded-2xl border border-amber-100">
+          {isVideoUrl(activeMedia) ? (
+            <video src={activeMedia} className="h-[440px] w-full object-cover" controls autoPlay muted />
+          ) : (
+            <Image
+              src={activeMedia}
+              alt={product.name}
+              className="h-[440px] w-full object-cover"
+              width={1200}
+              height={900}
+              sizes="(max-width: 1024px) 100vw, 55vw"
+            />
+          )}
+        </div>
+
+        {mediaList.length > 1 ? (
+          <div className="mt-3 grid grid-cols-5 gap-3">
+            {mediaList.map((media, index) => {
+              const selected = index === activeIndex;
+
+              return (
+                <button
+                  key={`${media}-${index}`}
+                  type="button"
+                  onClick={() => setActiveIndex(index)}
+                  className={`overflow-hidden rounded-xl border ${
+                    selected ? "border-amber-500 ring-2 ring-amber-100" : "border-amber-200"
+                  }`}
+                >
+                  {isVideoUrl(media) ? (
+                    <video src={media} className="h-20 w-full object-cover" muted />
+                  ) : (
+                    <Image
+                      src={media}
+                      alt={`${product.name}-${index + 1}`}
+                      width={180}
+                      height={120}
+                      className="h-20 w-full object-cover"
+                      sizes="20vw"
+                    />
+                  )}
+                </button>
+              );
+            })}
+          </div>
+        ) : null}
       </div>
 
       <div>
@@ -49,7 +93,7 @@ export function Theme2ProductDetail({ slug, product }: ThemeProductDetailProps) 
                   slug,
                   productId: product._id,
                   name: product.name,
-                  image: product.images[0],
+                  image: product.images[0] || "/file.svg",
                   price: finalPrice,
                   currency: product.currency,
                   quantity: 1,

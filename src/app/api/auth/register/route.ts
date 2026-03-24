@@ -35,6 +35,7 @@ export async function POST(request: Request) {
     ownerName,
     currency,
     slug,
+    status: "inactive",
     contactEmail: businessEmail,
     contactPhone: mobile,
     logoText: businessName,
@@ -49,12 +50,8 @@ export async function POST(request: Request) {
       layout: themeLayout,
       primary: "#0f172a",
       accent: "#14b8a6",
-      heroImage:
-        "https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?q=80&w=1200&auto=format&fit=crop",
-      sliderImages: [
-        "https://images.unsplash.com/photo-1523170335258-f5ed11844a49?q=80&w=1200&auto=format&fit=crop",
-        "https://images.unsplash.com/photo-1434056886845-dac89ffe9b56?q=80&w=1200&auto=format&fit=crop",
-      ],
+      heroImage: "",
+      sliderImages: [],
     },
   });
 
@@ -68,6 +65,7 @@ export async function POST(request: Request) {
   });
 
   const token = await signAdminToken({
+    role: "store_admin",
     adminId: admin._id.toString(),
     storeId: store._id.toString(),
     slug,
@@ -75,6 +73,7 @@ export async function POST(request: Request) {
 
   const response = NextResponse.json({
     ok: true,
+    role: "store_admin",
     admin: {
       id: admin._id,
       ownerName: admin.ownerName,
@@ -85,6 +84,7 @@ export async function POST(request: Request) {
       businessName: store.businessName,
       slug: store.slug,
       currency: store.currency,
+      status: store.status,
     },
   });
 

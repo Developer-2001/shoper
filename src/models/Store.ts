@@ -6,6 +6,8 @@ import {
   type ThemeLayout,
 } from "@/themes/theme-config";
 
+export type StoreStatus = "active" | "inactive";
+
 export type StoreDocument = {
   _id: Types.ObjectId;
   businessName: string;
@@ -14,6 +16,7 @@ export type StoreDocument = {
   ownerName: string;
   currency: string;
   slug: string;
+  status: StoreStatus;
   about: string;
   address: string;
   contactEmail: string;
@@ -43,6 +46,12 @@ const StoreSchema = new Schema<StoreDocument>(
     ownerName: { type: String, required: true },
     currency: { type: String, required: true, default: "INR" },
     slug: { type: String, required: true, unique: true, index: true },
+    status: {
+      type: String,
+      enum: ["active", "inactive"],
+      default: "inactive",
+      index: true,
+    },
     about: { type: String, default: "" },
     address: { type: String, default: "" },
     contactEmail: { type: String, default: "" },
@@ -64,8 +73,7 @@ const StoreSchema = new Schema<StoreDocument>(
       accent: { type: String, default: "#14b8a6" },
       heroImage: {
         type: String,
-        default:
-          "https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?q=80&w=1200&auto=format&fit=crop",
+        default: "",
       },
       sliderImages: { type: [String], default: [] },
     },

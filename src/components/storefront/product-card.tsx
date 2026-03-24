@@ -6,6 +6,7 @@ import Link from "next/link";
 import { addToCart } from "@/store/slices/cartSlice";
 import { useAppDispatch } from "@/hooks/useRedux";
 import { formatMoney, salePrice } from "@/utils/currency";
+import { isVideoUrl } from "@/utils/media";
 
 type ProductCardProps = {
   slug: string;
@@ -22,6 +23,7 @@ type ProductCardProps = {
 export function ProductCard({ slug, product }: ProductCardProps) {
   const dispatch = useAppDispatch();
   const finalPrice = salePrice(product.price, product.discountPercentage);
+  const firstMedia = product.images[0] || "/file.svg";
 
   function addItem() {
     dispatch(
@@ -29,7 +31,7 @@ export function ProductCard({ slug, product }: ProductCardProps) {
         slug,
         productId: product._id,
         name: product.name,
-        image: product.images[0],
+        image: firstMedia,
         price: finalPrice,
         currency: product.currency,
         quantity: 1,
@@ -40,14 +42,18 @@ export function ProductCard({ slug, product }: ProductCardProps) {
   return (
     <article className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
       <Link href={`/${slug}/product/${product._id}`}>
-        <Image
-          className="h-52 w-full object-cover"
-          src={product.images[0]}
-          alt={product.name}
-          width={900}
-          height={700}
-          sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
-        />
+        {isVideoUrl(firstMedia) ? (
+          <video className="h-52 w-full object-cover" src={firstMedia} muted controls />
+        ) : (
+          <Image
+            className="h-52 w-full object-cover"
+            src={firstMedia}
+            alt={product.name}
+            width={900}
+            height={700}
+            sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
+          />
+        )}
       </Link>
       <div className="p-4">
         <Link

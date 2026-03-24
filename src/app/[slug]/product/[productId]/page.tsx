@@ -16,7 +16,7 @@ export default async function ProductDetailsPage({
 
   const store = await Store.findOne({ slug: routeParams.slug }).lean();
 
-  if (!store) {
+  if (!store || store.status === "inactive") {
     notFound();
   }
 

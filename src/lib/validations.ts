@@ -52,14 +52,14 @@ export const storeConfigSchema = z.object({
       layout: z.enum(THEME_LAYOUTS).default(DEFAULT_THEME_LAYOUT),
       primary: z.string().default("#0f172a"),
       accent: z.string().default("#14b8a6"),
-      heroImage: z.string().url(),
+      heroImage: z.string().url().or(z.literal("")).default(""),
       sliderImages: z.array(z.string().url()).default([]),
     })
     .default({
       layout: DEFAULT_THEME_LAYOUT,
       primary: "#0f172a",
       accent: "#14b8a6",
-      heroImage: "https://images.unsplash.com/photo-1512436991641-6745cdb1723f",
+      heroImage: "",
       sliderImages: [],
     }),
   footerLinks: z
@@ -70,6 +70,11 @@ export const storeConfigSchema = z.object({
       })
     )
     .default([]),
+});
+
+export const updateStoreStatusSchema = z.object({
+  storeId: z.string().min(1),
+  status: z.enum(["active", "inactive"]),
 });
 
 export const checkoutSchema = z.object({
