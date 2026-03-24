@@ -9,6 +9,11 @@ import { Theme2ProductsPage } from "@/themes/theme2/products-page";
 import { Theme2ProductDetailPage } from "@/themes/theme2/product-detail-page";
 import { Theme2CartPage } from "@/themes/theme2/cart-page";
 import { Theme2CheckoutPage } from "@/themes/theme2/checkout-page";
+import { HampersHome } from "@/themes/hampers/home";
+import { HampersProductsPage } from "@/themes/hampers/products-page";
+import { HampersProductDetailPage } from "@/themes/hampers/product-detail-page";
+import { HampersCartPage } from "@/themes/hampers/cart-page";
+import { HampersCheckoutPage } from "@/themes/hampers/checkout-page";
 import type {
   ThemeCartProps,
   ThemeCheckoutProps,
@@ -40,6 +45,10 @@ export function StoreThemeHome(input: ThemeHomeProps) {
     return <Theme2Home {...props} />;
   }
 
+  if (props.layout === "hampers") {
+    return <HampersHome {...props} />;
+  }
+
   return <Theme1Home {...props} />;
 }
 
@@ -48,6 +57,10 @@ export function StoreThemeProducts(input: ThemeProductsProps) {
 
   if (props.layout === "theme2") {
     return <Theme2ProductsPage {...props} />;
+  }
+
+  if (props.layout === "hampers") {
+    return <HampersProductsPage {...props} />;
   }
 
   return <Theme1ProductsPage {...props} />;
@@ -60,6 +73,10 @@ export function StoreThemeProductDetail(input: ThemeProductDetailProps) {
     return <Theme2ProductDetailPage {...props} />;
   }
 
+  if (props.layout === "hampers") {
+    return <HampersProductDetailPage {...props} />;
+  }
+
   return <Theme1ProductDetailPage {...props} />;
 }
 
@@ -70,6 +87,10 @@ export function StoreThemeCart(input: ThemeCartProps) {
     return <Theme2CartPage {...props} />;
   }
 
+  if (props.layout === "hampers") {
+    return <HampersCartPage {...props} />;
+  }
+
   return <Theme1CartPage {...props} />;
 }
 
@@ -78,6 +99,10 @@ export function StoreThemeCheckout(input: ThemeCheckoutProps) {
 
   if (props.layout === "theme2") {
     return <Theme2CheckoutPage {...props} />;
+  }
+
+  if (props.layout === "hampers") {
+    return <HampersCheckoutPage {...props} />;
   }
 
   return <Theme1CheckoutPage {...props} />;
