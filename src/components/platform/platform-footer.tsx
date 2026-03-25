@@ -17,11 +17,19 @@ const footerColumns = [
   },
   {
     title: "Support",
-    links: ["Shopify Help Center", "Community Forum", "Hire a Partner", "Service Status"],
+    links: ["Shopify Help Center", "Community Forum", "Hire a Partner", "Service Status", "Contact Us"],
   },
 ];
 
-const legalLinks = ["Terms of Service", "Legal", "Privacy Policy", "Sitemap", "Your Privacy Choices"];
+
+const legalLinks = [
+  { name: "Terms of Service", href: "/terms" },
+  { name: "Privacy Policy", href: "/privacy" },
+  { name: "Legal", href: "#" },
+  { name: "Sitemap", href: "#" },
+  { name: "Your Privacy Choices", href: "#" }
+];
+
 // social media  with label and icons
 const socialLinks = [
   { label: "Facebook", icons:<icons.Facebook className="size-6" />, short: "fb" },
@@ -49,9 +57,13 @@ export function PlatformFooter() {
                 <ul className="space-y-3">
                   {column.links.map((item) => (
                     <li key={item}>
-                      <Link href="#" className="text-lg text-slate-400 transition hover:text-white sm:text-base">
+                      <Link 
+                        href={item === "Contact Us" ? "/contact" : "#"} 
+                        className="text-lg text-slate-400 transition hover:text-white sm:text-base"
+                      >
                         {item}
                       </Link>
+
                     </li>
                   ))}
                 </ul>
@@ -69,11 +81,12 @@ export function PlatformFooter() {
               </button>
               <div className="flex flex-wrap items-center gap-4">
                 {legalLinks.map((item) => (
-                <Link key={item} href="#" className="transition hover:text-white">
-                  {item}
+                <Link key={item.name} href={item.href} className="transition hover:text-white">
+                  {item.name}
                 </Link>
               ))}
               </div>
+
               
             </div>
 
