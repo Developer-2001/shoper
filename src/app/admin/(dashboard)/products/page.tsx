@@ -1,13 +1,18 @@
 "use client";
 
 import Image from "next/image";
-import { FormEvent, useEffect, useState } from "react";
+import { FormEvent, useEffect, useMemo, useState } from "react";
 import { Plus } from "lucide-react";
 
 import { AdminTopbar } from "@/components/admin/admin-topbar";
-import { encodeStorageObjectPath, extractStorageObjectPath, isVideoUrl } from "@/utils/media";
+import {
+  encodeStorageObjectPath,
+  extractStorageObjectPath,
+  isVideoUrl,
+} from "@/utils/media";
 
 const MAX_PRODUCT_MEDIA = 6;
+const PRODUCT_MEDIA_FOLDER = "products";
 
 type Product = {
   _id: string;
@@ -36,30 +41,58 @@ export default function ProductsPage() {
   const [products, setProducts] = useState<Product[]>([]);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [form, setForm] = useState(initialForm);
-  const [pendingProductFiles, setPendingProductFiles] = useState<File[]>([]);
+  const [pendingProductFile, setPendingProductFile] = useState<File | null>(
+    null,
+  );
   const [uploadingImages, setUploadingImages] = useState(false);
+  const pendingProductPreview = useMemo(
+    () => (pendingProductFile ? URL.createObjectURL(pendingProductFile) : ""),
+    [pendingProductFile],
+  );
 
-  async function loadProducts(signal?: AbortSignal) {
+  useEffect(() => {
+    return () => {
+      if (pendingProductPreview) URL.revokeObjectURL(pendingProductPreview);
+    };
+  }, [pendingProductPreview]);
+
+  async function fetchProducts(signal?: AbortSignal) {
     const response = await fetch("/api/admin/products", { signal });
-    if (!response.ok) return;
+    if (!response.ok) return [] as Product[];
     const data = await response.json();
-    setProducts(data.products);
+    return (data.products || []) as Product[];
+  }
+
+  async function refreshProducts() {
+    const nextProducts = await fetchProducts();
+    setProducts(nextProducts);
   }
 
   useEffect(() => {
     const controller = new AbortController();
+    let active = true;
 
-    loadProducts(controller.signal).catch(() => {
-      // ignore abort
-    });
+    void (async () => {
+      try {
+        const nextProducts = await fetchProducts(controller.signal);
+        if (active) {
+          setProducts(nextProducts);
+        }
+      } catch {
+        // ignore abort/network errors for initial load
+      }
+    })();
 
-    return () => controller.abort();
+    return () => {
+      active = false;
+      controller.abort();
+    };
   }, []);
 
   async function uploadNewMedia(file: File) {
     const formData = new FormData();
     formData.append("file", file);
-    formData.append("folder", "products");
+    formData.append("folder", PRODUCT_MEDIA_FOLDER);
 
     const response = await fetch("/api/storage", {
       method: "POST",
@@ -67,7 +100,9 @@ export default function ProductsPage() {
     });
 
     if (!response.ok) {
-      const data = await response.json().catch(() => ({ error: "Upload failed" }));
+      const data = await response
+        .json()
+        .catch(() => ({ error: "Upload failed" }));
       alert(data.error || "Upload failed");
       return null;
     }
@@ -76,11 +111,26 @@ export default function ProductsPage() {
     return data?.file?.url || null;
   }
 
-  async function replaceExistingMedia(file: File, currentUrl: string) {
+  async function replaceExistingMedia(
+    file: File,
+    currentUrl: string,
+    fallbackFolder: string,
+  ) {
     const path = extractStorageObjectPath(currentUrl);
 
     if (!path) {
       return uploadNewMedia(file);
+    }
+
+    const segments = path.split("/").filter(Boolean);
+    const currentFolder = segments.length >= 2 ? segments[1] : "";
+
+    if (currentFolder !== fallbackFolder) {
+      const nextUrl = await uploadNewMedia(file);
+      if (!nextUrl) return null;
+
+      await deleteMediaFromStorage(currentUrl);
+      return nextUrl;
     }
 
     const formData = new FormData();
@@ -93,7 +143,9 @@ export default function ProductsPage() {
     });
 
     if (!response.ok) {
-      const data = await response.json().catch(() => ({ error: "Replace failed" }));
+      const data = await response
+        .json()
+        .catch(() => ({ error: "Replace failed" }));
       alert(data.error || "Replace failed");
       return null;
     }
@@ -112,7 +164,9 @@ export default function ProductsPage() {
     });
 
     if (!response.ok) {
-      const data = await response.json().catch(() => ({ error: "Delete failed" }));
+      const data = await response
+        .json()
+        .catch(() => ({ error: "Delete failed" }));
       alert(data.error || "Delete failed");
       return false;
     }
@@ -121,8 +175,8 @@ export default function ProductsPage() {
   }
 
   async function uploadProductImages() {
-    if (!pendingProductFiles.length) {
-      alert("Choose at least one media first.");
+    if (!pendingProductFile) {
+      alert("Choose media first.");
       return;
     }
 
@@ -133,34 +187,31 @@ export default function ProductsPage() {
       return;
     }
 
-    const filesToUpload = pendingProductFiles.slice(0, remainingSlots);
-
     setUploadingImages(true);
-    const uploadedUrls: string[] = [];
+    const url = await uploadNewMedia(pendingProductFile);
+    setUploadingImages(false);
 
-    for (const file of filesToUpload) {
-      const url = await uploadNewMedia(file);
-      if (!url) {
-        setUploadingImages(false);
-        return;
-      }
-      uploadedUrls.push(url);
+    if (!url) {
+      return;
     }
 
     setForm((prev) => ({
       ...prev,
-      images: [...prev.images, ...uploadedUrls].slice(0, MAX_PRODUCT_MEDIA),
+      images: [...prev.images, url].slice(0, MAX_PRODUCT_MEDIA),
     }));
 
-    setPendingProductFiles([]);
-    setUploadingImages(false);
+    setPendingProductFile(null);
   }
 
   async function replaceProductMedia(index: number, file: File) {
     const currentUrl = form.images[index];
     if (!currentUrl) return;
 
-    const nextUrl = await replaceExistingMedia(file, currentUrl);
+    const nextUrl = await replaceExistingMedia(
+      file,
+      currentUrl,
+      PRODUCT_MEDIA_FOLDER,
+    );
     if (!nextUrl) return;
 
     setForm((prev) => {
@@ -193,27 +244,34 @@ export default function ProductsPage() {
       images: form.images,
     };
 
-    const response = await fetch(editingId ? `/api/admin/products/${editingId}` : "/api/admin/products", {
-      method: editingId ? "PUT" : "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload),
-    });
+    const response = await fetch(
+      editingId ? `/api/admin/products/${editingId}` : "/api/admin/products",
+      {
+        method: editingId ? "PUT" : "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      },
+    );
 
     if (!response.ok) {
-      const data = await response.json().catch(() => ({ error: "Failed to save product" }));
+      const data = await response
+        .json()
+        .catch(() => ({ error: "Failed to save product" }));
       alert(data.error || "Failed to save product");
       return;
     }
 
     setForm(initialForm);
     setEditingId(null);
-    setPendingProductFiles([]);
-    loadProducts();
+    setPendingProductFile(null);
+    refreshProducts();
   }
 
   async function handleDelete(id: string) {
-    const response = await fetch(`/api/admin/products/${id}`, { method: "DELETE" });
-    if (response.ok) loadProducts();
+    const response = await fetch(`/api/admin/products/${id}`, {
+      method: "DELETE",
+    });
+    if (response.ok) refreshProducts();
   }
 
   function editProduct(product: Product) {
@@ -232,135 +290,204 @@ export default function ProductsPage() {
 
   return (
     <div>
-      <AdminTopbar title="Products" subtitle="Create, edit and manage your store products with uploaded media." />
+      <AdminTopbar
+        title="Products"
+        subtitle="Create, edit and manage your store products with uploaded media."
+      />
 
-      <form onSubmit={handleSubmit} className="rounded-2xl border border-slate-200 bg-white p-5">
+      <form
+        onSubmit={handleSubmit}
+        className="rounded-2xl border border-slate-200 bg-white p-5"
+      >
         <div className="grid gap-3 md:grid-cols-2">
           <input
             required
             value={form.name}
-            onChange={(event) => setForm((prev) => ({ ...prev, name: event.target.value }))}
+            onChange={(event) =>
+              setForm((prev) => ({ ...prev, name: event.target.value }))
+            }
             placeholder="name"
             className="rounded-xl border border-slate-300 px-4 py-2"
           />
           <input
             required
             value={form.category}
-            onChange={(event) => setForm((prev) => ({ ...prev, category: event.target.value }))}
+            onChange={(event) =>
+              setForm((prev) => ({ ...prev, category: event.target.value }))
+            }
             placeholder="category"
             className="rounded-xl border border-slate-300 px-4 py-2"
           />
           <textarea
             value={form.description}
-            onChange={(event) => setForm((prev) => ({ ...prev, description: event.target.value }))}
+            onChange={(event) =>
+              setForm((prev) => ({ ...prev, description: event.target.value }))
+            }
             placeholder="description"
             className="min-h-24 rounded-xl border border-slate-300 px-4 py-2 md:col-span-2"
           />
 
           <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4 md:col-span-2">
             <div className="flex flex-wrap items-center justify-between gap-3">
-              <p className="text-sm font-semibold text-slate-800">Product Images (max {MAX_PRODUCT_MEDIA})</p>
-              <span className="text-xs text-slate-500">{form.images.length}/{MAX_PRODUCT_MEDIA}</span>
+              <p className="text-sm font-semibold text-slate-800">
+                Product Media
+              </p>
+              <span className="text-xs text-slate-500">
+                {form.images.length}/{MAX_PRODUCT_MEDIA}
+              </span>
             </div>
+            <input
+              id="product-add-input"
+              type="file"
+              accept="image/*,video/*"
+              className="hidden"
+              onChange={(event) =>
+                setPendingProductFile(event.target.files?.[0] || null)
+              }
+            />
 
-            <div className="mt-3 flex flex-wrap items-center gap-2">
-              <button
-                type="button"
-                onClick={() => document.getElementById("product-add-input")?.click()}
-                className="inline-flex items-center gap-2 rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm font-medium text-slate-700"
-              >
-                <Plus size={15} />
-                Choose Files
-              </button>
-              <input
-                id="product-add-input"
-                type="file"
-                accept="image/*,video/*"
-                multiple
-                className="hidden"
-                onChange={(event) => setPendingProductFiles(Array.from(event.target.files || []))}
-              />
-              <button
-                type="button"
-                onClick={uploadProductImages}
-                disabled={uploadingImages || !pendingProductFiles.length || form.images.length >= MAX_PRODUCT_MEDIA}
-                className="rounded-xl bg-slate-600 px-4 py-2 text-sm font-semibold text-white disabled:opacity-50"
-              >
-                {uploadingImages ? "Uploading..." : "Upload"}
-              </button>
-            </div>
-
-            {!form.images.length ? (
-              <p className="mt-3 text-sm text-slate-500">No media uploaded yet.</p>
-            ) : (
-              <div className="mt-3 grid gap-3 sm:grid-cols-3 lg:grid-cols-5">
-                {form.images.map((url, index) => (
-                  <div key={url} className="group relative overflow-hidden rounded-xl border border-slate-200 bg-white">
-                    {isVideoUrl(url) ? (
-                      <video src={url} className="h-24 w-full object-cover" controls muted />
-                    ) : (
-                      <Image src={url} alt={`product-${index + 1}`} width={180} height={180} className="h-24 w-full object-cover" />
-                    )}
-
-                    <div className="absolute inset-0 flex items-center justify-center gap-2 bg-black/30 opacity-0 transition group-hover:opacity-100">
-                      <label
-                        htmlFor={`product-change-${index}`}
-                        className="cursor-pointer rounded-lg bg-white/85 px-3 py-1.5 text-xs font-semibold text-slate-900"
-                      >
-                        Change
-                      </label>
-                      <button
-                        type="button"
-                        onClick={() => removeProductMedia(url)}
-                        className="rounded-lg bg-white/85 px-3 py-1.5 text-xs font-semibold text-red-700"
-                      >
-                        Remove
-                      </button>
-                    </div>
-
-                    <input
-                      id={`product-change-${index}`}
-                      type="file"
-                      accept="image/*,video/*"
-                      className="hidden"
-                      onChange={(event) => {
-                        const file = event.target.files?.[0];
-                        if (file) {
-                          replaceProductMedia(index, file);
-                        }
-                      }}
+            <div className="mt-3 grid gap-3 sm:grid-cols-3 lg:grid-cols-3">
+              {form.images.map((url, index) => (
+                <div
+                  key={url}
+                  className="group relative h-44 overflow-hidden rounded-2xl border border-slate-300 bg-white"
+                >
+                  {isVideoUrl(url) ? (
+                    <video
+                      src={url}
+                      className="h-full w-full object-cover"
+                      autoPlay
+                      muted
+                      loop
+                      playsInline
                     />
+                  ) : (
+                    <Image
+                      src={url}
+                      alt={`product-${index + 1}`}
+                      width={220}
+                      height={160}
+                      className="h-full w-full object-contain"
+                    />
+                  )}
+
+                  <div className="absolute inset-0 flex items-center justify-center gap-2 bg-black/25 opacity-0 transition group-hover:opacity-100">
+                    <label
+                      htmlFor={`product-change-${index}`}
+                      className="cursor-pointer rounded-lg border border-slate-900 bg-white/90 px-3 py-1.5 text-xs font-semibold text-slate-900"
+                    >
+                      Change
+                    </label>
+                    <button
+                      type="button"
+                      onClick={() => removeProductMedia(url)}
+                      className="rounded-lg border border-slate-900 bg-white/90 px-3 py-1.5 text-xs font-semibold text-slate-900"
+                    >
+                      Remove
+                    </button>
                   </div>
-                ))}
-              </div>
-            )}
+
+                  <input
+                    id={`product-change-${index}`}
+                    type="file"
+                    accept="image/*,video/*"
+                    className="hidden"
+                    onChange={(event) => {
+                      const file = event.target.files?.[0];
+                      if (file) {
+                        replaceProductMedia(index, file);
+                      }
+                    }}
+                  />
+                </div>
+              ))}
+
+              {pendingProductPreview &&
+                form.images.length < MAX_PRODUCT_MEDIA && (
+                  <button
+                    type="button"
+                    onClick={uploadProductImages}
+                    disabled={uploadingImages}
+                    className="group relative h-44 overflow-hidden rounded-2xl border border-amber-200 bg-white text-left disabled:opacity-50"
+                  >
+                    {isVideoUrl(pendingProductPreview) ||
+                    pendingProductFile?.type.startsWith("video/") ? (
+                      <video
+                        src={pendingProductPreview}
+                        className="h-full w-full object-cover"
+                        autoPlay
+                        muted
+                        loop
+                        playsInline
+                      />
+                    ) : (
+                      <Image
+                        src={pendingProductPreview}
+                        alt="pending product media"
+                        width={220}
+                        height={160}
+                        className="h-full w-full object-cover"
+                      />
+                    )}
+                    <div className="absolute inset-0 flex items-center justify-center bg-black/20">
+                      <span className="rounded-xl border border-slate-900 bg-white/90 px-4 py-1.5 text-sm font-semibold text-slate-900">
+                        {uploadingImages ? "Uploading..." : "Upload"}
+                      </span>
+                    </div>
+                  </button>
+                )}
+
+              {form.images.length < MAX_PRODUCT_MEDIA && (
+                <button
+                  type="button"
+                  onClick={() =>
+                    document.getElementById("product-add-input")?.click()
+                  }
+                  className="flex h-44 flex-col items-center justify-center rounded-2xl border border-slate-300 bg-white text-slate-700 transition hover:border-slate-400"
+                >
+                  <Plus size={26} />
+                  <span className="mt-2 text-sm font-medium">Choose Media</span>
+                </button>
+              )}
+            </div>
           </div>
 
           <input
             required
             value={form.price}
-            onChange={(event) => setForm((prev) => ({ ...prev, price: event.target.value }))}
+            onChange={(event) =>
+              setForm((prev) => ({ ...prev, price: event.target.value }))
+            }
             placeholder="price"
             className="rounded-xl border border-slate-300 px-4 py-2"
           />
           <input
             required
             value={form.currency}
-            onChange={(event) => setForm((prev) => ({ ...prev, currency: event.target.value }))}
+            onChange={(event) =>
+              setForm((prev) => ({ ...prev, currency: event.target.value }))
+            }
             placeholder="currency"
             className="rounded-xl border border-slate-300 px-4 py-2"
           />
           <input
             required
             value={form.discountPercentage}
-            onChange={(event) => setForm((prev) => ({ ...prev, discountPercentage: event.target.value }))}
+            onChange={(event) =>
+              setForm((prev) => ({
+                ...prev,
+                discountPercentage: event.target.value,
+              }))
+            }
             placeholder="discountPercentage"
             className="rounded-xl border border-slate-300 px-4 py-2"
           />
           <input
             required
             value={form.inStock}
-            onChange={(event) => setForm((prev) => ({ ...prev, inStock: event.target.value }))}
+            onChange={(event) =>
+              setForm((prev) => ({ ...prev, inStock: event.target.value }))
+            }
             placeholder="inStock"
             className="rounded-xl border border-slate-300 px-4 py-2"
           />
@@ -389,7 +516,11 @@ export default function ProductsPage() {
                 <td className="px-4 py-3">
                   {product.images[0] ? (
                     isVideoUrl(product.images[0]) ? (
-                      <video src={product.images[0]} className="h-12 w-12 rounded-lg object-cover" muted />
+                      <video
+                        src={product.images[0]}
+                        className="h-12 w-12 rounded-lg object-cover"
+                        muted
+                      />
                     ) : (
                       <Image
                         src={product.images[0]}
@@ -407,10 +538,18 @@ export default function ProductsPage() {
                 <td className="px-4 py-3">{product.inStock}</td>
                 <td className="px-4 py-3">
                   <div className="flex gap-2">
-                    <button type="button" onClick={() => editProduct(product)} className="text-teal-700">
+                    <button
+                      type="button"
+                      onClick={() => editProduct(product)}
+                      className="text-teal-700"
+                    >
                       Edit
                     </button>
-                    <button type="button" onClick={() => handleDelete(product._id)} className="text-red-600">
+                    <button
+                      type="button"
+                      onClick={() => handleDelete(product._id)}
+                      className="text-red-600"
+                    >
                       Delete
                     </button>
                   </div>
