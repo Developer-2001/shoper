@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { Home, Package, ShoppingBag, Settings, User, LogOut, ShieldCheck } from "lucide-react";
+import { Home, Package, ShoppingBag, Settings, User, LogOut, ShieldCheck, X as CloseIcon } from "lucide-react";
 
 type SessionRole = "store_admin" | "platform_admin";
 
@@ -17,7 +17,12 @@ const storeLinks = [
 
 const platformLinks = [{ href: "/admin/platform", label: "Platform", icon: ShieldCheck }];
 
-export function AdminSidebar() {
+interface AdminSidebarProps {
+  isOpen?: boolean;
+  onClose?: () => void;
+}
+
+export function AdminSidebar({ isOpen, onClose }: AdminSidebarProps) {
   const pathname = usePathname();
   const router = useRouter();
   const [role, setRole] = useState<SessionRole>("store_admin");
@@ -44,42 +49,68 @@ export function AdminSidebar() {
   }
 
   return (
-    <aside className="sticky top-0 hidden h-screen w-72 shrink-0 border-r border-slate-200 bg-white p-5 lg:block">
-      <div className="mb-8">
-        <p className="text-2xl font-black tracking-tight text-slate-900">Shoper</p>
-        <p className="text-sm text-slate-500">{role === "platform_admin" ? "Platform Admin" : "Store Admin"}</p>
-      </div>
+    <>
+      {/* Mobile Overlay */}
+      {isOpen && (
+        <div 
+          className="fixed inset-0 z-40 bg-black/50 backdrop-blur-sm lg:hidden"
+          onClick={onClose}
+        />
+      )}
 
-      <nav className="space-y-2">
-        {links.map((link) => {
-          const Icon = link.icon;
-          const isActive = pathname === link.href;
+      <aside className={`fixed inset-y-0 left-0 z-50 w-72 transform border-r border-slate-200 bg-white p-5 transition-transform duration-300 ease-in-out lg:sticky lg:top-0 lg:h-screen lg:translate-x-0 ${
+        isOpen ? "translate-x-0" : "-translate-x-full"
+      }`}>
+        <div className="mb-8 flex items-center justify-between">
+          <div>
+            <p className="text-2xl font-black tracking-tight text-slate-900">Shoper</p>
+            <p className="text-sm text-slate-500">{role === "platform_admin" ? "Platform Admin" : "Store Admin"}</p>
+          </div>
+          <button 
+            type="button"
+            onClick={onClose}
+            className="rounded-lg p-2 text-slate-500 hover:bg-slate-100 lg:hidden"
+          >
+            <CloseIcon size={20} />
+          </button>
+        </div>
 
-          return (
-            <Link
-              key={link.href}
-              href={link.href}
-              className={`flex items-center gap-3 rounded-xl px-3 py-2 text-sm font-semibold ${
-                isActive
-                  ? "bg-slate-900 text-white"
-                  : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"
-              }`}
-            >
-              <Icon size={16} />
-              {link.label}
-            </Link>
-          );
-        })}
-      </nav>
+        <nav className="space-y-4">
+          {links.map((link) => {
+            const Icon = link.icon;
+            const isActive = pathname === link.href;
 
-      <button
-        type="button"
-        onClick={handleLogout}
-        className="mt-8 flex w-full items-center justify-center gap-2 rounded-xl border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-700"
-      >
-        <LogOut size={16} />
-        Logout
-      </button>
-    </aside>
+            return (
+              <Link
+                key={link.href}
+                href={link.href}
+                onClick={onClose}
+                className={`flex items-center gap-3 rounded-xl px-3 py-2 text-sm font-semibold transition-colors ${
+                  isActive
+                    ? "bg-slate-900 text-white shadow-lg"
+                    : "text-slate-600 hover:bg-slate-50 hover:text-slate-900"
+                }`}
+              >
+                <Icon size={18} />
+                {link.label}
+              </Link>
+            );
+          })}
+        </nav>
+
+        <div className="absolute bottom-5 left-5 right-5">
+          <button
+            type="button"
+            onClick={handleLogout}
+            className="flex w-full items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-50 transition-colors"
+          >
+            <LogOut size={16} />
+            Logout
+          </button>
+        </div>
+      </aside>
+    </>
   );
 }
+
+

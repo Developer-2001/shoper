@@ -1,8 +1,12 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import Image from "next/image";
-import { X, Sparkles, Loader2, Check } from "lucide-react";
+import { X, Sparkles, Loader2, Check, Clock, Heart, ChevronDown } from "lucide-react";
+import { useDispatch, useSelector } from "react-redux";
+import { RootState, AppDispatch } from "@/store";
+import { fetchPrompts, savePrompt, toggleFavorite } from "@/store/slices/promptSlice";
+
 
 interface AIEnhanceModalProps {
   isOpen: boolean;
@@ -28,6 +32,12 @@ export function AIEnhanceModal({ isOpen, onClose, originalImage, onSelectImage }
    const [generatedImage, setGeneratedImage] = useState<string | null>(null);
    const [error, setError] = useState<string | null>(null);
    const [fullScreenImage, setFullScreenImage] = useState<string | null>(null);
+   
+   const dispatch = useDispatch<AppDispatch>();
+   const { prompts } = useSelector((state: RootState) => state.prompts);
+   const [showPrompts, setShowPrompts] = useState(false);
+   const dropdownRef = useRef<HTMLDivElement>(null);
+
 
 
   const isPremiumModel = MODELS.find((m) => m.id === selectedModel)?.premium;
@@ -39,16 +49,61 @@ export function AIEnhanceModal({ isOpen, onClose, originalImage, onSelectImage }
     }
   }, [selectedModel, isPremiumModel]);
 
+  useEffect(() => {
+    if (isOpen) {
+      dispatch(fetchPrompts());
+    }
+  }, [isOpen, dispatch]);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setShowPrompts(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+
+  const resizeImageToMaxDimension = (img: HTMLImageElement, maxDim: number): string => {
+    const canvas = document.createElement("canvas");
+    let { width, height } = img;
+
+    if (width > height) {
+      if (width > maxDim) {
+        height *= maxDim / width;
+        width = maxDim;
+      }
+    } else {
+      if (height > maxDim) {
+        width *= maxDim / height;
+        height = maxDim;
+      }
+    }
+
+    canvas.width = width;
+    canvas.height = height;
+    const ctx = canvas.getContext("2d");
+    ctx?.drawImage(img, 0, 0, width, height);
+    return canvas.toDataURL("image/jpeg", 0.85); // Compress as JPEG at 85% quality
+  };
+
   const convertToBase64 = async (url: string): Promise<string> => {
     const response = await fetch(url);
     const blob = await response.blob();
+    
     return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onloadend = () => resolve(reader.result as string);
-      reader.onerror = reject;
-      reader.readAsDataURL(blob);
+      const img = new window.Image();
+      img.onload = () => {
+        const resizedBase64 = resizeImageToMaxDimension(img, 1200); // Max 1200px
+        resolve(resizedBase64);
+      };
+      img.onerror = reject;
+      img.src = URL.createObjectURL(blob);
     });
   };
+
 
   const handleEnhance = async () => {
 
@@ -75,11 +130,12 @@ export function AIEnhanceModal({ isOpen, onClose, originalImage, onSelectImage }
         }),
       });
 
-
       const data = await response.json();
 
       if (data.success && data.imageUrl) {
         setGeneratedImage(data.imageUrl);
+        // Save prompt to history
+        dispatch(savePrompt({ promptText: prompt }));
       } else {
         setError(data.error || data.details || "Failed to generate image.");
       }
@@ -90,6 +146,7 @@ export function AIEnhanceModal({ isOpen, onClose, originalImage, onSelectImage }
       setIsEnhancing(false);
     }
   };
+
 
   if (!isOpen) return null;
 
@@ -174,15 +231,64 @@ export function AIEnhanceModal({ isOpen, onClose, originalImage, onSelectImage }
                 </div>
               </div>
 
-              <div className="space-y-2">
-                <label className="text-sm font-semibold text-slate-700">Enhancement Prompt</label>
+              <div className="relative space-y-2">
+                <div className="flex items-center justify-between">
+                  <label className="text-sm font-semibold text-slate-700">Enhancement Prompt</label>
+                  {prompts.length > 0 && (
+                    <button 
+                      onClick={() => setShowPrompts(!showPrompts)}
+                      className="flex items-center gap-1 text-xs font-bold text-indigo-600 hover:text-indigo-700"
+                    >
+                      <Clock size={12} />
+                      History
+                      <ChevronDown size={12} className={`transition ${showPrompts ? "rotate-180" : ""}`} />
+                    </button>
+                  )}
+                </div>
                 <textarea
                   value={prompt}
                   onChange={(e) => setPrompt(e.target.value)}
+                  onFocus={() => prompts.length > 0 && setShowPrompts(true)}
                   placeholder="e.g. Enhance clarity, fix lighting, sharpen details..."
                   className="min-h-[120px] w-full rounded-2xl border border-slate-200 bg-white p-4 text-sm shadow-sm focus:border-indigo-500 focus:outline-none"
                 />
+
+                {showPrompts && prompts.length > 0 && (
+                  <div 
+                    ref={dropdownRef}
+                    className="absolute left-0 right-0 top-full z-20 mt-2 max-h-[240px] overflow-y-auto rounded-2xl border border-slate-100 bg-white p-2 shadow-xl animate-in fade-in slide-in-from-top-2 duration-200"
+                  >
+                    <div className="mb-2 px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                      Recent Prompts
+                    </div>
+                    {prompts.map((p) => (
+                      <div 
+                        key={p._id}
+                        className="group flex items-center justify-between rounded-xl px-3 py-2.5 hover:bg-slate-50 transition cursor-pointer"
+                        onClick={() => {
+                          setPrompt(p.promptText);
+                          setShowPrompts(false);
+                        }}
+                      >
+                        <div className="flex-1 overflow-hidden">
+                          <p className="truncate text-sm text-slate-700">{p.promptText}</p>
+                          <p className="text-[10px] text-slate-400">{new Date(p.createdAt).toLocaleDateString()}</p>
+                        </div>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            dispatch(toggleFavorite({ id: p._id, favorite: !p.favorite }));
+                          }}
+                          className={`ml-2 p-1.5 rounded-lg transition ${p.favorite ? "bg-red-50 text-red-500" : "text-slate-300 hover:bg-slate-100 hover:text-slate-400"}`}
+                        >
+                          <Heart size={14} fill={p.favorite ? "currentColor" : "none"} />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
+
 
               {error && (
                 <div className="rounded-xl bg-red-50 p-4 text-sm text-red-600 border border-red-100">
