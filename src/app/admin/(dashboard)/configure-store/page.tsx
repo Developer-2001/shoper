@@ -126,6 +126,7 @@ export default function ConfigureStorePage() {
           >
             <option value="theme1">Theme 1 (Default)</option>
             <option value="theme2">Theme 2</option>
+            <option value="hampers">Hampers</option>
           </select>
         </div>
 
