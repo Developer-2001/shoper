@@ -4,7 +4,6 @@ import Image from "next/image";
 import { FormEvent, useEffect, useMemo, useState } from "react";
 import { Plus, Sparkles, X, Eye } from "lucide-react";
 
-
 import { AdminTopbar } from "@/components/admin/admin-topbar";
 import {
   encodeStorageObjectPath,
@@ -12,7 +11,7 @@ import {
   isVideoUrl,
 } from "@/utils/media";
 import { AIEnhanceModal } from "@/components/admin/ai-enhance-modal";
-
+import { currencyOptions } from "@/utils/currency";
 
 const MAX_PRODUCT_MEDIA = 6;
 const PRODUCT_MEDIA_FOLDER = "products";
@@ -51,19 +50,22 @@ export default function ProductsPage() {
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
 
   const pendingProductPreviews = useMemo(
-    () => pendingProductFiles.map((file) => ({
-      url: URL.createObjectURL(file),
-      file
-    })),
+    () =>
+      pendingProductFiles.map((file) => ({
+        url: URL.createObjectURL(file),
+        file,
+      })),
     [pendingProductFiles],
   );
 
   useEffect(() => {
     return () => {
-      pendingProductPreviews.forEach((preview) => URL.revokeObjectURL(preview.url));
+      pendingProductPreviews.forEach((preview) =>
+        URL.revokeObjectURL(preview.url),
+      );
     };
   }, [pendingProductPreviews]);
-  
+
   const [aiEnhanceSource, setAiEnhanceSource] = useState<string>("");
 
   async function fetchProducts(signal?: AbortSignal) {
@@ -125,12 +127,13 @@ export default function ProductsPage() {
     if (imageUrl.startsWith("data:")) {
       const response = await fetch(imageUrl);
       const blob = await response.blob();
-      const file = new File([blob], "ai-enhanced-image.png", { type: "image/png" });
+      const file = new File([blob], "ai-enhanced-image.png", {
+        type: "image/png",
+      });
       setPendingProductFiles((prev) => [...prev, file]);
     }
     setIsAIEnhanceModalOpen(false);
   };
-
 
   async function replaceExistingMedia(
     file: File,
@@ -236,7 +239,7 @@ export default function ProductsPage() {
     }
 
     setUploadingImages(true);
-    
+
     // 1. Upload pending images sequentially
     const newlyUploadedUrls: string[] = [];
     for (const file of pendingProductFiles) {
@@ -420,7 +423,7 @@ export default function ProductsPage() {
                     >
                       Change
                     </label>
-                    {(form.images.length + pendingProductFiles.length) > 1 && (
+                    {form.images.length + pendingProductFiles.length > 1 && (
                       <button
                         type="button"
                         onClick={() => removeProductMedia(url)}
@@ -451,7 +454,8 @@ export default function ProductsPage() {
                   key={preview.url}
                   className="group relative h-44 overflow-hidden rounded-2xl border border-amber-200 bg-white"
                 >
-                  {isVideoUrl(preview.url) || preview.file.type.startsWith("video/") ? (
+                  {isVideoUrl(preview.url) ||
+                  preview.file.type.startsWith("video/") ? (
                     <video
                       src={preview.url}
                       className="h-full w-full object-cover"
@@ -466,7 +470,7 @@ export default function ProductsPage() {
                       alt="pending product media"
                       width={220}
                       height={160}
-                      className="h-full w-full object-cover"
+                      className="h-full w-full object-contain"
                     />
                   )}
                   <div className="absolute inset-0 flex items-center justify-center gap-2 bg-black/25 opacity-100 lg:opacity-0 transition lg:group-hover:opacity-100">
@@ -480,10 +484,14 @@ export default function ProductsPage() {
                     >
                       View
                     </button>
-                    {(form.images.length + pendingProductFiles.length) > 1 && (
+                    {form.images.length + pendingProductFiles.length > 1 && (
                       <button
                         type="button"
-                        onClick={() => setPendingProductFiles(prev => prev.filter((_, i) => i !== index))}
+                        onClick={() =>
+                          setPendingProductFiles((prev) =>
+                            prev.filter((_, i) => i !== index),
+                          )
+                        }
                         className="rounded-lg border border-slate-900 bg-white/90 px-3 py-1.5 text-xs font-semibold text-slate-900"
                       >
                         Remove
@@ -510,8 +518,8 @@ export default function ProductsPage() {
                 </div>
               ))}
 
-
-              {(form.images.length + pendingProductFiles.length) < MAX_PRODUCT_MEDIA && (
+              {form.images.length + pendingProductFiles.length <
+                MAX_PRODUCT_MEDIA && (
                 <button
                   type="button"
                   onClick={() =>
@@ -538,15 +546,21 @@ export default function ProductsPage() {
             placeholder="price"
             className="rounded-xl border border-slate-300 px-4 py-2"
           />
-          <input
+
+          <select
             required
             value={form.currency}
             onChange={(event) =>
               setForm((prev) => ({ ...prev, currency: event.target.value }))
             }
-            placeholder="currency"
             className="rounded-xl border border-slate-300 px-4 py-2"
-          />
+          >
+            {currencyOptions.map((option) => (
+              <option key={option.value} value={option.value}>
+                {option.label}
+              </option>
+            ))}
+          </select>
           <input
             required
             value={form.discountPercentage}
@@ -570,11 +584,15 @@ export default function ProductsPage() {
           />
         </div>
 
-        <button 
+        <button
           disabled={uploadingImages}
           className="mt-4 rounded-xl bg-slate-900 px-5 py-2 font-semibold text-white disabled:opacity-50"
         >
-          {uploadingImages ? "Saving..." : (editingId ? "Update product" : "Create product")}
+          {uploadingImages
+            ? "Saving..."
+            : editingId
+              ? "Update product"
+              : "Create product"}
         </button>
       </form>
 
@@ -595,7 +613,7 @@ export default function ProductsPage() {
               <tr key={product._id} className="border-t border-slate-200">
                 <td className="px-4 py-3">
                   {product.images[0] ? (
-                    <div 
+                    <div
                       className="cursor-pointer group relative"
                       onClick={() => {
                         setPreviewUrl(product.images[0]);
@@ -659,25 +677,38 @@ export default function ProductsPage() {
       />
 
       {isPreviewOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4" onClick={() => setIsPreviewOpen(false)}>
-          <div className="relative max-h-[90vh] max-w-[90vw]" onClick={e => e.stopPropagation()}>
-            <button 
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4"
+          onClick={() => setIsPreviewOpen(false)}
+        >
+          <div
+            className="relative max-h-[90vh] max-w-[90vw]"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <button
               className="absolute -top-10 right-0 p-2 text-white hover:text-slate-300"
               onClick={() => setIsPreviewOpen(false)}
             >
               <X size={32} />
             </button>
-            {previewUrl && (
-              isVideoUrl(previewUrl) ? (
-                <video src={previewUrl} controls autoPlay className="max-h-[85vh] rounded-lg" />
+            {previewUrl &&
+              (isVideoUrl(previewUrl) ? (
+                <video
+                  src={previewUrl}
+                  controls
+                  autoPlay
+                  className="max-h-[85vh] rounded-lg"
+                />
               ) : (
-                <img src={previewUrl} alt="Preview" className="max-h-[85vh] rounded-lg object-contain" />
-              )
-            )}
+                <img
+                  src={previewUrl}
+                  alt="Preview"
+                  className="max-h-[85vh] rounded-lg object-contain"
+                />
+              ))}
           </div>
         </div>
       )}
     </div>
   );
 }
-

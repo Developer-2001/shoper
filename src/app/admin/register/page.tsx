@@ -3,14 +3,7 @@
 import { FormEvent, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-
-const currencyOptions = [
-  { value: "CAD", label: "Canada (CAD)" },
-  { value: "ERN", label: "Eritrea (ERN)" },
-  { value: "EUR", label: "European Union (EUR)" },
-  { value: "INR", label: "India (INR)" },
-  { value: "USD", label: "United States (USD)" },
-];
+import { currencyOptions } from "@/utils/currency";
 
 const themeOptions = [
   { value: "theme1", label: "Theme 1 (Default)" },

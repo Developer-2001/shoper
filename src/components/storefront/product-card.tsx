@@ -43,10 +43,17 @@ export function ProductCard({ slug, product }: ProductCardProps) {
     <article className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
       <Link href={`/${slug}/product/${product._id}`}>
         {isVideoUrl(firstMedia) ? (
-          <video className="h-52 w-full object-cover" src={firstMedia} muted controls />
+          <video
+            className="h-52 w-full object-cover"
+            src={firstMedia}
+            autoPlay
+            muted
+            loop
+            playsInline
+          />
         ) : (
           <Image
-            className="h-52 w-full object-cover"
+            className="h-52 w-full object-contain"
             src={firstMedia}
             alt={product.name}
             width={900}
@@ -55,14 +62,14 @@ export function ProductCard({ slug, product }: ProductCardProps) {
           />
         )}
       </Link>
-      <div className="p-4">
+      <div className="px-4 py-2 border-t border-slate-200">
         <Link
           href={`/${slug}/product/${product._id}`}
           className="font-semibold text-slate-900"
         >
           {product.name}
         </Link>
-        <div className="mt-2 flex items-center gap-2">
+        <div className="mt-1 flex items-center gap-2">
           <p className="text-lg font-bold text-slate-900">
             {formatMoney(finalPrice, product.currency)}
           </p>
@@ -75,7 +82,7 @@ export function ProductCard({ slug, product }: ProductCardProps) {
         <button
           type="button"
           onClick={addItem}
-          className="mt-4 w-full rounded-xl bg-slate-900 py-2 font-semibold text-white cursor-pointer transition hover:bg-slate-800 active:bg-slate-900 "
+          className="mt-2 w-full rounded-xl bg-slate-900 py-2 font-semibold text-white cursor-pointer transition hover:bg-slate-800 active:bg-slate-900 "
         >
           Add to cart
         </button>
