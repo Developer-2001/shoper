@@ -159,42 +159,12 @@ export default function ConfigureStorePage() {
     currentUrl: string,
     fallbackFolder: string,
   ) {
-    const path = extractStorageObjectPath(currentUrl);
-
-    if (!path) {
-      return uploadNewMedia(file, fallbackFolder);
-    }
-
-    const segments = path.split("/").filter(Boolean);
-    const currentFolder = segments.length >= 2 ? segments[1] : "";
-
-    if (currentFolder !== fallbackFolder) {
-      const nextUrl = await uploadNewMedia(file, fallbackFolder);
-      if (!nextUrl) return null;
-
-      await deleteMediaFromStorage(currentUrl);
-      return nextUrl;
-    }
-
-    const formData = new FormData();
-    formData.append("file", file);
-
-    const encodedPath = encodeStorageObjectPath(path);
-    const response = await fetch(`/api/storage/${encodedPath}`, {
-      method: "PUT",
-      body: formData,
-    });
-
-    if (!response.ok) {
-      const data = await response
-        .json()
-        .catch(() => ({ error: "Replace failed" }));
-      alert(data.error || "Replace failed");
+    const deleted = await deleteMediaFromStorage(currentUrl);
+    if (!deleted) {
       return null;
     }
 
-    const data = await response.json();
-    return data?.file?.url || currentUrl;
+    return uploadNewMedia(file, fallbackFolder);
   }
 
   async function deleteMediaFromStorage(url: string) {
@@ -210,7 +180,7 @@ export default function ConfigureStorePage() {
       const data = await response
         .json()
         .catch(() => ({ error: "Delete failed" }));
-      alert(data.error || "Delete failed");
+      console.log(data.error || "Delete failed");
       return false;
     }
 
@@ -273,7 +243,9 @@ export default function ConfigureStorePage() {
 
   async function removeSliderImage(index: number, url: string) {
     const deleted = await deleteMediaFromStorage(url);
-    if (!deleted) return;
+    if (!deleted) {
+      console.log("Failed to delete media from storage");
+    };
 
     setForm((prev) => ({
       ...prev,
@@ -992,6 +964,7 @@ export default function ConfigureStorePage() {
         originalImage={aiEnhanceSource}
         onSelectImage={handleAISelectImage}
       />
+      
 
       {isPreviewOpen && (
         <div
