@@ -597,7 +597,7 @@ export default function ProductsPage() {
       </form>
 
       <div className="mt-6 overflow-x-auto rounded-2xl border border-slate-200 bg-white">
-        <table className="w-full min-w-[600px] text-left text-sm">
+        <table className="w-full min-w-150 text-left text-sm">
           <thead className="bg-slate-50 text-slate-600">
             <tr>
               <th className="px-4 py-3">Image</th>
