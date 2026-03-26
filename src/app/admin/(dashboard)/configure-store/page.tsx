@@ -1003,7 +1003,7 @@ export default function ConfigureStorePage() {
             onClick={(event) => event.stopPropagation()}
           >
             <button
-              className="absolute -top-10 right-0 p-2 text-white hover:text-slate-300"
+              className="absolute -top-10 right-0 p-2 text-white hover:text-slate-300 cursor-pointer"
               onClick={() => setIsPreviewOpen(false)}
             >
               <X size={32} />
@@ -1012,16 +1012,19 @@ export default function ConfigureStorePage() {
               (isVideoUrl(previewUrl) ? (
                 <video
                   src={previewUrl}
+                  muted
                   controls
                   autoPlay
-                  className="max-h-[85vh] rounded-lg"
-                />
-              ) : (
-                <img
-                  src={previewUrl}
-                  alt="Preview"
                   className="max-h-[85vh] rounded-lg object-contain"
                 />
+              ) : (
+                  <Image
+                    src={previewUrl}
+                    alt="Preview"
+                    width={800}
+                    height={600}
+                    className="max-h-[85vh] rounded-lg object-contain"
+                  />
               ))}
           </div>
         </div>

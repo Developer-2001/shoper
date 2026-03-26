@@ -700,12 +700,15 @@ export default function ProductsPage() {
                   className="max-h-[85vh] rounded-lg"
                 />
               ) : (
-                <img
+                <Image
                   src={previewUrl}
                   alt="Preview"
+                  width={800}
+                  height={600}
                   className="max-h-[85vh] rounded-lg object-contain"
                 />
               ))}
+                
           </div>
         </div>
       )}
