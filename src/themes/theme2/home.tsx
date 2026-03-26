@@ -49,7 +49,7 @@ export function Theme2Home({ slug, store, products }: ThemeHomeProps) {
           isVideoUrl(store.theme.heroImage) ? (
             <video
               src={store.theme.heroImage}
-              className="h-[420px] w-full rounded-[2rem] border border-amber-200 object-cover shadow-[0_40px_80px_-60px_rgba(146,64,14,0.9)]"
+              className="h-105 w-full rounded-4xl border border-amber-200 object-cover shadow-[0_40px_80px_-60px_rgba(146,64,14,0.9)]"
               controls
               autoPlay
               muted
@@ -60,12 +60,12 @@ export function Theme2Home({ slug, store, products }: ThemeHomeProps) {
               alt={store.businessName}
               width={1200}
               height={900}
-              className="h-[420px] w-full rounded-[2rem] border border-amber-200 object-cover shadow-[0_40px_80px_-60px_rgba(146,64,14,0.9)]"
+              className="h-105 w-full rounded-4xl  border border-amber-200 object-cover shadow-[0_40px_80px_-60px_rgba(146,64,14,0.9)]"
               sizes="(max-width: 1024px) 100vw, 45vw"
             />
           )
         ) : (
-          <div className="grid h-[420px] w-full place-items-center rounded-[2rem] border border-dashed border-amber-300 text-amber-600">No hero media</div>
+          <div className="grid h-105 w-full place-items-center rounded-4xl border border-dashed border-amber-300 text-amber-600">No hero media</div>
         )}
       </section>
 

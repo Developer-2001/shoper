@@ -7,7 +7,11 @@ import { useAppDispatch, useAppSelector } from "@/hooks/useRedux";
 import { formatMoney } from "@/utils/currency";
 import { isVideoUrl } from "@/utils/media";
 
-export function CartItems({ slug }: { slug: string }) {
+type Theme1CartItemsProps = {
+  slug: string;
+};
+
+export function Theme1CartItems({ slug }: Theme1CartItemsProps) {
   const dispatch = useAppDispatch();
   const items = useAppSelector((state) => state.cart.items.filter((item) => item.slug === slug));
 
@@ -47,7 +51,7 @@ export function CartItems({ slug }: { slug: string }) {
                         productId: item.productId,
                         slug,
                         quantity: Math.max(1, item.quantity - 1),
-                      })
+                      }),
                     )
                   }
                 >
@@ -62,7 +66,7 @@ export function CartItems({ slug }: { slug: string }) {
                         productId: item.productId,
                         slug,
                         quantity: item.quantity + 1,
-                      })
+                      }),
                     )
                   }
                 >
@@ -86,10 +90,7 @@ export function CartItems({ slug }: { slug: string }) {
           <span>Total</span>
           <span className="text-lg font-bold text-slate-900">{formatMoney(total, currency)}</span>
         </div>
-        <a
-          href={`/${slug}/checkout`}
-          className="mt-5 block rounded-xl bg-slate-900 py-3 text-center font-semibold text-white"
-        >
+        <a href={`/${slug}/checkout`} className="mt-5 block rounded-xl bg-slate-900 py-3 text-center font-semibold text-white">
           Checkout
         </a>
       </div>

@@ -7,11 +7,11 @@ import { clearSlugCart } from "@/store/slices/cartSlice";
 import { useAppDispatch, useAppSelector } from "@/hooks/useRedux";
 import { formatMoney } from "@/utils/currency";
 
-type CheckoutFormProps = {
+type Theme1CheckoutFormProps = {
   slug: string;
 };
 
-export function CheckoutForm({ slug }: CheckoutFormProps) {
+export function Theme1CheckoutForm({ slug }: Theme1CheckoutFormProps) {
   const router = useRouter();
   const dispatch = useAppDispatch();
   const items = useAppSelector((state) => state.cart.items.filter((item) => item.slug === slug));
@@ -83,10 +83,7 @@ export function CheckoutForm({ slug }: CheckoutFormProps) {
         <h3 className="text-lg font-bold text-slate-900">Summary</h3>
         <p className="mt-3 text-slate-600">Items: {items.length}</p>
         <p className="text-xl font-bold text-slate-900">{formatMoney(total, items[0].currency)}</p>
-        <button
-          disabled={loading}
-          className="mt-4 w-full rounded-xl bg-slate-900 py-3 font-semibold text-white disabled:opacity-50"
-        >
+        <button disabled={loading} className="mt-4 w-full rounded-xl bg-slate-900 py-3 font-semibold text-white disabled:opacity-50">
           {loading ? "Placing order..." : "Buy now"}
         </button>
       </section>

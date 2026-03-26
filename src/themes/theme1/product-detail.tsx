@@ -9,7 +9,7 @@ import { useCartStorage } from "@/hooks/useCartStorage";
 import { formatMoney, salePrice } from "@/utils/currency";
 import { isVideoUrl } from "@/utils/media";
 
-type ProductProps = {
+type Theme1ProductDetailProps = {
   slug: string;
   product: {
     _id: string;
@@ -23,7 +23,7 @@ type ProductProps = {
   };
 };
 
-export function ProductDetailClient({ slug, product }: ProductProps) {
+export function Theme1ProductDetail({ slug, product }: Theme1ProductDetailProps) {
   const dispatch = useAppDispatch();
   useCartStorage();
 
@@ -89,7 +89,7 @@ export function ProductDetailClient({ slug, product }: ProductProps) {
         <p className="mt-3 text-slate-600">{product.description || "No description added yet."}</p>
         <p className="mt-5 text-3xl font-bold text-slate-900">{formatMoney(finalPrice, product.currency)}</p>
         {product.discountPercentage > 0 ? (
-          <p className="text-slate-500 line-through">{formatMoney(product.price, product.currency)}</p>
+          <p className="line-through text-slate-500">{formatMoney(product.price, product.currency)}</p>
         ) : null}
         <p className="mt-2 text-sm text-slate-600">In stock: {product.inStock}</p>
 
@@ -105,10 +105,10 @@ export function ProductDetailClient({ slug, product }: ProductProps) {
                 price: finalPrice,
                 currency: product.currency,
                 quantity: 1,
-              })
+              }),
             )
           }
-          className="mt-6 rounded-xl bg-slate-900 px-6 py-3 font-semibold text-white cursor-pointer transition hover:bg-slate-800 active:bg-slate-900"
+          className="mt-6 cursor-pointer rounded-xl bg-slate-900 px-6 py-3 font-semibold text-white transition hover:bg-slate-800 active:bg-slate-900"
         >
           Add to cart
         </button>
