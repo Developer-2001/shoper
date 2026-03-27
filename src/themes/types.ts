@@ -21,6 +21,12 @@ export type StorefrontStore = {
     accent: string;
     heroImage: string;
     sliderImages: string[];
+    theme3?: {
+      announcementText: string;
+      collectionLabels: string[];
+      collectionLabelImages: string[];
+      featuredHeading: string;
+    };
   };
 };
 

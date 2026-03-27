@@ -1,4 +1,4 @@
-export const THEME_LAYOUTS = ["theme1", "theme2"] as const;
+export const THEME_LAYOUTS = ["theme1", "theme2", "theme3"] as const;
 
 export type ThemeLayout = (typeof THEME_LAYOUTS)[number];
 

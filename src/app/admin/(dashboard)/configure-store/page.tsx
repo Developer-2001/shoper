@@ -15,8 +15,12 @@ import {
 } from "@/utils/media";
 
 const MAX_SLIDER_IMAGES = 8;
+const MAX_THEME3_COLLECTION_IMAGES = 8;
 const HERO_MEDIA_FOLDER = "hero-image";
 const SLIDER_MEDIA_FOLDER = "slider-images";
+const THEME3_COLLECTION_MEDIA_FOLDER = "theme3-collection-labels";
+const THEME3_SLIDER_WIDTH = 1898;
+const THEME3_SLIDER_HEIGHT = 742;
 
 const defaultForm = {
   companyName: "",
@@ -34,6 +38,10 @@ const defaultForm = {
   accent: "#14b8a6",
   heroImage: "",
   sliderImages: [] as string[],
+  theme3AnnouncementText: "Free Shipping On Orders Over $200",
+  theme3CollectionLabels: "Rings, Bracelets, Necklaces, Earrings, Pendants, Bangles",
+  theme3CollectionLabelImages: [] as string[],
+  theme3FeaturedHeading: "Sparkling New Pieces",
   footerLinks: "",
 };
 
@@ -44,6 +52,12 @@ export default function ConfigureStorePage() {
   const [pendingSliderFiles, setPendingSliderFiles] = useState<File[]>([]);
   const [pendingSliderReplacementFiles, setPendingSliderReplacementFiles] =
     useState<Record<number, File>>({});
+  const [pendingTheme3CollectionFiles, setPendingTheme3CollectionFiles] =
+    useState<File[]>([]);
+  const [
+    pendingTheme3CollectionReplacementFiles,
+    setPendingTheme3CollectionReplacementFiles,
+  ] = useState<Record<number, File>>({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [isAIEnhanceModalOpen, setIsAIEnhanceModalOpen] = useState(false);
@@ -86,6 +100,24 @@ export default function ConfigureStorePage() {
             0,
             MAX_SLIDER_IMAGES,
           ),
+          theme3AnnouncementText:
+            store.theme?.theme3?.announcementText ||
+            "Free Shipping On Orders Over $200",
+          theme3CollectionLabels: (
+            store.theme?.theme3?.collectionLabels || [
+              "Rings",
+              "Bracelets",
+              "Necklaces",
+              "Earrings",
+              "Pendants",
+              "Bangles",
+            ]
+          ).join(", "),
+          theme3CollectionLabelImages: (
+            store.theme?.theme3?.collectionLabelImages || []
+          ).slice(0, MAX_THEME3_COLLECTION_IMAGES),
+          theme3FeaturedHeading:
+            store.theme?.theme3?.featuredHeading || "Sparkling New Pieces",
           footerLinks: (store.footerLinks || [])
             .map(
               (item: { label: string; href: string }) =>
@@ -125,6 +157,25 @@ export default function ConfigureStorePage() {
       })),
     [pendingSliderReplacementFiles],
   );
+  const pendingTheme3CollectionPreviews = useMemo(
+    () =>
+      pendingTheme3CollectionFiles.map((file) => ({
+        url: URL.createObjectURL(file),
+        file,
+      })),
+    [pendingTheme3CollectionFiles],
+  );
+  const pendingTheme3CollectionReplacementPreviews = useMemo(
+    () =>
+      Object.entries(pendingTheme3CollectionReplacementFiles).map(
+        ([index, file]) => ({
+          index: Number(index),
+          url: URL.createObjectURL(file),
+          file,
+        }),
+      ),
+    [pendingTheme3CollectionReplacementFiles],
+  );
 
   useEffect(() => {
     return () => {
@@ -147,6 +198,67 @@ export default function ConfigureStorePage() {
       );
     };
   }, [pendingSliderReplacementPreviews]);
+
+  useEffect(() => {
+    return () => {
+      pendingTheme3CollectionPreviews.forEach((preview) =>
+        URL.revokeObjectURL(preview.url),
+      );
+    };
+  }, [pendingTheme3CollectionPreviews]);
+
+  useEffect(() => {
+    return () => {
+      pendingTheme3CollectionReplacementPreviews.forEach((preview) =>
+        URL.revokeObjectURL(preview.url),
+      );
+    };
+  }, [pendingTheme3CollectionReplacementPreviews]);
+
+  async function getImageDimensions(file: File) {
+    return new Promise<{ width: number; height: number }>((resolve, reject) => {
+      const objectUrl = URL.createObjectURL(file);
+      const image = new window.Image();
+      image.onload = () => {
+        resolve({ width: image.width, height: image.height });
+        URL.revokeObjectURL(objectUrl);
+      };
+      image.onerror = () => {
+        URL.revokeObjectURL(objectUrl);
+        reject(new Error("Unable to read image dimensions"));
+      };
+      image.src = objectUrl;
+    });
+  }
+
+  async function validateSliderFileForTheme(file: File) {
+    if (form.themeLayout !== "theme3") return true;
+
+    if (!file.type.startsWith("image/")) {
+      alert("Theme 3 only supports image slider media.");
+      return false;
+    }
+
+    try {
+      const { width, height } = await getImageDimensions(file);
+      if (width !== THEME3_SLIDER_WIDTH || height !== THEME3_SLIDER_HEIGHT) {
+        alert(`Theme 3 slider images must be exactly ${THEME3_SLIDER_WIDTH} x ${THEME3_SLIDER_HEIGHT}.`);
+        return false;
+      }
+      return true;
+    } catch {
+      alert("Unable to validate image dimensions.");
+      return false;
+    }
+  }
+
+  function validateTheme3CollectionFile(file: File) {
+    if (!file.type.startsWith("image/")) {
+      alert("Theme 3 collection media supports image files only.");
+      return false;
+    }
+    return true;
+  }
 
   async function uploadNewMedia(file: File, folder: string) {
     const formData = new FormData();
@@ -236,6 +348,18 @@ export default function ConfigureStorePage() {
     });
   }
 
+  function removePendingTheme3CollectionMedia(index: number) {
+    setPendingTheme3CollectionFiles((prev) => prev.filter((_, i) => i !== index));
+  }
+
+  function removePendingTheme3CollectionReplacement(index: number) {
+    setPendingTheme3CollectionReplacementFiles((prev) => {
+      const next = { ...prev };
+      delete next[index];
+      return next;
+    });
+  }
+
   async function handleAISelectImage(imageUrl: string) {
     if (!imageUrl.startsWith("data:")) {
       setIsAIEnhanceModalOpen(false);
@@ -251,6 +375,12 @@ export default function ConfigureStorePage() {
     if (aiEnhanceTarget === "hero") {
       setPendingHeroFile(file);
     } else {
+      const validForTheme = await validateSliderFileForTheme(file);
+      if (!validForTheme) {
+        setIsAIEnhanceModalOpen(false);
+        return;
+      }
+
       setPendingSliderFiles((prev) => {
         const remaining =
           MAX_SLIDER_IMAGES - form.sliderImages.length - prev.length;
@@ -262,8 +392,20 @@ export default function ConfigureStorePage() {
     setIsAIEnhanceModalOpen(false);
   }
 
-  function replaceSliderMedia(index: number, file: File) {
+  async function replaceSliderMedia(index: number, file: File) {
+    const validForTheme = await validateSliderFileForTheme(file);
+    if (!validForTheme) return;
+
     setPendingSliderReplacementFiles((prev) => ({
+      ...prev,
+      [index]: file,
+    }));
+  }
+
+  async function replaceTheme3CollectionMedia(index: number, file: File) {
+    if (!validateTheme3CollectionFile(file)) return;
+
+    setPendingTheme3CollectionReplacementFiles((prev) => ({
       ...prev,
       [index]: file,
     }));
@@ -273,7 +415,8 @@ export default function ConfigureStorePage() {
     const deleted = await deleteMediaFromStorage(url);
     if (!deleted) {
       console.log("Failed to delete media from storage");
-    };
+      return;
+    }
 
     setForm((prev) => ({
       ...prev,
@@ -291,12 +434,34 @@ export default function ConfigureStorePage() {
     });
   }
 
+  async function removeTheme3CollectionImage(index: number, url: string) {
+    const deleted = await deleteMediaFromStorage(url);
+    if (!deleted) return;
+
+    setForm((prev) => ({
+      ...prev,
+      theme3CollectionLabelImages: prev.theme3CollectionLabelImages.filter(
+        (image) => image !== url,
+      ),
+    }));
+
+    setPendingTheme3CollectionReplacementFiles((prev) => {
+      const next: Record<number, File> = {};
+      for (const [key, file] of Object.entries(prev)) {
+        const pendingIndex = Number(key);
+        if (pendingIndex === index) continue;
+        next[pendingIndex > index ? pendingIndex - 1 : pendingIndex] = file;
+      }
+      return next;
+    });
+  }
+
   async function handleSubmit(event: FormEvent) {
     event.preventDefault();
     setSaving(true);
 
-    let heroImage = form.heroImage;
-    if (pendingHeroFile) {
+    let heroImage = form.themeLayout === "theme3" ? "" : form.heroImage;
+    if (form.themeLayout !== "theme3" && pendingHeroFile) {
       const nextHeroImage = form.heroImage
         ? await replaceExistingMedia(
             pendingHeroFile,
@@ -355,6 +520,60 @@ export default function ConfigureStorePage() {
       MAX_SLIDER_IMAGES,
     );
 
+    let theme3CollectionLabelImages = [...form.theme3CollectionLabelImages];
+
+    if (form.themeLayout === "theme3") {
+      const sortedTheme3CollectionReplacementEntries = Object.entries(
+        pendingTheme3CollectionReplacementFiles,
+      ).sort((a, b) => Number(a[0]) - Number(b[0]));
+
+      for (const [indexText, file] of sortedTheme3CollectionReplacementEntries) {
+        const index = Number(indexText);
+        const currentUrl = theme3CollectionLabelImages[index];
+        if (!currentUrl) continue;
+
+        const nextUrl = await replaceExistingMedia(
+          file,
+          currentUrl,
+          THEME3_COLLECTION_MEDIA_FOLDER,
+        );
+        if (!nextUrl) {
+          setSaving(false);
+          return;
+        }
+
+        theme3CollectionLabelImages[index] = nextUrl;
+      }
+
+      const remainingTheme3CollectionSlots =
+        MAX_THEME3_COLLECTION_IMAGES - theme3CollectionLabelImages.length;
+      const theme3CollectionFilesToUpload = pendingTheme3CollectionFiles.slice(
+        0,
+        remainingTheme3CollectionSlots,
+      );
+      const newTheme3CollectionUrls: string[] = [];
+
+      for (const file of theme3CollectionFilesToUpload) {
+        const url = await uploadNewMedia(file, THEME3_COLLECTION_MEDIA_FOLDER);
+        if (!url) {
+          setSaving(false);
+          return;
+        }
+        newTheme3CollectionUrls.push(url);
+      }
+
+      theme3CollectionLabelImages = [
+        ...theme3CollectionLabelImages,
+        ...newTheme3CollectionUrls,
+      ].slice(0, MAX_THEME3_COLLECTION_IMAGES);
+    }
+
+    const theme3CollectionLabels = form.theme3CollectionLabels
+      .split(",")
+      .map((item) => item.trim())
+      .filter(Boolean)
+      .slice(0, MAX_THEME3_COLLECTION_IMAGES);
+
     const payload = {
       companyName: form.companyName,
       logoText: form.logoText,
@@ -374,6 +593,12 @@ export default function ConfigureStorePage() {
         accent: form.accent,
         heroImage,
         sliderImages,
+        theme3: {
+          announcementText: form.theme3AnnouncementText || "Free Shipping On Orders Over $200",
+          collectionLabels: theme3CollectionLabels,
+          collectionLabelImages: theme3CollectionLabelImages,
+          featuredHeading: form.theme3FeaturedHeading || "Sparkling New Pieces",
+        },
       },
       footerLinks: form.footerLinks
         .split(",")
@@ -401,10 +626,13 @@ export default function ConfigureStorePage() {
         ...prev,
         heroImage,
         sliderImages,
+        theme3CollectionLabelImages,
       }));
       setPendingHeroFile(null);
       setPendingSliderFiles([]);
       setPendingSliderReplacementFiles({});
+      setPendingTheme3CollectionFiles([]);
+      setPendingTheme3CollectionReplacementFiles({});
 
       alert("Store config saved");
     } catch (err) {
@@ -455,13 +683,22 @@ export default function ConfigureStorePage() {
           <select
             id="themeLayout"
             value={form.themeLayout}
-            onChange={(event) =>
-              setForm((prev) => ({ ...prev, themeLayout: event.target.value }))
-            }
+            onChange={(event) => {
+              if (event.target.value === "theme3") {
+                setPendingHeroFile(null);
+              }
+
+              setForm((prev) => ({
+                ...prev,
+                themeLayout: event.target.value,
+                heroImage: event.target.value === "theme3" ? "" : prev.heroImage,
+              }));
+            }}
             className="rounded-xl border border-slate-300 px-4 py-2"
           >
             <option value="theme1">Theme 1 (Default)</option>
             <option value="theme2">Theme 2</option>
+            <option value="theme3">Theme 3 (Jewellery)</option>
           </select>
         </div>
 
@@ -518,151 +755,402 @@ export default function ConfigureStorePage() {
             className="rounded-xl border border-slate-300 px-4 py-2"
           />
 
-          <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4 md:col-span-2">
-            <p className="text-sm font-semibold text-slate-800">Hero Media</p>
-            <input
-              id="hero-pick-input"
-              type="file"
-              accept="image/*,video/*"
-              className="hidden"
-              onChange={(event) =>
-                setPendingHeroFile(event.target.files?.[0] || null)
-              }
-            />
+          {form.themeLayout !== "theme3" ? (
+            <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4 md:col-span-2">
+              <p className="text-sm font-semibold text-slate-800">Hero Media</p>
+              <input
+                id="hero-pick-input"
+                type="file"
+                accept="image/*,video/*"
+                className="hidden"
+                onChange={(event) =>
+                  setPendingHeroFile(event.target.files?.[0] || null)
+                }
+              />
 
-            <div className="mt-3 grid gap-3 sm:grid-cols-3 lg:grid-cols-4">
-              {pendingHeroPreview ? (
-                <div className="group relative h-44 overflow-hidden rounded-2xl border border-amber-200 bg-white">
-                  {isVideoUrl(pendingHeroPreview) ||
-                  pendingHeroFile?.type.startsWith("video/") ? (
-                    <video
-                      src={pendingHeroPreview}
-                      className="h-full w-full object-contain"
-                      autoPlay
-                      muted
-                      loop
-                      playsInline
-                    />
-                  ) : (
-                    <Image
-                      src={pendingHeroPreview}
-                      alt="pending hero"
-                      width={240}
-                      height={160}
-                      className="h-full w-full object-contain"
-                    />
-                  )}
-                  <div className="absolute inset-0 flex items-center justify-center gap-2 bg-black/25 opacity-100 lg:opacity-0 transition lg:group-hover:opacity-100">
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setPreviewUrl(pendingHeroPreview);
-                        setIsPreviewOpen(true);
-                      }}
-                      className="rounded-lg border border-slate-900 bg-white/90 px-3 py-1.5 text-xs font-semibold text-slate-900"
-                    >
-                      View
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setPendingHeroFile(null)}
-                      className="rounded-lg border border-slate-900 bg-white/90 px-3 py-1.5 text-xs font-semibold text-slate-900"
-                    >
-                      Remove
-                    </button>
-                    {!pendingHeroFile?.type.startsWith("video/") && (
+              <div className="mt-3 grid gap-3 sm:grid-cols-3 lg:grid-cols-4">
+                {pendingHeroPreview ? (
+                  <div className="group relative h-44 overflow-hidden rounded-2xl border border-amber-200 bg-white">
+                    {isVideoUrl(pendingHeroPreview) ||
+                    pendingHeroFile?.type.startsWith("video/") ? (
+                      <video
+                        src={pendingHeroPreview}
+                        className="h-full w-full object-contain"
+                        autoPlay
+                        muted
+                        loop
+                        playsInline
+                      />
+                    ) : (
+                      <Image
+                        src={pendingHeroPreview}
+                        alt="pending hero"
+                        width={240}
+                        height={160}
+                        className="h-full w-full object-contain"
+                      />
+                    )}
+                    <div className="absolute inset-0 flex items-center justify-center gap-2 bg-black/25 opacity-100 lg:opacity-0 transition lg:group-hover:opacity-100">
                       <button
                         type="button"
                         onClick={() => {
-                          setAiEnhanceSource(pendingHeroPreview);
-                          setAiEnhanceTarget("hero");
-                          setIsAIEnhanceModalOpen(true);
+                          setPreviewUrl(pendingHeroPreview);
+                          setIsPreviewOpen(true);
                         }}
-                        className="flex items-center gap-1.5 rounded-lg border border-indigo-600 bg-indigo-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-indigo-700"
+                        className="rounded-lg border border-slate-900 bg-white/90 px-3 py-1.5 text-xs font-semibold text-slate-900"
                       >
-                        <Sparkles size={12} />
-                        AI
+                        View
                       </button>
+                      <button
+                        type="button"
+                        onClick={() => setPendingHeroFile(null)}
+                        className="rounded-lg border border-slate-900 bg-white/90 px-3 py-1.5 text-xs font-semibold text-slate-900"
+                      >
+                        Remove
+                      </button>
+                      {!pendingHeroFile?.type.startsWith("video/") && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setAiEnhanceSource(pendingHeroPreview);
+                            setAiEnhanceTarget("hero");
+                            setIsAIEnhanceModalOpen(true);
+                          }}
+                          className="flex items-center gap-1.5 rounded-lg border border-indigo-600 bg-indigo-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-indigo-700"
+                        >
+                          <Sparkles size={12} />
+                          AI
+                        </button>
+                      )}
+                    </div>
+                    <div className="absolute top-2 left-2 rounded-md bg-amber-500 px-2 py-0.5 text-[10px] font-bold text-white uppercase">
+                      Pending
+                    </div>
+                  </div>
+                ) : form.heroImage ? (
+                  <div className="group relative h-44 overflow-hidden rounded-2xl border border-slate-300 bg-white">
+                    {isVideoUrl(form.heroImage) ? (
+                      <video
+                        src={form.heroImage}
+                        className="h-full w-full object-contain"
+                        autoPlay
+                        muted
+                        loop
+                        playsInline
+                      />
+                    ) : (
+                      <Image
+                        src={form.heroImage}
+                        alt="hero"
+                        width={240}
+                        height={160}
+                        className="h-full w-full object-contain"
+                      />
                     )}
-                  </div>
-                  <div className="absolute top-2 left-2 rounded-md bg-amber-500 px-2 py-0.5 text-[10px] font-bold text-white uppercase">
-                    Pending
-                  </div>
-                </div>
-              ) : form.heroImage ? (
-                <div className="group relative h-44 overflow-hidden rounded-2xl border border-slate-300 bg-white">
-                  {isVideoUrl(form.heroImage) ? (
-                    <video
-                      src={form.heroImage}
-                      className="h-full w-full object-contain"
-                      autoPlay
-                      muted
-                      loop
-                      playsInline
-                    />
-                  ) : (
-                    <Image
-                      src={form.heroImage}
-                      alt="hero"
-                      width={240}
-                      height={160}
-                      className="h-full w-full object-contain"
-                    />
-                  )}
-                  <div className="absolute inset-0 flex items-center justify-center gap-2 bg-black/25 opacity-100 lg:opacity-0 transition lg:group-hover:opacity-100">
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setPreviewUrl(form.heroImage);
-                        setIsPreviewOpen(true);
-                      }}
-                      className="rounded-lg border border-slate-900 bg-white/90 px-3 py-1.5 text-xs font-semibold text-slate-900"
-                    >
-                      View
-                    </button>
-                    <label
-                      htmlFor="hero-pick-input"
-                      className="cursor-pointer rounded-lg border border-slate-900 bg-white/90 px-3 py-1.5 text-xs font-semibold text-slate-900"
-                    >
-                      Change
-                    </label>
-                    <button
-                      type="button"
-                      onClick={removeHeroImage}
-                      className="rounded-lg border border-slate-900 bg-white/90 px-3 py-1.5 text-xs font-semibold text-slate-900"
-                    >
-                      Remove
-                    </button>
-                    {!isVideoUrl(form.heroImage) && (
+                    <div className="absolute inset-0 flex items-center justify-center gap-2 bg-black/25 opacity-100 lg:opacity-0 transition lg:group-hover:opacity-100">
                       <button
                         type="button"
                         onClick={() => {
-                          setAiEnhanceSource(form.heroImage);
-                          setAiEnhanceTarget("hero");
-                          setIsAIEnhanceModalOpen(true);
+                          setPreviewUrl(form.heroImage);
+                          setIsPreviewOpen(true);
                         }}
-                        className="flex items-center gap-1.5 rounded-lg border border-indigo-600 bg-indigo-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-indigo-700"
+                        className="rounded-lg border border-slate-900 bg-white/90 px-3 py-1.5 text-xs font-semibold text-slate-900"
                       >
-                        <Sparkles size={12} />
-                        AI
+                        View
                       </button>
-                    )}
+                      <label
+                        htmlFor="hero-pick-input"
+                        className="cursor-pointer rounded-lg border border-slate-900 bg-white/90 px-3 py-1.5 text-xs font-semibold text-slate-900"
+                      >
+                        Change
+                      </label>
+                      <button
+                        type="button"
+                        onClick={removeHeroImage}
+                        className="rounded-lg border border-slate-900 bg-white/90 px-3 py-1.5 text-xs font-semibold text-slate-900"
+                      >
+                        Remove
+                      </button>
+                      {!isVideoUrl(form.heroImage) && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setAiEnhanceSource(form.heroImage);
+                            setAiEnhanceTarget("hero");
+                            setIsAIEnhanceModalOpen(true);
+                          }}
+                          className="flex items-center gap-1.5 rounded-lg border border-indigo-600 bg-indigo-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-indigo-700"
+                        >
+                          <Sparkles size={12} />
+                          AI
+                        </button>
+                      )}
+                    </div>
                   </div>
-                </div>
-              ) : (
-                <button
-                  type="button"
-                  onClick={() =>
-                    document.getElementById("hero-pick-input")?.click()
-                  }
-                  className="flex h-44 flex-col items-center justify-center rounded-2xl border border-slate-300 bg-white text-slate-700 transition hover:border-slate-400"
-                >
-                  <Plus size={26} />
-                  <span className="mt-2 text-sm font-medium">Choose Media</span>
-                </button>
-              )}
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() =>
+                      document.getElementById("hero-pick-input")?.click()
+                    }
+                    className="flex h-44 flex-col items-center justify-center rounded-2xl border border-slate-300 bg-white text-slate-700 transition hover:border-slate-400"
+                  >
+                    <Plus size={26} />
+                    <span className="mt-2 text-sm font-medium">Choose Media</span>
+                  </button>
+                )}
+              </div>
             </div>
-          </div>
+          ) : (
+            <div className="rounded-2xl border border-rose-200 bg-rose-50 p-4 md:col-span-2">
+              <p className="text-sm font-semibold text-rose-900">Theme 3 Settings</p>
+              <p className="mt-1 text-xs text-rose-700">
+                Theme 3 uses slider media only (no hero media).
+              </p>
+              <div className="mt-3 grid gap-3 md:grid-cols-2">
+                <input
+                  value={form.theme3AnnouncementText}
+                  onChange={(event) =>
+                    setForm((prev) => ({ ...prev, theme3AnnouncementText: event.target.value }))
+                  }
+                  placeholder="Announcement text"
+                  className="rounded-xl border border-rose-200 bg-white px-4 py-2"
+                />
+                <input
+                  value={form.theme3FeaturedHeading}
+                  onChange={(event) =>
+                    setForm((prev) => ({ ...prev, theme3FeaturedHeading: event.target.value }))
+                  }
+                  placeholder="Featured heading"
+                  className="rounded-xl border border-rose-200 bg-white px-4 py-2"
+                />
+                <textarea
+                  value={form.theme3CollectionLabels}
+                  onChange={(event) =>
+                    setForm((prev) => ({ ...prev, theme3CollectionLabels: event.target.value }))
+                  }
+                  placeholder="Collection labels (comma separated)"
+                  className="min-h-24 rounded-xl border border-rose-200 bg-white px-4 py-2 md:col-span-2"
+                />
+
+                <div className="rounded-xl border border-rose-200 bg-rose-50/60 p-3 md:col-span-2">
+                  <div className="flex items-center justify-between">
+                    <p className="text-sm font-semibold text-rose-900">
+                      Collection Label Images
+                    </p>
+                    <span className="text-xs text-rose-700">
+                      {form.theme3CollectionLabelImages.length +
+                        pendingTheme3CollectionFiles.length}
+                      /{MAX_THEME3_COLLECTION_IMAGES}
+                    </span>
+                  </div>
+                  <p className="mt-1 text-xs text-rose-700">
+                    Image only. The image order follows the label order above.
+                  </p>
+
+                  <input
+                    id="theme3-collection-add-input"
+                    type="file"
+                    accept="image/*"
+                    multiple
+                    className="hidden"
+                    onChange={(event) => {
+                      const files = Array.from(event.target.files || []).filter(
+                        validateTheme3CollectionFile,
+                      );
+
+                      setPendingTheme3CollectionFiles((prev) => {
+                        const remaining =
+                          MAX_THEME3_COLLECTION_IMAGES -
+                          form.theme3CollectionLabelImages.length -
+                          prev.length;
+                        if (remaining <= 0) return prev;
+                        return [...prev, ...files.slice(0, remaining)];
+                      });
+                    }}
+                  />
+
+                  <div className="mt-3 grid gap-3 sm:grid-cols-3 lg:grid-cols-4">
+                    {form.theme3CollectionLabelImages.map((url, index) => {
+                      const pendingReplacement =
+                        pendingTheme3CollectionReplacementPreviews.find(
+                          (preview) => preview.index === index,
+                        );
+
+                      if (pendingReplacement) {
+                        return (
+                          <div
+                            key={`${url}-${index}`}
+                            className="group relative h-36 overflow-hidden rounded-2xl border border-amber-200 bg-white"
+                          >
+                            <Image
+                              src={pendingReplacement.url}
+                              alt="pending collection replacement"
+                              width={260}
+                              height={90}
+                              className="h-full w-full object-cover"
+                            />
+                            <div className="absolute inset-0 flex items-center justify-center gap-2 bg-black/25 opacity-100 transition lg:opacity-0 lg:group-hover:opacity-100">
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setPreviewUrl(pendingReplacement.url);
+                                  setIsPreviewOpen(true);
+                                }}
+                                className="rounded-lg border border-slate-900 bg-white/90 px-3 py-1.5 text-xs font-semibold text-slate-900"
+                              >
+                                View
+                              </button>
+                              <label
+                                htmlFor={`theme3-collection-change-${index}`}
+                                className="cursor-pointer rounded-lg border border-slate-900 bg-white/90 px-3 py-1.5 text-xs font-semibold text-slate-900"
+                              >
+                                Change
+                              </label>
+                              <button
+                                type="button"
+                                onClick={() =>
+                                  removePendingTheme3CollectionReplacement(index)
+                                }
+                                className="rounded-lg border border-slate-900 bg-white/90 px-3 py-1.5 text-xs font-semibold text-slate-900"
+                              >
+                                Remove
+                              </button>
+                            </div>
+                            <input
+                              id={`theme3-collection-change-${index}`}
+                              type="file"
+                              accept="image/*"
+                              className="hidden"
+                              onChange={(event) => {
+                                const file = event.target.files?.[0];
+                                if (file) {
+                                  replaceTheme3CollectionMedia(index, file);
+                                }
+                              }}
+                            />
+                            <div className="absolute top-2 left-2 rounded-md bg-amber-500 px-2 py-0.5 text-[10px] font-bold text-white uppercase">
+                              Pending
+                            </div>
+                          </div>
+                        );
+                      }
+
+                      return (
+                        <div
+                          key={url}
+                          className="group relative h-36 overflow-hidden rounded-2xl border border-rose-200 bg-white"
+                        >
+                          <Image
+                            src={url}
+                            alt="collection label"
+                            width={260}
+                            height={90}
+                            className="h-full w-full object-cover"
+                          />
+                          <div className="absolute inset-0 flex items-center justify-center gap-2 bg-black/25 opacity-100 transition lg:opacity-0 lg:group-hover:opacity-100">
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setPreviewUrl(url);
+                                setIsPreviewOpen(true);
+                              }}
+                              className="rounded-lg border border-slate-900 bg-white/90 px-3 py-1.5 text-xs font-semibold text-slate-900"
+                            >
+                              View
+                            </button>
+                            <label
+                              htmlFor={`theme3-collection-change-${index}`}
+                              className="cursor-pointer rounded-lg border border-slate-900 bg-white/90 px-3 py-1.5 text-xs font-semibold text-slate-900"
+                            >
+                              Change
+                            </label>
+                            <button
+                              type="button"
+                              onClick={() => removeTheme3CollectionImage(index, url)}
+                              className="rounded-lg border border-slate-900 bg-white/90 px-3 py-1.5 text-xs font-semibold text-slate-900"
+                            >
+                              Remove
+                            </button>
+                          </div>
+                          <input
+                            id={`theme3-collection-change-${index}`}
+                            type="file"
+                            accept="image/*"
+                            className="hidden"
+                            onChange={(event) => {
+                              const file = event.target.files?.[0];
+                              if (file) {
+                                replaceTheme3CollectionMedia(index, file);
+                              }
+                            }}
+                          />
+                        </div>
+                      );
+                    })}
+
+                    {pendingTheme3CollectionPreviews.map((preview, index) => (
+                      <div
+                        key={preview.url}
+                        className="group relative h-36 overflow-hidden rounded-2xl border border-amber-200 bg-white"
+                      >
+                        <Image
+                          src={preview.url}
+                          alt="pending collection image"
+                          width={260}
+                          height={90}
+                          className="h-full w-full object-cover"
+                        />
+                        <div className="absolute inset-0 flex items-center justify-center gap-2 bg-black/25 opacity-100 transition lg:opacity-0 lg:group-hover:opacity-100">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setPreviewUrl(preview.url);
+                              setIsPreviewOpen(true);
+                            }}
+                            className="rounded-lg border border-slate-900 bg-white/90 px-3 py-1.5 text-xs font-semibold text-slate-900"
+                          >
+                            View
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() =>
+                              removePendingTheme3CollectionMedia(index)
+                            }
+                            className="rounded-lg border border-slate-900 bg-white/90 px-3 py-1.5 text-xs font-semibold text-slate-900"
+                          >
+                            Remove
+                          </button>
+                        </div>
+                        <div className="absolute top-2 left-2 rounded-md bg-amber-500 px-2 py-0.5 text-[10px] font-bold text-white uppercase">
+                          Pending
+                        </div>
+                      </div>
+                    ))}
+
+                    {form.theme3CollectionLabelImages.length +
+                      pendingTheme3CollectionFiles.length <
+                      MAX_THEME3_COLLECTION_IMAGES && (
+                      <button
+                        type="button"
+                        onClick={() =>
+                          document
+                            .getElementById("theme3-collection-add-input")
+                            ?.click()
+                        }
+                        className="flex h-36 flex-col items-center justify-center rounded-2xl border border-rose-300 bg-white text-rose-800 transition hover:border-rose-400"
+                      >
+                        <Plus size={24} />
+                        <span className="mt-2 text-sm font-semibold">
+                          Choose Media
+                        </span>
+                      </button>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
 
           <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4 md:col-span-2">
             <div className="flex items-center justify-between">
@@ -674,19 +1162,29 @@ export default function ConfigureStorePage() {
                 {MAX_SLIDER_IMAGES}
               </span>
             </div>
+            {form.themeLayout === "theme3" ? (
+              <p className="mt-1 text-xs font-semibold text-rose-700">
+                Theme 3 requires image size exactly {THEME3_SLIDER_WIDTH} x {THEME3_SLIDER_HEIGHT}.
+              </p>
+            ) : null}
             <input
               id="slider-add-input"
               type="file"
               accept="image/*,video/*"
               multiple
               className="hidden"
-              onChange={(event) => {
+              onChange={async (event) => {
                 const files = Array.from(event.target.files || []);
+                const validFiles: File[] = [];
+                for (const file of files) {
+                  const valid = await validateSliderFileForTheme(file);
+                  if (valid) validFiles.push(file);
+                }
                 setPendingSliderFiles((prev) => {
                   const remaining =
                     MAX_SLIDER_IMAGES - form.sliderImages.length - prev.length;
                   if (remaining <= 0) return prev;
-                  return [...prev, ...files.slice(0, remaining)];
+                  return [...prev, ...validFiles.slice(0, remaining)];
                 });
               }}
             />

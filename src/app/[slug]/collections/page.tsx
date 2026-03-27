@@ -1,10 +1,10 @@
 import { notFound, redirect } from "next/navigation";
 
 import { getStorefrontHomeData } from "@/lib/storefront-data";
-import { StorefrontProductsTheme } from "@/components/storefront/theme-layout";
 import { resolveThemeLayout } from "@/themes/theme-config";
+import { Theme3CollectionsPage } from "@/themes/theme3/collections-page";
 
-export default async function ProductsPage({
+export default async function CollectionsPage({
   params,
 }: {
   params: Promise<{ slug: string }>;
@@ -16,12 +16,13 @@ export default async function ProductsPage({
     notFound();
   }
 
-  if (resolveThemeLayout(storefrontData.store.theme?.layout) === "theme3") {
-    redirect(`/${routeParams.slug}/collections`);
+  const layout = resolveThemeLayout(storefrontData.store.theme?.layout);
+  if (layout !== "theme3") {
+    redirect(`/${routeParams.slug}/products`);
   }
 
   return (
-    <StorefrontProductsTheme
+    <Theme3CollectionsPage
       slug={routeParams.slug}
       store={storefrontData.store}
       products={storefrontData.products}

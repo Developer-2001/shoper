@@ -9,6 +9,7 @@ import { Spinner } from "@/components/admin/ui/loader";
 const themeOptions = [
   { value: "theme1", label: "Theme 1 (Default)" },
   { value: "theme2", label: "Theme 2" },
+  { value: "theme3", label: "Theme 3 (Jewellery)" },
 ];
 
 export default function AdminRegisterPage() {

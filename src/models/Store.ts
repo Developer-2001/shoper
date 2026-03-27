@@ -34,6 +34,12 @@ export type StoreDocument = {
     accent: string;
     heroImage: string;
     sliderImages: string[];
+    theme3?: {
+      announcementText: string;
+      collectionLabels: string[];
+      collectionLabelImages: string[];
+      featuredHeading: string;
+    };
   };
   footerLinks: { label: string; href: string }[];
 };
@@ -76,6 +82,18 @@ const StoreSchema = new Schema<StoreDocument>(
         default: "",
       },
       sliderImages: { type: [String], default: [] },
+      theme3: {
+        announcementText: { type: String, default: "Free Shipping On Orders Over $200" },
+        collectionLabels: {
+          type: [String],
+          default: ["Rings", "Bracelets", "Necklaces", "Earrings", "Pendants", "Bangles"],
+        },
+        collectionLabelImages: {
+          type: [String],
+          default: [],
+        },
+        featuredHeading: { type: String, default: "Sparkling New Pieces" },
+      },
     },
     footerLinks: {
       type: [{ label: String, href: String }],
