@@ -85,4 +85,4 @@ const StoreSchema = new Schema<StoreDocument>(
   { timestamps: true }
 );
 
-export const Store = models.Store || model<StoreDocument>("store", StoreSchema);
+export const Store = models.Store || model<StoreDocument>("Store", StoreSchema);
