@@ -1,18 +1,19 @@
 import { notFound } from "next/navigation";
 
-import { connectToDatabase } from "@/lib/mongodb";
-import { Store } from "@/models/Store";
-import { StoreThemeCheckout } from "@/themes/store-theme-renderer";
+import { getActiveStoreBySlug } from "@/lib/storefront-data";
+import { StorefrontCheckoutTheme } from "@/components/storefront/theme-layout";
 
-export default async function CheckoutPage({ params }: { params: Promise<{ slug: string }> }) {
-  await connectToDatabase();
-
+export default async function CheckoutPage({
+  params,
+}: {
+  params: Promise<{ slug: string }>;
+}) {
   const routeParams = await params;
-  const store = await Store.findOne({ slug: routeParams.slug }).lean();
+  const store = await getActiveStoreBySlug(routeParams.slug);
 
-  if (!store || store.status === "inactive") {
+  if (!store) {
     notFound();
   }
 
-  return <StoreThemeCheckout slug={routeParams.slug} store={JSON.parse(JSON.stringify(store))} />;
+  return <StorefrontCheckoutTheme slug={routeParams.slug} store={store} />;
 }

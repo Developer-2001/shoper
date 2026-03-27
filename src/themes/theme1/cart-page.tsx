@@ -1,9 +1,9 @@
 "use client";
 
 import { useCartStorage } from "@/hooks/useCartStorage";
-import { StorefrontNavbar } from "@/components/storefront/storefront-navbar";
-import { CartItems } from "@/components/storefront/cart-items";
-import { DynamicStoreFooter } from "@/components/storefront/dynamic-store-footer";
+import { Theme1Navbar } from "@/themes/theme1/navbar";
+import { Theme1CartItems } from "@/themes/theme1/cart-items";
+import { Theme1Footer } from "@/themes/theme1/footer";
 import type { ThemeCartProps } from "@/themes/types";
 
 export function Theme1CartPage({ slug, store }: ThemeCartProps) {
@@ -11,15 +11,15 @@ export function Theme1CartPage({ slug, store }: ThemeCartProps) {
 
   return (
     <div className="min-h-screen bg-slate-50">
-      <StorefrontNavbar logoText={store.logoText || store.businessName} slug={slug} />
+      <Theme1Navbar logoText={store.logoText || store.businessName} slug={slug} />
       <main className="mx-auto w-full max-w-7xl px-6 py-10">
         <h1 className="text-3xl font-bold text-slate-900">Your Cart</h1>
         <div className="mt-6">
-          <CartItems slug={slug} />
+          <Theme1CartItems slug={slug} />
         </div>
       </main>
 
-      <DynamicStoreFooter
+      <Theme1Footer
         slug={slug}
         companyName={store.businessName}
         about={store.about}

@@ -5,26 +5,22 @@ import { ShoppingCart } from "lucide-react";
 
 import { useAppSelector } from "@/hooks/useRedux";
 
-export function StorefrontNavbar({
-  logoText,
-  slug,
-}: {
+type Theme1NavbarProps = {
   logoText: string;
   slug: string;
-}) {
+};
+
+export function Theme1Navbar({ logoText, slug }: Theme1NavbarProps) {
   const cartCount = useAppSelector((state) =>
     state.cart.items
       .filter((item) => item.slug === slug)
-      .reduce((count, item) => count + item.quantity, 0)
+      .reduce((count, item) => count + item.quantity, 0),
   );
 
   return (
     <header className="sticky top-0 z-30 border-b border-slate-200/60 bg-white/95 backdrop-blur">
       <div className="grid w-full grid-cols-3 items-center justify-evenly gap-4 px-8 py-3">
-        <Link
-          href={`/${slug}`}
-          className="min-w-28 text-xl font-black text-slate-900"
-        >
+        <Link href={`/${slug}`} className="min-w-28 text-xl font-black text-slate-900">
           {logoText}
         </Link>
 
@@ -45,7 +41,7 @@ export function StorefrontNavbar({
           >
             <ShoppingCart size={18} />
             {cartCount > 0 ? (
-              <span className="absolute -right-1 -top-1 inline-flex h-4 min-w-4 items-center justify-center rounded-full bg-slate-900 px-1 text-xs  text-white">
+              <span className="absolute -right-1 -top-1 inline-flex h-4 min-w-4 items-center justify-center rounded-full bg-slate-900 px-1 text-xs text-white">
                 {cartCount > 99 ? "99+" : cartCount}
               </span>
             ) : null}

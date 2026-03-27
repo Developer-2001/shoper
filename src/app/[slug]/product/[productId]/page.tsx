@@ -1,39 +1,28 @@
 import { notFound } from "next/navigation";
 
-import { connectToDatabase } from "@/lib/mongodb";
-import { Store } from "@/models/Store";
-import { Product } from "@/models/Product";
-import { StoreThemeProductDetail } from "@/themes/store-theme-renderer";
+import { getStorefrontProductData } from "@/lib/storefront-data";
+import { StorefrontProductDetailTheme } from "@/components/storefront/theme-layout";
 
 export default async function ProductDetailsPage({
   params,
 }: {
   params: Promise<{ slug: string; productId: string }>;
 }) {
-  await connectToDatabase();
-
   const routeParams = await params;
+  const storefrontData = await getStorefrontProductData(
+    routeParams.slug,
+    routeParams.productId,
+  );
 
-  const store = await Store.findOne({ slug: routeParams.slug }).lean();
-
-  if (!store || store.status === "inactive") {
-    notFound();
-  }
-
-  const product = await Product.findOne({
-    _id: routeParams.productId,
-    storeId: store._id,
-  }).lean();
-
-  if (!product) {
+  if (!storefrontData) {
     notFound();
   }
 
   return (
-    <StoreThemeProductDetail
+    <StorefrontProductDetailTheme
       slug={routeParams.slug}
-      store={JSON.parse(JSON.stringify(store))}
-      product={JSON.parse(JSON.stringify(product))}
+      store={storefrontData.store}
+      product={storefrontData.product}
     />
   );
 }

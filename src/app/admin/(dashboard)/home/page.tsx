@@ -84,7 +84,7 @@ export default function AdminHomePage() {
 
           <div className="mt-6 rounded-2xl border border-slate-200 bg-white p-5">
             <p className="font-semibold text-slate-900">Storefront preview</p>
-            <Link href={`/${data.store.slug}`} className="mt-2 inline-block text-teal-700 underline">
+            <Link href={`/${data.store.slug}`} target="_blank" className="mt-2 inline-block text-teal-700 underline">
               Open /{data.store.slug}
             </Link>
           </div>

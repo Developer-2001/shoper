@@ -1,30 +1,25 @@
 import { notFound } from "next/navigation";
 
-import { connectToDatabase } from "@/lib/mongodb";
-import { Store } from "@/models/Store";
-import { Product } from "@/models/Product";
-import { StoreThemeHome } from "@/themes/store-theme-renderer";
+import { getStorefrontHomeData } from "@/lib/storefront-data";
+import { StorefrontHomeTheme } from "@/components/storefront/theme-layout";
 
-export default async function StoreBySlugPage({ params }: { params: Promise<{ slug: string }> }) {
-  await connectToDatabase();
-
+export default async function StoreBySlugPage({
+  params,
+}: {
+  params: Promise<{ slug: string }>;
+}) {
   const routeParams = await params;
+  const storefrontData = await getStorefrontHomeData(routeParams.slug);
 
-  const store = await Store.findOne({ slug: routeParams.slug }).lean();
-
-  if (!store || store.status === "inactive") {
+  if (!storefrontData) {
     notFound();
   }
 
-  const products = await Product.find({ storeId: store._id, isPublished: true })
-    .sort({ createdAt: -1 })
-    .lean();
-
   return (
-    <StoreThemeHome
+    <StorefrontHomeTheme
       slug={routeParams.slug}
-      store={JSON.parse(JSON.stringify(store))}
-      products={JSON.parse(JSON.stringify(products))}
+      store={storefrontData.store}
+      products={storefrontData.products}
     />
   );
 }

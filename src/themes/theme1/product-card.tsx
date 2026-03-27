@@ -8,7 +8,7 @@ import { useAppDispatch } from "@/hooks/useRedux";
 import { formatMoney, salePrice } from "@/utils/currency";
 import { isVideoUrl } from "@/utils/media";
 
-type ProductCardProps = {
+type Theme1ProductCardProps = {
   slug: string;
   product: {
     _id: string;
@@ -20,7 +20,7 @@ type ProductCardProps = {
   };
 };
 
-export function ProductCard({ slug, product }: ProductCardProps) {
+export function Theme1ProductCard({ slug, product }: Theme1ProductCardProps) {
   const dispatch = useAppDispatch();
   const finalPrice = salePrice(product.price, product.discountPercentage);
   const firstMedia = product.images[0] || "/file.svg";
@@ -43,14 +43,7 @@ export function ProductCard({ slug, product }: ProductCardProps) {
     <article className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
       <Link href={`/${slug}/product/${product._id}`}>
         {isVideoUrl(firstMedia) ? (
-          <video
-            className="h-52 w-full object-cover"
-            src={firstMedia}
-            autoPlay
-            muted
-            loop
-            playsInline
-          />
+          <video className="h-52 w-full object-cover" src={firstMedia} autoPlay muted loop playsInline />
         ) : (
           <Image
             className="h-52 w-full object-contain"
@@ -62,27 +55,20 @@ export function ProductCard({ slug, product }: ProductCardProps) {
           />
         )}
       </Link>
-      <div className="px-4 py-2 border-t border-slate-200">
-        <Link
-          href={`/${slug}/product/${product._id}`}
-          className="font-semibold text-slate-900"
-        >
+      <div className="border-t border-slate-200 px-4 py-2">
+        <Link href={`/${slug}/product/${product._id}`} className="font-semibold text-slate-900">
           {product.name}
         </Link>
         <div className="mt-1 flex items-center gap-2">
-          <p className="text-lg font-bold text-slate-900">
-            {formatMoney(finalPrice, product.currency)}
-          </p>
+          <p className="text-lg font-bold text-slate-900">{formatMoney(finalPrice, product.currency)}</p>
           {product.discountPercentage > 0 ? (
-            <p className="text-sm text-slate-500 line-through">
-              {formatMoney(product.price, product.currency)}
-            </p>
+            <p className="text-sm text-slate-500 line-through">{formatMoney(product.price, product.currency)}</p>
           ) : null}
         </div>
         <button
           type="button"
           onClick={addItem}
-          className="mt-2 w-full rounded-xl bg-slate-900 py-2 font-semibold text-white cursor-pointer transition hover:bg-slate-800 active:bg-slate-900 "
+          className="mt-2 w-full cursor-pointer rounded-xl bg-slate-900 py-2 font-semibold text-white transition hover:bg-slate-800 active:bg-slate-900"
         >
           Add to cart
         </button>

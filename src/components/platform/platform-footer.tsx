@@ -5,7 +5,7 @@ import { icons } from "lucide-react";
 const footerColumns = [
   {
     title: "Shoper",
-    links: ["What is Shopify?", "Shopify Editions", "Investors", "Sustainability"],
+    links: ["What is Shoper?", "Shoper Editions", "Investors", "Sustainability"],
   },
   {
     title: "Ecosystem",
@@ -13,11 +13,11 @@ const footerColumns = [
   },
   {
     title: "Resources",
-    links: ["Blog", "Compare Shopify", "Guides", "Courses", "Free Tools", "Changelog"],
+    links: ["Blog", "Compare Shoper", "Guides", "Courses", "Free Tools", "Changelog"],
   },
   {
     title: "Support",
-    links: ["Shopify Help Center", "Community Forum", "Hire a Partner", "Service Status", "Contact Us"],
+    links: ["Shoper Help Center", "Community Forum", "Hire a Partner", "Service Status", "Contact Us"],
   },
 ];
 
