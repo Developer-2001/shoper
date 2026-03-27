@@ -79,6 +79,9 @@ export default function ProductsPage() {
       const data = await response.json();
       return (data.products || []) as Product[];
     } catch (err) {
+      if (err instanceof Error && err.name === "AbortError") {
+        return [] as Product[];
+      }
       console.error(err);
       return [] as Product[];
     }
