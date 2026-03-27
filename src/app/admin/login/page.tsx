@@ -3,6 +3,7 @@
 import { FormEvent, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { Spinner } from "@/components/admin/ui/loader";
 
 export default function AdminLoginPage() {
   const router = useRouter();
@@ -16,24 +17,27 @@ export default function AdminLoginPage() {
   async function handleSubmit(event: FormEvent) {
     event.preventDefault();
     setLoading(true);
-    setError("");
+    try {
+      const response = await fetch("/api/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(form),
+      });
 
-    const response = await fetch("/api/auth/login", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(form),
-    });
+      const data = await response.json().catch(() => ({}));
 
-    setLoading(false);
+      if (!response.ok) {
+        setError(data.error || "Login failed. Please check your credentials.");
+        return;
+      }
 
-    const data = await response.json();
-
-    if (!response.ok) {
-      setError(data.error || "Login failed");
-      return;
+      router.push(data.role === "platform_admin" ? "/admin/platform" : "/admin/home");
+    } catch (err) {
+      console.error(err);
+      setError("A network error occurred. Please try again.");
+    } finally {
+      setLoading(false);
     }
-
-    router.push(data.role === "platform_admin" ? "/admin/platform" : "/admin/home");
   }
 
   return (
@@ -64,8 +68,9 @@ export default function AdminLoginPage() {
 
         <button
           disabled={loading}
-          className="mt-6 w-full rounded-xl bg-slate-900 py-3 font-semibold text-white disabled:opacity-50"
+          className="flex items-center justify-center gap-2 mt-6 w-full rounded-xl bg-slate-900 py-3 font-semibold text-white disabled:opacity-50"
         >
+          {loading && <Spinner size={16} className="text-white" />}
           {loading ? "Signing in..." : "Login"}
         </button>
 

@@ -5,6 +5,8 @@ import { FormEvent, useEffect, useMemo, useState } from "react";
 import { Plus, Sparkles, X, Eye } from "lucide-react";
 
 import { AdminTopbar } from "@/components/admin/admin-topbar";
+import { Spinner } from "@/components/admin/ui/loader";
+import { TableSkeleton } from "@/components/admin/ui/skeleton";
 import {
   encodeStorageObjectPath,
   extractStorageObjectPath,
@@ -48,6 +50,8 @@ export default function ProductsPage() {
   const [isAIEnhanceModalOpen, setIsAIEnhanceModalOpen] = useState(false);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
 
   const pendingProductPreviews = useMemo(
     () =>
@@ -69,15 +73,22 @@ export default function ProductsPage() {
   const [aiEnhanceSource, setAiEnhanceSource] = useState<string>("");
 
   async function fetchProducts(signal?: AbortSignal) {
-    const response = await fetch("/api/admin/products", { signal });
-    if (!response.ok) return [] as Product[];
-    const data = await response.json();
-    return (data.products || []) as Product[];
+    try {
+      const response = await fetch("/api/admin/products", { signal });
+      if (!response.ok) return [] as Product[];
+      const data = await response.json();
+      return (data.products || []) as Product[];
+    } catch (err) {
+      console.error(err);
+      return [] as Product[];
+    }
   }
 
   async function refreshProducts() {
+    setLoading(true);
     const nextProducts = await fetchProducts();
     setProducts(nextProducts);
+    setLoading(false);
   }
 
   useEffect(() => {
@@ -86,12 +97,17 @@ export default function ProductsPage() {
 
     void (async () => {
       try {
+        setLoading(true);
         const nextProducts = await fetchProducts(controller.signal);
         if (active) {
           setProducts(nextProducts);
         }
       } catch {
         // ignore abort/network errors for initial load
+      } finally {
+        if (active) {
+          setLoading(false);
+        }
       }
     })();
 
@@ -106,21 +122,27 @@ export default function ProductsPage() {
     formData.append("file", file);
     formData.append("folder", PRODUCT_MEDIA_FOLDER);
 
-    const response = await fetch("/api/storage", {
-      method: "POST",
-      body: formData,
-    });
+    try {
+      const response = await fetch("/api/storage", {
+        method: "POST",
+        body: formData,
+      });
 
-    if (!response.ok) {
-      const data = await response
-        .json()
-        .catch(() => ({ error: "Upload failed" }));
-      alert(data.error || "Upload failed");
+      if (!response.ok) {
+        const data = await response
+          .json()
+          .catch(() => ({ error: "Upload failed" }));
+        alert(data.error || "Upload failed");
+        return null;
+      }
+
+      const data = await response.json();
+      return data?.file?.url || null;
+    } catch (err) {
+      console.error(err);
+      alert("Network error during upload.");
       return null;
     }
-
-    const data = await response.json();
-    return data?.file?.url || null;
   }
 
   const handleAISelectImage = async (imageUrl: string) => {
@@ -160,42 +182,54 @@ export default function ProductsPage() {
     const formData = new FormData();
     formData.append("file", file);
 
-    const encodedPath = encodeStorageObjectPath(path);
-    const response = await fetch(`/api/storage/${encodedPath}`, {
-      method: "PUT",
-      body: formData,
-    });
+    try {
+      const encodedPath = encodeStorageObjectPath(path);
+      const response = await fetch(`/api/storage/${encodedPath}`, {
+        method: "PUT",
+        body: formData,
+      });
 
-    if (!response.ok) {
-      const data = await response
-        .json()
-        .catch(() => ({ error: "Replace failed" }));
-      alert(data.error || "Replace failed");
+      if (!response.ok) {
+        const data = await response
+          .json()
+          .catch(() => ({ error: "Replace failed" }));
+        alert(data.error || "Replace failed");
+        return null;
+      }
+
+      const data = await response.json();
+      return data?.file?.url || currentUrl;
+    } catch (err) {
+      console.error(err);
+      alert("Network error during media replacement.");
       return null;
     }
-
-    const data = await response.json();
-    return data?.file?.url || currentUrl;
   }
 
   async function deleteMediaFromStorage(url: string) {
     const path = extractStorageObjectPath(url);
     if (!path) return true;
 
-    const encodedPath = encodeStorageObjectPath(path);
-    const response = await fetch(`/api/storage/${encodedPath}`, {
-      method: "DELETE",
-    });
+    try {
+      const encodedPath = encodeStorageObjectPath(path);
+      const response = await fetch(`/api/storage/${encodedPath}`, {
+        method: "DELETE",
+      });
 
-    if (!response.ok) {
-      const data = await response
-        .json()
-        .catch(() => ({ error: "Delete failed" }));
-      alert(data.error || "Delete failed");
+      if (!response.ok) {
+        const data = await response
+          .json()
+          .catch(() => ({ error: "Delete failed" }));
+        alert(data.error || "Delete failed");
+        return false;
+      }
+
+      return true;
+    } catch (err) {
+      console.error(err);
+      alert("Network error during media deletion.");
       return false;
     }
-
-    return true;
   }
 
   async function removePendingProductMedia(index: number) {
@@ -266,45 +300,58 @@ export default function ProductsPage() {
       images: finalImages,
     };
 
-    const response = await fetch(
-      editingId ? `/api/admin/products/${editingId}` : "/api/admin/products",
-      {
-        method: editingId ? "PUT" : "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      },
-    );
+    try {
+      const response = await fetch(
+        editingId ? `/api/admin/products/${editingId}` : "/api/admin/products",
+        {
+          method: editingId ? "PUT" : "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        },
+      );
 
-    setUploadingImages(false);
+      if (!response.ok) {
+        const data = await response
+          .json()
+          .catch(() => ({ error: "Failed to save product" }));
+        alert(data.error || "Failed to save product");
+        return;
+      }
 
-    if (!response.ok) {
-      const data = await response
-        .json()
-        .catch(() => ({ error: "Failed to save product" }));
-      alert(data.error || "Failed to save product");
-      return;
+      setForm(initialForm);
+      setEditingId(null);
+      setPendingProductFiles([]);
+      refreshProducts();
+    } catch (err) {
+      console.error(err);
+      alert("Network error while saving product.");
+    } finally {
+      setUploadingImages(false);
     }
-
-    setForm(initialForm);
-    setEditingId(null);
-    setPendingProductFiles([]);
-    refreshProducts();
   }
 
   async function handleDelete(id: string) {
     if (!confirm("Are you sure you want to delete this product?")) return;
 
-    const product = products.find((p) => p._id === id);
-    if (product?.images) {
-      for (const url of product.images) {
-        await deleteMediaFromStorage(url);
+    setDeletingId(id);
+    try {
+      const product = products.find((p) => p._id === id);
+      if (product?.images) {
+        for (const url of product.images) {
+          await deleteMediaFromStorage(url);
+        }
       }
-    }
 
-    const response = await fetch(`/api/admin/products/${id}`, {
-      method: "DELETE",
-    });
-    if (response.ok) refreshProducts();
+      const response = await fetch(`/api/admin/products/${id}`, {
+        method: "DELETE",
+      });
+      if (response.ok) await refreshProducts();
+    } catch (err) {
+      console.error(err);
+      alert("Network error during product deletion.");
+    } finally {
+      setDeletingId(null);
+    }
   }
 
   function editProduct(product: Product) {
@@ -323,351 +370,354 @@ export default function ProductsPage() {
 
   return (
     <div>
-      <AdminTopbar
-        title="Products"
-        subtitle="Create, edit and manage your store products with uploaded media."
-      />
+      <AdminTopbar title="Products" subtitle="Manage your catalog, stock, and media." />
 
-      <form
-        onSubmit={handleSubmit}
-        className="rounded-2xl border border-slate-200 bg-white p-5"
-      >
-        <div className="grid gap-3 md:grid-cols-2">
-          <input
-            required
-            value={form.name}
-            onChange={(event) =>
-              setForm((prev) => ({ ...prev, name: event.target.value }))
-            }
-            placeholder="name"
-            className="rounded-xl border border-slate-300 px-4 py-2"
-          />
-          <input
-            required
-            value={form.category}
-            onChange={(event) =>
-              setForm((prev) => ({ ...prev, category: event.target.value }))
-            }
-            placeholder="category"
-            className="rounded-xl border border-slate-300 px-4 py-2"
-          />
-          <textarea
-            value={form.description}
-            onChange={(event) =>
-              setForm((prev) => ({ ...prev, description: event.target.value }))
-            }
-            placeholder="description"
-            className="min-h-24 rounded-xl border border-slate-300 px-4 py-2 md:col-span-2"
-          />
-
-          <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4 md:col-span-2">
-            <div className="flex flex-wrap items-center justify-between gap-3">
-              <p className="text-sm font-semibold text-slate-800">
-                Product Media
-              </p>
-              <span className="text-xs text-slate-500">
-                {form.images.length}/{MAX_PRODUCT_MEDIA}
-              </span>
-            </div>
-            <input
-              id="product-add-input"
-              type="file"
-              accept="image/*,video/*"
-              multiple
-              className="hidden"
-              onChange={(event) => {
-                const files = Array.from(event.target.files || []);
-                setPendingProductFiles((prev) => [...prev, ...files]);
-              }}
-            />
-
-            <div className="mt-3 grid gap-3 sm:grid-cols-3 lg:grid-cols-3">
-              {form.images.map((url, index) => (
-                <div
-                  key={url}
-                  className="group relative h-44 overflow-hidden rounded-2xl border border-slate-300 bg-white"
-                >
-                  {isVideoUrl(url) ? (
-                    <video
-                      src={url}
-                      className="h-full w-full object-cover"
-                      autoPlay
-                      muted
-                      loop
-                      playsInline
-                    />
-                  ) : (
-                    <Image
-                      src={url}
-                      alt={`product-${index + 1}`}
-                      width={220}
-                      height={160}
-                      className="h-full w-full object-contain"
-                    />
-                  )}
-
-                  <div className="absolute inset-0 flex items-center justify-center gap-2 bg-black/25 opacity-100 lg:opacity-0 transition lg:group-hover:opacity-100">
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setPreviewUrl(url);
-                        setIsPreviewOpen(true);
-                      }}
-                      className="rounded-lg border border-slate-900 bg-white/90 px-3 py-1.5 text-xs font-semibold text-slate-900"
-                    >
-                      View
-                    </button>
-                    <label
-                      htmlFor={`product-change-${index}`}
-                      className="cursor-pointer rounded-lg border border-slate-900 bg-white/90 px-3 py-1.5 text-xs font-semibold text-slate-900"
-                    >
-                      Change
-                    </label>
-                    {form.images.length + pendingProductFiles.length > 1 && (
-                      <button
-                        type="button"
-                        onClick={() => removeProductMedia(url)}
-                        className="rounded-lg border border-slate-900 bg-white/90 px-3 py-1.5 text-xs font-semibold text-slate-900"
-                      >
-                        Remove
-                      </button>
-                    )}
-                  </div>
-
-                  <input
-                    id={`product-change-${index}`}
-                    type="file"
-                    accept="image/*,video/*"
-                    className="hidden"
-                    onChange={(event) => {
-                      const file = event.target.files?.[0];
-                      if (file) {
-                        replaceProductMedia(index, file);
-                      }
-                    }}
-                  />
-                </div>
-              ))}
-
-              {pendingProductPreviews.map((preview, index) => (
-                <div
-                  key={preview.url}
-                  className="group relative h-44 overflow-hidden rounded-2xl border border-amber-200 bg-white"
-                >
-                  {isVideoUrl(preview.url) ||
-                  preview.file.type.startsWith("video/") ? (
-                    <video
-                      src={preview.url}
-                      className="h-full w-full object-cover"
-                      autoPlay
-                      muted
-                      loop
-                      playsInline
-                    />
-                  ) : (
-                    <Image
-                      src={preview.url}
-                      alt="pending product media"
-                      width={220}
-                      height={160}
-                      className="h-full w-full object-contain"
-                    />
-                  )}
-                  <div className="absolute inset-0 flex items-center justify-center gap-2 bg-black/25 opacity-100 lg:opacity-0 transition lg:group-hover:opacity-100">
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setPreviewUrl(preview.url);
-                        setIsPreviewOpen(true);
-                      }}
-                      className="rounded-lg border border-slate-900 bg-white/90 px-3 py-1.5 text-xs font-semibold text-slate-900"
-                    >
-                      View
-                    </button>
-                    {form.images.length + pendingProductFiles.length > 1 && (
-                      <button
-                        type="button"
-                        onClick={() =>
-                          setPendingProductFiles((prev) =>
-                            prev.filter((_, i) => i !== index),
-                          )
-                        }
-                        className="rounded-lg border border-slate-900 bg-white/90 px-3 py-1.5 text-xs font-semibold text-slate-900"
-                      >
-                        Remove
-                      </button>
-                    )}
-                    {!preview.file.type.startsWith("video/") && (
-                      <button
-                        type="button"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setAiEnhanceSource(preview.url);
-                          setIsAIEnhanceModalOpen(true);
-                        }}
-                        className="flex items-center gap-1.5 rounded-lg border border-indigo-600 bg-indigo-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-indigo-700"
-                      >
-                        <Sparkles size={12} />
-                        AI
-                      </button>
-                    )}
-                  </div>
-                  <div className="absolute top-2 left-2 rounded-md bg-amber-500 px-2 py-0.5 text-[10px] font-bold text-white uppercase">
-                    Pending
-                  </div>
-                </div>
-              ))}
-
-              {form.images.length + pendingProductFiles.length <
-                MAX_PRODUCT_MEDIA && (
-                <button
-                  type="button"
-                  onClick={() =>
-                    document.getElementById("product-add-input")?.click()
-                  }
-                  className="flex h-44 flex-col items-center justify-center rounded-2xl border border-slate-300 bg-white text-slate-700 transition hover:border-slate-400"
-                >
-                  <Plus size={26} />
-                  <span className="mt-2 text-sm font-medium">Choose Media</span>
-                </button>
-              )}
-            </div>
-          </div>
-
-          <input
-            required
-            type="number"
-            min="0"
-            step="0.01"
-            value={form.price}
-            onChange={(event) =>
-              setForm((prev) => ({ ...prev, price: event.target.value }))
-            }
-            placeholder="price"
-            className="rounded-xl border border-slate-300 px-4 py-2"
-          />
-
-          <select
-            required
-            value={form.currency}
-            onChange={(event) =>
-              setForm((prev) => ({ ...prev, currency: event.target.value }))
-            }
-            className="rounded-xl border border-slate-300 px-4 py-2"
+      {loading ? (
+        <TableSkeleton rows={5} />
+      ) : (
+        <div className="grid gap-6 lg:grid-cols-[1fr_2fr]">
+          <form
+            onSubmit={handleSubmit}
+            className="rounded-2xl border border-slate-200 bg-white p-5"
           >
-            {currencyOptions.map((option) => (
-              <option key={option.value} value={option.value}>
-                {option.label}
-              </option>
-            ))}
-          </select>
-          <input
-            required
-            value={form.discountPercentage}
-            onChange={(event) =>
-              setForm((prev) => ({
-                ...prev,
-                discountPercentage: event.target.value,
-              }))
-            }
-            placeholder="discountPercentage"
-            className="rounded-xl border border-slate-300 px-4 py-2"
-          />
-          <input
-            required
-            value={form.inStock}
-            onChange={(event) =>
-              setForm((prev) => ({ ...prev, inStock: event.target.value }))
-            }
-            placeholder="inStock"
-            className="rounded-xl border border-slate-300 px-4 py-2"
-          />
-        </div>
+            <div className="grid gap-3 md:grid-cols-2">
+              <input
+                required
+                value={form.name}
+                onChange={(event) =>
+                  setForm((prev) => ({ ...prev, name: event.target.value }))
+                }
+                placeholder="name"
+                className="rounded-xl border border-slate-300 px-4 py-2"
+              />
+              <input
+                required
+                value={form.category}
+                onChange={(event) =>
+                  setForm((prev) => ({ ...prev, category: event.target.value }))
+                }
+                placeholder="category"
+                className="rounded-xl border border-slate-300 px-4 py-2"
+              />
+              <textarea
+                value={form.description}
+                onChange={(event) =>
+                  setForm((prev) => ({ ...prev, description: event.target.value }))
+                }
+                placeholder="description"
+                className="min-h-24 rounded-xl border border-slate-300 px-4 py-2 md:col-span-2"
+              />
 
-        <button
-          disabled={uploadingImages}
-          className="mt-4 rounded-xl bg-slate-900 px-5 py-2 font-semibold text-white disabled:opacity-50"
-        >
-          {uploadingImages
-            ? "Saving..."
-            : editingId
-              ? "Update product"
-              : "Create product"}
-        </button>
-      </form>
+              <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4 md:col-span-2">
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                  <p className="text-sm font-semibold text-slate-800">
+                    Product Media
+                  </p>
+                  <span className="text-xs text-slate-500">
+                    {form.images.length}/{MAX_PRODUCT_MEDIA}
+                  </span>
+                </div>
+                <input
+                  id="product-add-input"
+                  type="file"
+                  accept="image/*,video/*"
+                  multiple
+                  className="hidden"
+                  onChange={(event) => {
+                    const files = Array.from(event.target.files || []);
+                    setPendingProductFiles((prev) => [...prev, ...files]);
+                  }}
+                />
 
-      <div className="mt-6 overflow-x-auto rounded-2xl border border-slate-200 bg-white">
-        <table className="w-full min-w-150 text-left text-sm">
-          <thead className="bg-slate-50 text-slate-600">
-            <tr>
-              <th className="px-4 py-3">Image</th>
-              <th className="px-4 py-3">Name</th>
-              <th className="px-4 py-3">Price</th>
-              <th className="px-4 py-3">Category</th>
-              <th className="px-4 py-3">Stock</th>
-              <th className="px-4 py-3">Action</th>
-            </tr>
-          </thead>
-          <tbody>
-            {products.map((product) => (
-              <tr key={product._id} className="border-t border-slate-200">
-                <td className="px-4 py-3">
-                  {product.images[0] ? (
+                <div className="mt-3 grid gap-3 sm:grid-cols-3 lg:grid-cols-3">
+                  {form.images.map((url, index) => (
                     <div
-                      className="cursor-pointer group relative"
-                      onClick={() => {
-                        setPreviewUrl(product.images[0]);
-                        setIsPreviewOpen(true);
-                      }}
+                      key={url}
+                      className="group relative h-44 overflow-hidden rounded-2xl border border-slate-300 bg-white"
                     >
-                      {isVideoUrl(product.images[0]) ? (
+                      {isVideoUrl(url) ? (
                         <video
-                          src={product.images[0]}
-                          className="h-12 w-12 rounded-lg object-cover"
+                          src={url}
+                          className="h-full w-full object-cover"
+                          autoPlay
                           muted
+                          loop
+                          playsInline
                         />
                       ) : (
                         <Image
-                          src={product.images[0]}
-                          alt={product.name}
-                          width={48}
-                          height={48}
-                          className="h-12 w-12 rounded-lg object-cover"
+                          src={url}
+                          alt={`product-${index + 1}`}
+                          width={220}
+                          height={160}
+                          className="h-full w-full object-contain"
                         />
                       )}
-                      <div className="absolute inset-0 flex items-center justify-center bg-black/20 opacity-0 group-hover:opacity-100 rounded-lg transition">
-                        <Eye size={16} className="text-white" />
+
+                      <div className="absolute inset-0 flex items-center justify-center gap-2 bg-black/25 opacity-100 lg:opacity-0 transition lg:group-hover:opacity-100">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setPreviewUrl(url);
+                            setIsPreviewOpen(true);
+                          }}
+                          className="rounded-lg border border-slate-900 bg-white/90 px-3 py-1.5 text-xs font-semibold text-slate-900"
+                        >
+                          View
+                        </button>
+                        <label
+                          htmlFor={`product-change-${index}`}
+                          className="cursor-pointer rounded-lg border border-slate-900 bg-white/90 px-3 py-1.5 text-xs font-semibold text-slate-900"
+                        >
+                          Change
+                        </label>
+                        {form.images.length + pendingProductFiles.length > 1 && (
+                          <button
+                            type="button"
+                            onClick={() => removeProductMedia(url)}
+                            className="rounded-lg border border-slate-900 bg-white/90 px-3 py-1.5 text-xs font-semibold text-slate-900"
+                          >
+                            Remove
+                          </button>
+                        )}
+                      </div>
+
+                      <input
+                        id={`product-change-${index}`}
+                        type="file"
+                        accept="image/*,video/*"
+                        className="hidden"
+                        onChange={(event) => {
+                          const file = event.target.files?.[0];
+                          if (file) {
+                            replaceProductMedia(index, file);
+                          }
+                        }}
+                      />
+                    </div>
+                  ))}
+
+                  {pendingProductPreviews.map((preview, index) => (
+                    <div
+                      key={preview.url}
+                      className="group relative h-44 overflow-hidden rounded-2xl border border-amber-200 bg-white"
+                    >
+                      {isVideoUrl(preview.url) ||
+                      preview.file.type.startsWith("video/") ? (
+                        <video
+                          src={preview.url}
+                          className="h-full w-full object-cover"
+                          autoPlay
+                          muted
+                          loop
+                          playsInline
+                        />
+                      ) : (
+                        <Image
+                          src={preview.url}
+                          alt="pending product media"
+                          width={220}
+                          height={160}
+                          className="h-full w-full object-contain"
+                        />
+                      )}
+                      <div className="absolute inset-0 flex items-center justify-center gap-2 bg-black/25 opacity-100 lg:opacity-0 transition lg:group-hover:opacity-100">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setPreviewUrl(preview.url);
+                            setIsPreviewOpen(true);
+                          }}
+                          className="rounded-lg border border-slate-900 bg-white/90 px-3 py-1.5 text-xs font-semibold text-slate-900"
+                        >
+                          View
+                        </button>
+                        {form.images.length + pendingProductFiles.length > 1 && (
+                          <button
+                            type="button"
+                            onClick={() =>
+                              setPendingProductFiles((prev) =>
+                                prev.filter((_, i) => i !== index),
+                              )
+                            }
+                            className="rounded-lg border border-slate-900 bg-white/90 px-3 py-1.5 text-xs font-semibold text-slate-900"
+                          >
+                            Remove
+                          </button>
+                        )}
+                        {!preview.file.type.startsWith("video/") && (
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setAiEnhanceSource(preview.url);
+                              setIsAIEnhanceModalOpen(true);
+                            }}
+                            className="flex items-center gap-1.5 rounded-lg border border-indigo-600 bg-indigo-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-indigo-700"
+                          >
+                            <Sparkles size={12} />
+                            AI
+                          </button>
+                        )}
+                      </div>
+                      <div className="absolute top-2 left-2 rounded-md bg-amber-500 px-2 py-0.5 text-[10px] font-bold text-white uppercase">
+                        Pending
                       </div>
                     </div>
-                  ) : null}
-                </td>
-                <td className="px-4 py-3">{product.name}</td>
-                <td className="px-4 py-3">{product.price}</td>
-                <td className="px-4 py-3">{product.category}</td>
-                <td className="px-4 py-3">{product.inStock}</td>
-                <td className="px-4 py-3">
-                  <div className="flex gap-2">
+                  ))}
+
+                  {form.images.length + pendingProductFiles.length <
+                    MAX_PRODUCT_MEDIA && (
                     <button
                       type="button"
-                      onClick={() => editProduct(product)}
-                      className="text-teal-700"
+                      onClick={() =>
+                        document.getElementById("product-add-input")?.click()
+                      }
+                      className="flex h-44 flex-col items-center justify-center rounded-2xl border border-slate-300 bg-white text-slate-700 transition hover:border-slate-400"
                     >
-                      Edit
+                      <Plus size={26} />
+                      <span className="mt-2 text-sm font-medium">Choose Media</span>
                     </button>
-                    <button
-                      type="button"
-                      onClick={() => handleDelete(product._id)}
-                      className="text-red-600"
-                    >
-                      Delete
-                    </button>
-                  </div>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+                  )}
+                </div>
+              </div>
+
+              <input
+                required
+                type="number"
+                min="0"
+                step="0.01"
+                value={form.price}
+                onChange={(event) =>
+                  setForm((prev) => ({ ...prev, price: event.target.value }))
+                }
+                placeholder="price"
+                className="rounded-xl border border-slate-300 px-4 py-2"
+              />
+
+              <select
+                required
+                value={form.currency}
+                onChange={(event) =>
+                  setForm((prev) => ({ ...prev, currency: event.target.value }))
+                }
+                className="rounded-xl border border-slate-300 px-4 py-2"
+              >
+                {currencyOptions.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
+              <input
+                required
+                value={form.discountPercentage}
+                onChange={(event) =>
+                  setForm((prev) => ({
+                    ...prev,
+                    discountPercentage: event.target.value,
+                  }))
+                }
+                placeholder="discountPercentage"
+                className="rounded-xl border border-slate-300 px-4 py-2"
+              />
+              <input
+                required
+                value={form.inStock}
+                onChange={(event) =>
+                  setForm((prev) => ({ ...prev, inStock: event.target.value }))
+                }
+                placeholder="inStock"
+                className="rounded-xl border border-slate-300 px-4 py-2"
+              />
+            </div>
+
+            <button
+              type="submit"
+              disabled={uploadingImages}
+              className="flex items-center justify-center gap-2 rounded-xl bg-slate-900 py-3 font-semibold text-white disabled:opacity-50"
+            >
+              {uploadingImages && <Spinner size={16} className="text-white" />}
+              {uploadingImages ? "Saving..." : editingId ? "Update Product" : "Create Product"}
+            </button>
+          </form>
+
+          <div className="mt-6 overflow-x-auto rounded-2xl border border-slate-200 bg-white">
+            <table className="w-full min-w-150 text-left text-sm">
+              <thead className="bg-slate-50 text-slate-600">
+                <tr>
+                  <th className="px-4 py-3">Image</th>
+                  <th className="px-4 py-3">Name</th>
+                  <th className="px-4 py-3">Price</th>
+                  <th className="px-4 py-3">Category</th>
+                  <th className="px-4 py-3">Stock</th>
+                  <th className="px-4 py-3">Action</th>
+                </tr>
+              </thead>
+              <tbody>
+                {products.map((product) => (
+                  <tr key={product._id} className="border-t border-slate-200">
+                    <td className="px-4 py-3">
+                      {product.images[0] ? (
+                        <div
+                          className="cursor-pointer group relative"
+                          onClick={() => {
+                            setPreviewUrl(product.images[0]);
+                            setIsPreviewOpen(true);
+                          }}
+                        >
+                          {isVideoUrl(product.images[0]) ? (
+                            <video
+                              src={product.images[0]}
+                              className="h-12 w-12 rounded-lg object-cover"
+                              muted
+                            />
+                          ) : (
+                            <Image
+                              src={product.images[0]}
+                              alt={product.name}
+                              width={48}
+                              height={48}
+                              className="h-12 w-12 rounded-lg object-cover"
+                            />
+                          )}
+                          <div className="absolute inset-0 flex items-center justify-center bg-black/20 opacity-0 group-hover:opacity-100 rounded-lg transition">
+                            <Eye size={16} className="text-white" />
+                          </div>
+                        </div>
+                      ) : null}
+                    </td>
+                    <td className="px-4 py-3">{product.name}</td>
+                    <td className="px-4 py-3">{product.price}</td>
+                    <td className="px-4 py-3">{product.category}</td>
+                    <td className="px-4 py-3">{product.inStock}</td>
+                    <td className="px-4 py-3">
+                      <div className="flex gap-2">
+                        <button
+                          type="button"
+                          onClick={() => editProduct(product)}
+                          className="text-teal-700"
+                        >
+                          Edit
+                        </button>
+                        <button
+                          type="button"
+                          disabled={deletingId === product._id}
+                          onClick={() => handleDelete(product._id)}
+                          className="flex items-center gap-1 text-red-600 disabled:opacity-50"
+                        >
+                          {deletingId === product._id && <Spinner size={14} className="text-red-600" />}
+                          {deletingId === product._id ? "Deleting..." : "Delete"}
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
 
       <AIEnhanceModal
         isOpen={isAIEnhanceModalOpen}

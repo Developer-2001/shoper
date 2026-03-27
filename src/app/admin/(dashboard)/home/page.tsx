@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 
 import { AdminTopbar } from "@/components/admin/admin-topbar";
+import { Skeleton } from "@/components/admin/ui/skeleton";
 
 type DashboardData = {
   store: { businessName: string; slug: string; currency: string; status: "active" | "inactive" };
@@ -13,31 +14,41 @@ type DashboardData = {
 
 export default function AdminHomePage() {
   const [data, setData] = useState<DashboardData | null>(null);
+  const [error, setError] = useState("");
 
   useEffect(() => {
     async function load() {
-      const [storeRes, productsRes, ordersRes] = await Promise.all([
-        fetch("/api/admin/store"),
-        fetch("/api/admin/products"),
-        fetch("/api/admin/orders"),
-      ]);
+      setError("");
+      try {
+        const [storeRes, productsRes, ordersRes] = await Promise.all([
+          fetch("/api/admin/store"),
+          fetch("/api/admin/products"),
+          fetch("/api/admin/orders"),
+        ]);
 
-      if (!storeRes.ok) return;
+        if (!storeRes.ok) {
+          setError("Failed to load store information.");
+          return;
+        }
 
-      const storeData = await storeRes.json();
-      const productsData = productsRes.ok ? await productsRes.json() : { products: [] };
-      const ordersData = ordersRes.ok ? await ordersRes.json() : { orders: [] };
+        const storeData = await storeRes.json();
+        const productsData = productsRes.ok ? await productsRes.json() : { products: [] };
+        const ordersData = ordersRes.ok ? await ordersRes.json() : { orders: [] };
 
-      setData({
-        store: {
-          businessName: storeData.store.businessName,
-          slug: storeData.store.slug,
-          currency: storeData.store.currency,
-          status: storeData.store.status || "inactive",
-        },
-        productsCount: productsData.products.length,
-        ordersCount: ordersData.orders.length,
-      });
+        setData({
+          store: {
+            businessName: storeData.store.businessName,
+            slug: storeData.store.slug,
+            currency: storeData.store.currency,
+            status: storeData.store.status || "inactive",
+          },
+          productsCount: productsData.products.length,
+          ordersCount: ordersData.orders.length,
+        });
+      } catch (err) {
+        console.error(err);
+        setError("A network error occurred while loading dashboard.");
+      }
     }
 
     load();
@@ -47,8 +58,17 @@ export default function AdminHomePage() {
     <div>
       <AdminTopbar title="Dashboard Home" subtitle="Track your store performance and quick actions." />
 
-      {!data ? (
-        <p className="text-slate-600">Loading dashboard...</p>
+      {error ? (
+        <div className="rounded-2xl border border-red-200 bg-red-50 p-5 text-red-700">
+          <p className="font-semibold">{error}</p>
+        </div>
+      ) : !data ? (
+        <div className="grid gap-4 md:grid-cols-3">
+          <Skeleton className="h-32 rounded-2xl" />
+          <Skeleton className="h-32 rounded-2xl" />
+          <Skeleton className="h-32 rounded-2xl" />
+          <Skeleton className="mt-2 h-20 w-full rounded-2xl md:col-span-3" />
+        </div>
       ) : (
         <>
           <div className="grid gap-4 md:grid-cols-3">

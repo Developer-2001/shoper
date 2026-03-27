@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 
 import { AdminTopbar } from "@/components/admin/admin-topbar";
+import { TableSkeleton } from "@/components/admin/ui/skeleton";
 
 type Order = {
   _id: string;
@@ -17,13 +18,27 @@ type Order = {
 export default function OrdersPage() {
   const [orders, setOrders] = useState<Order[]>([]);
   const [expanded, setExpanded] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
 
   useEffect(() => {
     async function load() {
-      const response = await fetch("/api/admin/orders");
-      if (!response.ok) return;
-      const data = await response.json();
-      setOrders(data.orders);
+      setLoading(true);
+      setError("");
+      try {
+        const response = await fetch("/api/admin/orders");
+        if (!response.ok) {
+          setError("Failed to fetch orders. Please try again.");
+          return;
+        }
+        const data = await response.json();
+        setOrders(data.orders || []);
+      } catch (err) {
+        console.error(err);
+        setError("A network error occurred.");
+      } finally {
+        setLoading(false);
+      }
     }
 
     load();
@@ -33,7 +48,16 @@ export default function OrdersPage() {
     <div>
       <AdminTopbar title="Orders" subtitle="View customer and shipping details with expand/collapse." />
 
-      <div className="space-y-4">
+      {error ? (
+        <div className="mb-6 rounded-2xl border border-red-200 bg-red-50 p-5 text-red-700">
+          <p className="font-semibold text-sm">{error}</p>
+        </div>
+      ) : null}
+
+      {loading ? (
+        <TableSkeleton rows={5} />
+      ) : (
+        <div className="space-y-4">
         {orders.map((order) => (
           <article key={order._id} className="rounded-2xl border border-slate-200 bg-white p-5">
             <div className="flex flex-wrap items-center justify-between gap-3">
@@ -76,6 +100,7 @@ export default function OrdersPage() {
           </article>
         ))}
       </div>
+      )}
     </div>
   );
 }

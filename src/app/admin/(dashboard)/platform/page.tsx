@@ -3,6 +3,8 @@
 import { useEffect, useMemo, useState } from "react";
 
 import { AdminTopbar } from "@/components/admin/admin-topbar";
+import { TableSkeleton } from "@/components/admin/ui/skeleton";
+import { Spinner } from "@/components/admin/ui/loader";
 
 type StoreAdmin = {
   id: string;
@@ -30,20 +32,30 @@ export default function PlatformAdminPage() {
   const [selectedStoreId, setSelectedStoreId] = useState("");
   const [loading, setLoading] = useState(true);
   const [updatingId, setUpdatingId] = useState("");
+  const [error, setError] = useState("");
 
   async function loadStores() {
     setLoading(true);
-    const response = await fetch("/api/admin/platform/stores");
+    setError("");
+    try {
+      const response = await fetch("/api/admin/platform/stores");
 
-    if (response.ok) {
-      const data = await response.json();
-      setStores(data.stores || []);
-      if (!selectedStoreId && data.stores?.length) {
-        setSelectedStoreId(data.stores[0].id);
+      if (response.ok) {
+        const data = await response.json();
+        setStores(data.stores || []);
+        if (!selectedStoreId && data.stores?.length) {
+          setSelectedStoreId(data.stores[0].id);
+        }
+      } else {
+        const data = await response.json().catch(() => ({}));
+        setError(data.error || "Failed to load stores. Please check your connection.");
       }
+    } catch (err) {
+      console.error(err);
+      setError("A network error occurred. Please try again later.");
+    } finally {
+      setLoading(false);
     }
-
-    setLoading(false);
   }
 
   useEffect(() => {
@@ -60,20 +72,26 @@ export default function PlatformAdminPage() {
 
     const nextStatus = store.status === "active" ? "inactive" : "active";
 
-    const response = await fetch("/api/admin/platform/stores", {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ storeId: store.id, status: nextStatus }),
-    });
+    try {
+      const response = await fetch("/api/admin/platform/stores", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ storeId: store.id, status: nextStatus }),
+      });
 
-    setUpdatingId("");
+      if (!response.ok) {
+        const data = await response.json().catch(() => ({}));
+        alert(data.error || "Failed to update store status");
+        return;
+      }
 
-    if (!response.ok) {
-      alert("Failed to update store status");
-      return;
+      await loadStores();
+    } catch (err) {
+      console.error(err);
+      alert("A network error occurred while updating status.");
+    } finally {
+      setUpdatingId("");
     }
-
-    await loadStores();
   }
 
   return (
@@ -83,8 +101,21 @@ export default function PlatformAdminPage() {
         subtitle="Manage store activation and inspect store/admin account details."
       />
 
+      {error ? (
+        <div className="mb-6 rounded-2xl border border-red-200 bg-red-50 p-5 text-red-700">
+          <p className="font-semibold">Error Loading Stores</p>
+          <p className="text-sm">{error}</p>
+          <button 
+            onClick={() => loadStores()} 
+            className="mt-3 rounded-lg bg-red-600 px-4 py-1.5 text-xs font-bold text-white uppercase tracking-wider hover:bg-red-700"
+          >
+            Retry
+          </button>
+        </div>
+      ) : null}
+
       {loading ? (
-        <p className="text-slate-600">Loading stores...</p>
+        <TableSkeleton rows={5} />
       ) : (
         <>
           <div className="grid gap-4 md:grid-cols-3">
@@ -133,15 +164,21 @@ export default function PlatformAdminPage() {
                   <button
                     disabled={updatingId === selectedStore.id}
                     onClick={() => toggleStatus(selectedStore)}
-                    className={`rounded-xl px-4 py-2 text-sm font-semibold text-white disabled:opacity-60 ${
-                      selectedStore.status === "active" ? "bg-orange-600" : "bg-emerald-700"
+                    className={`relative flex h-6 w-11 items-center rounded-full transition-colors duration-200 focus:outline-hidden focus:ring-2 focus:ring-slate-400 focus:ring-offset-2 ${
+                      selectedStore.status === "active" ? "bg-slate-900" : "bg-slate-200"
                     }`}
                   >
-                    {updatingId === selectedStore.id
-                      ? "Updating..."
-                      : selectedStore.status === "active"
-                      ? "Set Inactive"
-                      : "Set Active"}
+                    {updatingId === selectedStore.id ? (
+                      <div className="flex w-full justify-center">
+                        <Spinner size={14} className={selectedStore.status === "active" ? "text-white" : "text-slate-900"} />
+                      </div>
+                    ) : (
+                      <span
+                        className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform duration-200 ${
+                          selectedStore.status === "active" ? "translate-x-6" : "translate-x-1"
+                        }`}
+                      />
+                    )}
                   </button>
                 </div>
 
@@ -216,8 +253,9 @@ export default function PlatformAdminPage() {
                       <button
                         disabled={updatingId === store.id}
                         onClick={() => toggleStatus(store)}
-                        className="text-sm font-semibold text-slate-700 underline"
+                        className="flex items-center gap-1.5 text-sm font-semibold text-slate-700 underline disabled:opacity-50"
                       >
+                        {updatingId === store.id && <Spinner size={12} />}
                         {store.status === "active" ? "Deactivate" : "Activate"}
                       </button>
                     </td>

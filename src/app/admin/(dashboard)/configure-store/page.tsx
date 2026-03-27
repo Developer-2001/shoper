@@ -5,6 +5,8 @@ import { FormEvent, useEffect, useMemo, useState } from "react";
 import { Plus, Sparkles, X } from "lucide-react";
 
 import { AdminTopbar } from "@/components/admin/admin-topbar";
+import { Skeleton } from "@/components/admin/ui/skeleton";
+import { Spinner } from "@/components/admin/ui/loader";
 import { AIEnhanceModal } from "@/components/admin/ai-enhance-modal";
 import {
   encodeStorageObjectPath,
@@ -42,6 +44,8 @@ export default function ConfigureStorePage() {
   const [pendingSliderFiles, setPendingSliderFiles] = useState<File[]>([]);
   const [pendingSliderReplacementFiles, setPendingSliderReplacementFiles] =
     useState<Record<number, File>>({});
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
   const [isAIEnhanceModalOpen, setIsAIEnhanceModalOpen] = useState(false);
   const [aiEnhanceSource, setAiEnhanceSource] = useState("");
   const [aiEnhanceTarget, setAiEnhanceTarget] = useState<"hero" | "slider">(
@@ -52,37 +56,49 @@ export default function ConfigureStorePage() {
 
   useEffect(() => {
     async function load() {
-      const response = await fetch("/api/admin/store");
-      if (!response.ok) return;
-      const data = await response.json();
-      const store = data.store;
+      setLoading(true);
+      setError("");
+      try {
+        const response = await fetch("/api/admin/store");
+        if (!response.ok) {
+          setError("Failed to load store configuration.");
+          return;
+        }
+        const data = await response.json();
+        const store = data.store;
 
-      setForm({
-        companyName: store.businessName || "",
-        logoText: store.logoText || "",
-        about: store.about || "",
-        address: store.address || "",
-        contactEmail: store.contactEmail || "",
-        contactPhone: store.contactPhone || "",
-        instagram: store.socialLinks?.instagram || "",
-        facebook: store.socialLinks?.facebook || "",
-        x: store.socialLinks?.x || "",
-        youtube: store.socialLinks?.youtube || "",
-        themeLayout: store.theme?.layout || "theme1",
-        primary: store.theme?.primary || "#0f172a",
-        accent: store.theme?.accent || "#14b8a6",
-        heroImage: store.theme?.heroImage || "",
-        sliderImages: (store.theme?.sliderImages || []).slice(
-          0,
-          MAX_SLIDER_IMAGES,
-        ),
-        footerLinks: (store.footerLinks || [])
-          .map(
-            (item: { label: string; href: string }) =>
-              `${item.label}|${item.href}`,
-          )
-          .join(","),
-      });
+        setForm({
+          companyName: store.businessName || "",
+          logoText: store.logoText || "",
+          about: store.about || "",
+          address: store.address || "",
+          contactEmail: store.contactEmail || "",
+          contactPhone: store.contactPhone || "",
+          instagram: store.socialLinks?.instagram || "",
+          facebook: store.socialLinks?.facebook || "",
+          x: store.socialLinks?.x || "",
+          youtube: store.socialLinks?.youtube || "",
+          themeLayout: store.theme?.layout || "theme1",
+          primary: store.theme?.primary || "#0f172a",
+          accent: store.theme?.accent || "#14b8a6",
+          heroImage: store.theme?.heroImage || "",
+          sliderImages: (store.theme?.sliderImages || []).slice(
+            0,
+            MAX_SLIDER_IMAGES,
+          ),
+          footerLinks: (store.footerLinks || [])
+            .map(
+              (item: { label: string; href: string }) =>
+                `${item.label}|${item.href}`,
+            )
+            .join(","),
+        });
+      } catch (err) {
+        console.error(err);
+        setError("A network error occurred while loading store config.");
+      } finally {
+        setLoading(false);
+      }
     }
 
     load();
@@ -137,21 +153,27 @@ export default function ConfigureStorePage() {
     formData.append("file", file);
     formData.append("folder", folder);
 
-    const response = await fetch("/api/storage", {
-      method: "POST",
-      body: formData,
-    });
+    try {
+      const response = await fetch("/api/storage", {
+        method: "POST",
+        body: formData,
+      });
 
-    if (!response.ok) {
-      const data = await response
-        .json()
-        .catch(() => ({ error: "Upload failed" }));
-      alert(data.error || "Upload failed");
+      if (!response.ok) {
+        const data = await response
+          .json()
+          .catch(() => ({ error: "Upload failed" }));
+        alert(data.error || "Upload failed");
+        return null;
+      }
+
+      const data = await response.json();
+      return data?.file?.url || null;
+    } catch (err) {
+      console.error(err);
+      alert("Network error during upload.");
       return null;
     }
-
-    const data = await response.json();
-    return data?.file?.url || null;
   }
 
   async function replaceExistingMedia(
@@ -171,20 +193,26 @@ export default function ConfigureStorePage() {
     const path = extractStorageObjectPath(url);
     if (!path) return true;
 
-    const encodedPath = encodeStorageObjectPath(path);
-    const response = await fetch(`/api/storage/${encodedPath}`, {
-      method: "DELETE",
-    });
+    try {
+      const encodedPath = encodeStorageObjectPath(path);
+      const response = await fetch(`/api/storage/${encodedPath}`, {
+        method: "DELETE",
+      });
 
-    if (!response.ok) {
-      const data = await response
-        .json()
-        .catch(() => ({ error: "Delete failed" }));
-      console.log(data.error || "Delete failed");
+      if (!response.ok) {
+        const data = await response
+          .json()
+          .catch(() => ({ error: "Delete failed" }));
+        alert(data.error || "Media deletion failed.");
+        return false;
+      }
+
+      return true;
+    } catch (err) {
+      console.error(err);
+      alert("Network error during media deletion.");
       return false;
     }
-
-    return true;
   }
 
   async function removeHeroImage() {
@@ -357,29 +385,34 @@ export default function ConfigureStorePage() {
         }),
     };
 
-    const response = await fetch("/api/admin/store", {
-      method: "PUT",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload),
-    });
+    try {
+      const response = await fetch("/api/admin/store", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
 
-    setSaving(false);
+      if (!response.ok) {
+        alert("Failed to save store config");
+        return;
+      }
 
-    if (!response.ok) {
-      alert("Failed to save store config");
-      return;
+      setForm((prev) => ({
+        ...prev,
+        heroImage,
+        sliderImages,
+      }));
+      setPendingHeroFile(null);
+      setPendingSliderFiles([]);
+      setPendingSliderReplacementFiles({});
+
+      alert("Store config saved");
+    } catch (err) {
+      console.error(err);
+      alert("Network error while saving configuration.");
+    } finally {
+      setSaving(false);
     }
-
-    setForm((prev) => ({
-      ...prev,
-      heroImage,
-      sliderImages,
-    }));
-    setPendingHeroFile(null);
-    setPendingSliderFiles([]);
-    setPendingSliderReplacementFiles({});
-
-    alert("Store config saved");
   }
 
   return (
@@ -389,10 +422,29 @@ export default function ConfigureStorePage() {
         subtitle="Control branding, footer, contacts, and uploaded store media."
       />
 
-      <form
-        onSubmit={handleSubmit}
-        className="rounded-2xl border border-slate-200 bg-white p-5"
-      >
+      {error ? (
+        <div className="mb-6 rounded-2xl border border-red-200 bg-red-50 p-5 text-red-700">
+          <p className="font-semibold">{error}</p>
+        </div>
+      ) : loading ? (
+        <div className="space-y-6">
+          <Skeleton className="h-10 w-48 rounded-xl" />
+          <div className="grid gap-6 md:grid-cols-2">
+            <Skeleton className="h-12 rounded-xl" />
+            <Skeleton className="h-12 rounded-xl" />
+            <Skeleton className="h-12 rounded-xl" />
+            <Skeleton className="h-12 rounded-xl" />
+            <Skeleton className="h-12 rounded-xl" />
+            <Skeleton className="h-12 rounded-xl" />
+            <Skeleton className="h-64 rounded-2xl md:col-span-2" />
+            <Skeleton className="h-96 rounded-2xl md:col-span-2" />
+          </div>
+        </div>
+      ) : (
+        <form
+          onSubmit={handleSubmit}
+          className="rounded-2xl border border-slate-200 bg-white p-5"
+        >
         <div className="mb-4 grid gap-3 md:max-w-xs">
           <label
             className="text-sm font-semibold text-slate-700"
@@ -951,12 +1003,15 @@ export default function ConfigureStorePage() {
         </div>
 
         <button
+          type="submit"
           disabled={saving}
-          className="mt-4 rounded-xl bg-slate-900 px-5 py-2 font-semibold text-white disabled:opacity-50"
+          className="flex items-center justify-center gap-2 rounded-xl bg-slate-900 py-3 font-semibold text-white disabled:opacity-50"
         >
-          {saving ? "Saving..." : "Save configuration"}
+          {saving && <Spinner size={16} className="text-white" />}
+          {saving ? "Saving Changes..." : "Save Configuration"}
         </button>
       </form>
+    )}
 
       <AIEnhanceModal
         isOpen={isAIEnhanceModalOpen}

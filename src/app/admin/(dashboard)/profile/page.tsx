@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 
 import { AdminTopbar } from "@/components/admin/admin-topbar";
+import { Skeleton } from "@/components/admin/ui/skeleton";
 
 export default function ProfilePage() {
   const [profile, setProfile] = useState<{
@@ -12,20 +13,30 @@ export default function ProfilePage() {
     businessName: string;
     slug: string;
   } | null>(null);
+  const [error, setError] = useState("");
 
   useEffect(() => {
     async function load() {
-      const response = await fetch("/api/auth/me");
-      if (!response.ok) return;
-      const data = await response.json();
+      setError("");
+      try {
+        const response = await fetch("/api/auth/me");
+        if (!response.ok) {
+          setError("Failed to load profile. Please sign in again.");
+          return;
+        }
+        const data = await response.json();
 
-      setProfile({
-        ownerName: data.admin.ownerName,
-        email: data.admin.email,
-        mobile: data.admin.mobile,
-        businessName: data.store.businessName,
-        slug: data.store.slug,
-      });
+        setProfile({
+          ownerName: data.admin.ownerName,
+          email: data.admin.email,
+          mobile: data.admin.mobile,
+          businessName: data.store.businessName,
+          slug: data.store.slug,
+        });
+      } catch (err) {
+        console.error(err);
+        setError("A network error occurred.");
+      }
     }
 
     load();
@@ -35,8 +46,18 @@ export default function ProfilePage() {
     <div>
       <AdminTopbar title="Profile" subtitle="Your account and store identity." />
 
-      {!profile ? (
-        <p className="text-slate-600">Loading profile...</p>
+      {error ? (
+        <div className="rounded-2xl border border-red-200 bg-red-50 p-5 text-red-700">
+          <p className="font-semibold">{error}</p>
+        </div>
+      ) : !profile ? (
+        <div className="rounded-2xl border border-slate-200 bg-white p-6 space-y-4">
+          <Skeleton className="h-6 w-1/3" />
+          <Skeleton className="h-6 w-1/2" />
+          <Skeleton className="h-6 w-1/4" />
+          <Skeleton className="h-6 w-1/3" />
+          <Skeleton className="h-6 w-1/2" />
+        </div>
       ) : (
         <div className="rounded-2xl border border-slate-200 bg-white p-6">
           <p>

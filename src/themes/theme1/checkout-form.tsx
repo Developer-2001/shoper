@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { Spinner } from "@/components/admin/ui/loader";
 
 import { clearSlugCart } from "@/store/slices/cartSlice";
 import { useAppDispatch, useAppSelector } from "@/hooks/useRedux";
@@ -26,32 +27,38 @@ export function Theme1CheckoutForm({ slug }: Theme1CheckoutFormProps) {
     state: "",
     postalCode: "",
   });
+  const [error, setError] = useState("");
 
   const total = items.reduce((sum, item) => sum + item.price * item.quantity, 0);
 
   async function handleSubmit(event: React.FormEvent) {
     event.preventDefault();
     setLoading(true);
+    try {
+      const response = await fetch(`/api/store/${slug}/orders`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          ...form,
+          items: items.map((item) => ({ productId: item.productId, quantity: item.quantity })),
+        }),
+      });
 
-    const response = await fetch(`/api/store/${slug}/orders`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        ...form,
-        items: items.map((item) => ({ productId: item.productId, quantity: item.quantity })),
-      }),
-    });
+      if (!response.ok) {
+        const data = await response.json().catch(() => ({}));
+        setError(data.error || "Failed to place order. Please check your details.");
+        return;
+      }
 
-    setLoading(false);
-
-    if (!response.ok) {
-      alert("Failed to place order");
-      return;
+      dispatch(clearSlugCart({ slug }));
+      alert("Order confirmed successfully");
+      router.push(`/${slug}`);
+    } catch (err) {
+      console.error(err);
+      setError("A network error occurred while placing your order.");
+    } finally {
+      setLoading(false);
     }
-
-    dispatch(clearSlugCart({ slug }));
-    alert("Order confirmed successfully");
-    router.push(`/${slug}`);
   }
 
   if (!items.length) {
@@ -83,7 +90,14 @@ export function Theme1CheckoutForm({ slug }: Theme1CheckoutFormProps) {
         <h3 className="text-lg font-bold text-slate-900">Summary</h3>
         <p className="mt-3 text-slate-600">Items: {items.length}</p>
         <p className="text-xl font-bold text-slate-900">{formatMoney(total, items[0].currency)}</p>
-        <button disabled={loading} className="mt-4 w-full rounded-xl bg-slate-900 py-3 font-semibold text-white disabled:opacity-50">
+        
+        {error ? <p className="mt-3 text-sm font-semibold text-red-600">{error}</p> : null}
+
+        <button 
+          disabled={loading} 
+          className="flex items-center justify-center gap-2 mt-4 w-full rounded-xl bg-slate-900 py-3 font-semibold text-white disabled:opacity-50"
+        >
+          {loading && <Spinner size={16} className="text-white" />}
           {loading ? "Placing order..." : "Buy now"}
         </button>
       </section>

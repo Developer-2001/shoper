@@ -4,6 +4,7 @@ import { FormEvent, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { currencyOptions } from "@/utils/currency";
+import { Spinner } from "@/components/admin/ui/loader";
 
 const themeOptions = [
   { value: "theme1", label: "Theme 1 (Default)" },
@@ -28,23 +29,26 @@ export default function AdminRegisterPage() {
   async function handleSubmit(event: FormEvent) {
     event.preventDefault();
     setLoading(true);
-    setError("");
+    try {
+      const response = await fetch("/api/auth/register", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(form),
+      });
 
-    const response = await fetch("/api/auth/register", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(form),
-    });
+      if (!response.ok) {
+        const data = await response.json().catch(() => ({}));
+        setError(data.error || "Registration failed. Try a different slug or email.");
+        return;
+      }
 
-    setLoading(false);
-
-    if (!response.ok) {
-      const data = await response.json();
-      setError(data.error || "Registration failed");
-      return;
+      router.push("/admin/home");
+    } catch (err) {
+      console.error(err);
+      setError("A network error occurred. Please try again.");
+    } finally {
+      setLoading(false);
     }
-
-    router.push("/admin/home");
   }
 
   return (
@@ -155,9 +159,10 @@ export default function AdminRegisterPage() {
 
         <button
           disabled={loading}
-          className="mt-6 w-full rounded-xl bg-slate-900 py-3 font-semibold text-white disabled:opacity-50"
+          className="flex items-center justify-center gap-2 mt-6 w-full rounded-xl bg-slate-900 py-3 font-semibold text-white disabled:opacity-50"
         >
-          {loading ? "Creating..." : "Create store"}
+          {loading && <Spinner size={16} className="text-white" />}
+          {loading ? "Creating Store..." : "Create Store"}
         </button>
 
         <p className="mt-4 text-sm text-slate-600">
