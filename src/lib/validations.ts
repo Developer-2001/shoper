@@ -50,36 +50,9 @@ export const storeConfigSchema = z.object({
   theme: z
     .object({
       layout: z.enum(THEME_LAYOUTS).default(DEFAULT_THEME_LAYOUT),
-      primary: z.string().default("#0f172a"),
-      accent: z.string().default("#14b8a6"),
-      heroImage: z.string().url().or(z.literal("")).default(""),
-      sliderImages: z.array(z.string().url()).default([]),
-      theme3: z
-        .object({
-          announcementText: z.string().default("Free Shipping On Orders Over $200"),
-          collectionLabels: z.array(z.string().min(1)).default([]),
-          collectionLabelImages: z.array(z.string().url()).default([]),
-          featuredHeading: z.string().default("Sparkling New Pieces"),
-        })
-        .default({
-          announcementText: "Free Shipping On Orders Over $200",
-          collectionLabels: ["Rings", "Bracelets", "Necklaces", "Earrings", "Pendants", "Bangles"],
-          collectionLabelImages: [],
-          featuredHeading: "Sparkling New Pieces",
-        }),
     })
     .default({
       layout: DEFAULT_THEME_LAYOUT,
-      primary: "#0f172a",
-      accent: "#14b8a6",
-      heroImage: "",
-      sliderImages: [],
-      theme3: {
-        announcementText: "Free Shipping On Orders Over $200",
-        collectionLabels: ["Rings", "Bracelets", "Necklaces", "Earrings", "Pendants", "Bangles"],
-        collectionLabelImages: [],
-        featuredHeading: "Sparkling New Pieces",
-      },
     }),
   footerLinks: z
     .array(

@@ -7,28 +7,35 @@ import { useCartStorage } from "@/hooks/useCartStorage";
 import { Theme1ProductCard } from "@/themes/theme1/product-card";
 import { Theme1Navbar } from "@/themes/theme1/navbar";
 import { Theme1Footer } from "@/themes/theme1/footer";
+import {
+  SHARED_THEME_IMAGE_URL,
+  SHARED_THEME_MEDIA_LIST,
+  THEME1_PRIMARY_COLOR,
+} from "@/themes/theme-defaults";
 import type { ThemeHomeProps } from "@/themes/types";
 import { isVideoUrl } from "@/utils/media";
 
 export function Theme1Home({ slug, store, products }: ThemeHomeProps) {
   useCartStorage();
+  const heroImage = SHARED_THEME_IMAGE_URL;
+  const sliderImages = SHARED_THEME_MEDIA_LIST;
 
   return (
     <div className="min-h-screen bg-slate-50">
       <Theme1Navbar logoText={store.logoText || store.businessName} slug={slug} />
 
-      <section className="relative overflow-hidden" style={{ backgroundColor: `${store.theme.primary}10` }}>
+      <section className="relative overflow-hidden" style={{ backgroundColor: `${THEME1_PRIMARY_COLOR}10` }}>
         <div className="mx-auto grid w-full max-w-7xl gap-6 px-6 pb-10 pt-12 lg:grid-cols-2 lg:items-center">
           <div>
             <h1 className="text-5xl font-black leading-tight text-slate-900">{store.businessName}</h1>
             <p className="mt-4 text-lg text-slate-700">{store.about || "Discover our latest collections."}</p>
           </div>
-          {store.theme.heroImage ? (
-            isVideoUrl(store.theme.heroImage) ? (
-              <video src={store.theme.heroImage} className="h-80 w-full rounded-3xl object-cover" controls autoPlay muted />
+          {heroImage ? (
+            isVideoUrl(heroImage) ? (
+              <video src={heroImage} className="h-80 w-full rounded-3xl object-cover" controls autoPlay muted />
             ) : (
               <Image
-                src={store.theme.heroImage}
+                src={heroImage}
                 alt={store.businessName}
                 className="h-80 w-full rounded-3xl object-cover"
                 width={1200}
@@ -41,9 +48,9 @@ export function Theme1Home({ slug, store, products }: ThemeHomeProps) {
           )}
         </div>
 
-        {store.theme.sliderImages?.length ? (
+        {sliderImages.length ? (
           <div className="mx-auto grid w-full max-w-7xl gap-4 px-6 pb-10 md:grid-cols-3">
-            {store.theme.sliderImages.slice(0, 3).map((media, index) =>
+            {sliderImages.slice(0, 3).map((media, index) =>
               isVideoUrl(media) ? (
                 <video key={`${slug}-${index}`} src={media} className="h-44 w-full rounded-2xl object-cover" controls muted />
               ) : (

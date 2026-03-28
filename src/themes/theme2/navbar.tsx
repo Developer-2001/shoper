@@ -4,14 +4,14 @@ import Link from "next/link";
 import { ShoppingBag } from "lucide-react";
 
 import { useAppSelector } from "@/hooks/useRedux";
+import { THEME2_ACCENT_COLOR } from "@/themes/theme-defaults";
 
 type Theme2NavbarProps = {
   slug: string;
   logoText: string;
-  accent: string;
 };
 
-export function Theme2Navbar({ slug, logoText, accent }: Theme2NavbarProps) {
+export function Theme2Navbar({ slug, logoText }: Theme2NavbarProps) {
   const cartCount = useAppSelector((state) =>
     state.cart.items
       .filter((item) => item.slug === slug)
@@ -38,7 +38,7 @@ export function Theme2Navbar({ slug, logoText, accent }: Theme2NavbarProps) {
           href={`/${slug}/cart`}
           aria-label="Cart"
           className="relative inline-flex h-11 w-11 items-center justify-center rounded-full text-white shadow"
-          style={{ backgroundColor: accent || "#d97706" }}
+          style={{ backgroundColor: THEME2_ACCENT_COLOR }}
         >
           <ShoppingBag size={18} />
           {cartCount > 0 ? (

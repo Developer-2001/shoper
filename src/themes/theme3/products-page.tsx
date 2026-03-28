@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react";
 
 import { useCartStorage } from "@/hooks/useCartStorage";
+import { THEME3_ANNOUNCEMENT_TEXT } from "@/themes/theme-defaults";
 import { Theme3Navbar } from "@/themes/theme3/navbar";
 import { Theme3Footer } from "@/themes/theme3/footer";
 import { Theme3ProductCard } from "@/themes/theme3/product-card";
@@ -44,7 +45,7 @@ export function Theme3ProductsPage({ slug, store, products }: ThemeProductsProps
   return (
     <div className="min-h-screen bg-[#fff2f5] text-rose-950">
       <div className="mx-auto w-full max-w-3xl rounded-b-[28px] bg-[#cc5639] px-6 py-2 text-center text-sm font-semibold text-white">
-        {store.theme.theme3?.announcementText || "Free Shipping On Orders Over $200"}
+        {THEME3_ANNOUNCEMENT_TEXT}
       </div>
       <Theme3Navbar slug={slug} logoText={store.logoText || store.businessName} />
 
@@ -103,3 +104,4 @@ export function Theme3ProductsPage({ slug, store, products }: ThemeProductsProps
     </div>
   );
 }
+

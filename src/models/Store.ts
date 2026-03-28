@@ -30,16 +30,6 @@ export type StoreDocument = {
   };
   theme: {
     layout: ThemeLayout;
-    primary: string;
-    accent: string;
-    heroImage: string;
-    sliderImages: string[];
-    theme3?: {
-      announcementText: string;
-      collectionLabels: string[];
-      collectionLabelImages: string[];
-      featuredHeading: string;
-    };
   };
   footerLinks: { label: string; href: string }[];
 };
@@ -74,25 +64,6 @@ const StoreSchema = new Schema<StoreDocument>(
         type: String,
         enum: THEME_LAYOUTS,
         default: DEFAULT_THEME_LAYOUT,
-      },
-      primary: { type: String, default: "#0f172a" },
-      accent: { type: String, default: "#14b8a6" },
-      heroImage: {
-        type: String,
-        default: "",
-      },
-      sliderImages: { type: [String], default: [] },
-      theme3: {
-        announcementText: { type: String, default: "Free Shipping On Orders Over $200" },
-        collectionLabels: {
-          type: [String],
-          default: ["Rings", "Bracelets", "Necklaces", "Earrings", "Pendants", "Bangles"],
-        },
-        collectionLabelImages: {
-          type: [String],
-          default: [],
-        },
-        featuredHeading: { type: String, default: "Sparkling New Pieces" },
       },
     },
     footerLinks: {

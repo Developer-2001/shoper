@@ -6,6 +6,13 @@ import { MoveLeft, MoveRight } from "lucide-react";
 import { useMemo, useState } from "react";
 
 import { useCartStorage } from "@/hooks/useCartStorage";
+import {
+  SHARED_THEME_IMAGE_URL,
+  SHARED_THEME_MEDIA_LIST,
+  THEME3_ANNOUNCEMENT_TEXT,
+  THEME3_COLLECTION_LABELS,
+  THEME3_FEATURED_HEADING,
+} from "@/themes/theme-defaults";
 import { Theme3Navbar } from "@/themes/theme3/navbar";
 import { Theme3Footer } from "@/themes/theme3/footer";
 import { Theme3ProductCard } from "@/themes/theme3/product-card";
@@ -13,40 +20,26 @@ import { toCollectionSlug } from "@/themes/theme3/collection-utils";
 import type { ThemeHomeProps } from "@/themes/types";
 import { isVideoUrl } from "@/utils/media";
 
-const FALLBACK_COLLECTIONS = [
-  "Rings",
-  "Bracelets",
-  "Necklaces",
-  "Earrings",
-  "Anklet",
-  "Pearls",
-  "Pendants",
-  "Bangles",
-];
 const MAX_COLLECTION_CARDS = 8;
 
 export function Theme3Home({ slug, store, products }: ThemeHomeProps) {
   useCartStorage();
 
-  const sliderMedia = store.theme.sliderImages || [];
+  const sliderMedia = SHARED_THEME_MEDIA_LIST;
   const [activeSlide, setActiveSlide] = useState(0);
 
-  const collections = useMemo(
-    () => (store.theme.theme3?.collectionLabels?.length ? store.theme.theme3.collectionLabels : FALLBACK_COLLECTIONS),
-    [store.theme.theme3?.collectionLabels],
-  );
-  const collectionImages = useMemo(
-    () => store.theme.theme3?.collectionLabelImages || [],
-    [store.theme.theme3?.collectionLabelImages],
-  );
+  const collections = THEME3_COLLECTION_LABELS;
+  const collectionImages = useMemo(() => {
+    return Array.from({ length: MAX_COLLECTION_CARDS }, () => SHARED_THEME_IMAGE_URL);
+  }, []);
   const collectionTiles = useMemo(() => {
     const size = Math.min(
       MAX_COLLECTION_CARDS,
-      Math.max(collections.length, collectionImages.length, FALLBACK_COLLECTIONS.length),
+      Math.max(collections.length, collectionImages.length, THEME3_COLLECTION_LABELS.length),
     );
 
     return Array.from({ length: size }, (_, index) => ({
-      label: collections[index] || FALLBACK_COLLECTIONS[index] || `Collection ${index + 1}`,
+      label: collections[index] || THEME3_COLLECTION_LABELS[index] || `Collection ${index + 1}`,
       imageUrl: collectionImages[index] || "",
     }));
   }, [collections, collectionImages]);
@@ -62,7 +55,7 @@ export function Theme3Home({ slug, store, products }: ThemeHomeProps) {
 
   const activeMedia = sliderMedia[activeSlide] || "";
   const featuredProducts = products.slice(0, 4);
-  const announcementText = store.theme.theme3?.announcementText || "Free Shipping On Orders Over $200";
+  const announcementText = THEME3_ANNOUNCEMENT_TEXT;
 
   function goPrev() {
     if (!sliderMedia.length) return;
@@ -172,7 +165,7 @@ export function Theme3Home({ slug, store, products }: ThemeHomeProps) {
         <div className="text-center">
           <span className="rounded-full bg-[#cc5639] px-4 py-1 text-xs font-bold uppercase tracking-wider text-white">Just Dropped</span>
           <h2 className="mt-4 text-4xl font-semibold text-rose-950">
-            {store.theme.theme3?.featuredHeading || "Sparkling New Pieces"}
+            {THEME3_FEATURED_HEADING}
           </h2>
         </div>
 

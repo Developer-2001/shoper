@@ -27,16 +27,6 @@ function normalizeStoreTheme<T extends { store: ThemeHomeProps["store"] }>(props
 
   props.store.theme = {
     layout,
-    primary: props.store.theme?.primary || "#0f172a",
-    accent: props.store.theme?.accent || "#14b8a6",
-    heroImage: props.store.theme?.heroImage || "",
-    sliderImages: props.store.theme?.sliderImages || [],
-    theme3: {
-      announcementText: props.store.theme?.theme3?.announcementText || "Free Shipping On Orders Over $200",
-      collectionLabels: props.store.theme?.theme3?.collectionLabels || ["Rings", "Bracelets", "Necklaces", "Earrings", "Pendants", "Bangles"],
-      collectionLabelImages: props.store.theme?.theme3?.collectionLabelImages || [],
-      featuredHeading: props.store.theme?.theme3?.featuredHeading || "Sparkling New Pieces",
-    },
   };
 
   return { ...props, layout };

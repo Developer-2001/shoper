@@ -11,7 +11,7 @@ export function Theme2CartPage({ slug, store }: ThemeCartProps) {
 
   return (
     <div className="min-h-screen bg-[linear-gradient(180deg,#fff8e7_0%,#fff 45%)] text-amber-950">
-      <Theme2Navbar slug={slug} logoText={store.logoText || store.businessName} accent={store.theme.accent} />
+      <Theme2Navbar slug={slug} logoText={store.logoText || store.businessName} />
 
       <main className="mx-auto w-full max-w-7xl px-6 py-10">
         <h1 className="text-4xl font-black uppercase">Your Cart</h1>

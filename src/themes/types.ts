@@ -17,16 +17,6 @@ export type StorefrontStore = {
   footerLinks: { label: string; href: string }[];
   theme: {
     layout?: ThemeLayout | string;
-    primary: string;
-    accent: string;
-    heroImage: string;
-    sliderImages: string[];
-    theme3?: {
-      announcementText: string;
-      collectionLabels: string[];
-      collectionLabelImages: string[];
-      featuredHeading: string;
-    };
   };
 };
 

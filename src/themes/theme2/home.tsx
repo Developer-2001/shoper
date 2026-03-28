@@ -7,6 +7,7 @@ import { useCartStorage } from "@/hooks/useCartStorage";
 import { Theme2Navbar } from "@/themes/theme2/navbar";
 import { Theme2Footer } from "@/themes/theme2/footer";
 import { Theme2ProductCard } from "@/themes/theme2/product-card";
+import { SHARED_THEME_IMAGE_URL, SHARED_THEME_MEDIA_LIST } from "@/themes/theme-defaults";
 import type { ThemeHomeProps } from "@/themes/types";
 import { isVideoUrl } from "@/utils/media";
 
@@ -14,10 +15,12 @@ export function Theme2Home({ slug, store, products }: ThemeHomeProps) {
   useCartStorage();
 
   const featuredProducts = products.slice(0, 6);
+  const heroImage = SHARED_THEME_IMAGE_URL;
+  const sliderImages = SHARED_THEME_MEDIA_LIST;
 
   return (
     <div className="min-h-screen bg-[radial-gradient(circle_at_top,#fff3d6_0%,#fff8e7_40%,#fff_100%)] text-amber-950">
-      <Theme2Navbar slug={slug} logoText={store.logoText || store.businessName} accent={store.theme.accent} />
+      <Theme2Navbar slug={slug} logoText={store.logoText || store.businessName} />
 
       <section className="mx-auto grid w-full max-w-7xl gap-8 px-6 pb-10 pt-10 lg:grid-cols-[1.15fr_1fr] lg:items-center">
         <div>
@@ -45,10 +48,10 @@ export function Theme2Home({ slug, store, products }: ThemeHomeProps) {
           </div>
         </div>
 
-        {store.theme.heroImage ? (
-          isVideoUrl(store.theme.heroImage) ? (
+        {heroImage ? (
+          isVideoUrl(heroImage) ? (
             <video
-              src={store.theme.heroImage}
+              src={heroImage}
               className="h-105 w-full rounded-4xl border border-amber-200 object-cover shadow-[0_40px_80px_-60px_rgba(146,64,14,0.9)]"
               controls
               autoPlay
@@ -56,7 +59,7 @@ export function Theme2Home({ slug, store, products }: ThemeHomeProps) {
             />
           ) : (
             <Image
-              src={store.theme.heroImage}
+              src={heroImage}
               alt={store.businessName}
               width={1200}
               height={900}
@@ -69,10 +72,10 @@ export function Theme2Home({ slug, store, products }: ThemeHomeProps) {
         )}
       </section>
 
-      {store.theme.sliderImages?.length ? (
+      {sliderImages.length ? (
         <section className="mx-auto w-full max-w-7xl px-6">
           <div className="flex snap-x gap-4 overflow-x-auto pb-2">
-            {store.theme.sliderImages.map((media, index) =>
+            {sliderImages.map((media, index) =>
               isVideoUrl(media) ? (
                 <video
                   key={`${slug}-theme2-${index}`}

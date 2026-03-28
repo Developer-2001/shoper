@@ -4,6 +4,10 @@ import Image from "next/image";
 import Link from "next/link";
 
 import { useCartStorage } from "@/hooks/useCartStorage";
+import {
+  SHARED_THEME_IMAGE_URL,
+  THEME3_ANNOUNCEMENT_TEXT,
+} from "@/themes/theme-defaults";
 import { Theme3Footer } from "@/themes/theme3/footer";
 import { Theme3Navbar } from "@/themes/theme3/navbar";
 import { toCollectionSlug } from "@/themes/theme3/collection-utils";
@@ -43,12 +47,12 @@ export function Theme3CollectionsPage({ slug, store, products }: ThemeHomeProps)
   const collections = Array.from(collectionMap.values()).sort((a, b) =>
     a.label.localeCompare(b.label),
   );
-  const bannerMedia = store.theme.sliderImages?.[0] || "";
+  const bannerMedia = SHARED_THEME_IMAGE_URL;
 
   return (
     <div className="min-h-screen bg-[#fae9e6] text-rose-950">
       <div className="mx-auto w-full max-w-3xl rounded-b-[28px] bg-[#cc5639] px-6 py-2 text-center text-sm font-semibold text-white">
-        {store.theme.theme3?.announcementText || "Free Shipping On Orders Over $200"}
+        {THEME3_ANNOUNCEMENT_TEXT}
       </div>
 
       <Theme3Navbar slug={slug} logoText={store.logoText || store.businessName} />

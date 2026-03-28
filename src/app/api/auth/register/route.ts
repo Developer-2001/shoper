@@ -48,16 +48,6 @@ export async function POST(request: Request) {
     ],
     theme: {
       layout: themeLayout,
-      primary: "#0f172a",
-      accent: "#14b8a6",
-      heroImage: "",
-      sliderImages: [],
-      theme3: {
-        announcementText: "Free Shipping On Orders Over $200",
-        collectionLabels: ["Rings", "Bracelets", "Necklaces", "Earrings", "Pendants", "Bangles"],
-        collectionLabelImages: [],
-        featuredHeading: "Sparkling New Pieces",
-      },
     },
   });
 
