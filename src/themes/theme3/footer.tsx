@@ -1,11 +1,5 @@
 import Link from "next/link";
-import {
-  ArrowUp,
-  Facebook,
-  Instagram,
-  Music2,
-  Youtube,
-} from "lucide-react";
+import { Facebook, Instagram, MoveUp, Music2, Youtube } from "lucide-react";
 
 type Theme3FooterProps = {
   slug: string;
@@ -58,7 +52,8 @@ export function Theme3Footer({
               About
             </h3>
             <p className="mt-6 text-[17px] leading-10 text-[#f3dfd8]">
-              {about || `At ${companyName}, we believe jewellery is more than an accessory.`}
+              {about ||
+                `At ${companyName}, we believe jewellery is more than an accessory.`}
             </p>
           </section>
 
@@ -69,7 +64,10 @@ export function Theme3Footer({
             <ul className="mt-6 space-y-4 text-[17px] text-[#f3dfd8]">
               {shopLinks.map((item) => (
                 <li key={item.label}>
-                  <Link href={item.href} className="transition hover:text-white">
+                  <Link
+                    href={item.href}
+                    className="transition hover:text-white"
+                  >
                     {item.label}
                   </Link>
                 </li>
@@ -84,7 +82,10 @@ export function Theme3Footer({
             <ul className="mt-6 space-y-4 text-[17px] text-[#f3dfd8]">
               {companyLinks.slice(0, 4).map((item) => (
                 <li key={`${item.label}-${item.href}`}>
-                  <Link href={item.href} className="transition hover:text-white">
+                  <Link
+                    href={item.href}
+                    className="transition hover:text-white"
+                  >
                     {item.label}
                   </Link>
                 </li>
@@ -127,32 +128,32 @@ export function Theme3Footer({
               aria-label="Facebook"
               className="rounded-full p-1.5 text-[#f3dfd8] transition hover:text-white"
             >
-              <Facebook size={34} />
+              <Facebook size={28} />
             </Link>
             <Link
               href={socialLinks?.instagram || `/${slug}`}
               aria-label="Instagram"
               className="rounded-full p-1.5 text-[#f3dfd8] transition hover:text-white"
             >
-              <Instagram size={34} />
+              <Instagram size={28} />
             </Link>
             <Link
               href={socialLinks?.youtube || `/${slug}`}
               aria-label="Youtube"
               className="rounded-full p-1.5 text-[#f3dfd8] transition hover:text-white"
             >
-              <Youtube size={34} />
+              <Youtube size={28} />
             </Link>
             <Link
               href={socialLinks?.x || `/${slug}`}
               aria-label="TikTok"
               className="rounded-full p-1.5 text-[#f3dfd8] transition hover:text-white"
             >
-              <Music2 size={34} />
+              <Music2 size={28} />
             </Link>
           </div>
           <div className="text-center text-7xl tracking-widest text-white font-[Georgia,serif]">
-            {companyName || "LUMEA"}
+            {companyName}
           </div>
           <div className="flex flex-wrap items-center justify-start gap-3 md:justify-end">
             {["VISA", "MC", "AMEX", "PAYPAL", "DINERS", "DISC"].map((item) => (
@@ -168,15 +169,18 @@ export function Theme3Footer({
 
         <div className="mx-auto h-10 w-[80%] rounded-t-[40px] bg-[#e8dad4]" />
       </div>
-
       <div className="relative mx-auto -mt-0.5 flex w-full flex-col gap-4 rounded-b-2xl bg-[#e8dad4] px-3 pb-6 pt-4 text-[#3f2019] md:flex-row md:items-center md:justify-between md:px-6">
+        {/* to top */}
         <button
           type="button"
           onClick={scrollToTop}
-          className="absolute -top-10 left-3 grid w-14 h-14 cursor-pointer hover:h-16 place-items-center rounded-full bg-[#d26043] text-white transition hover:bg-[#bc5338]"
+          className="group absolute bottom-10 right-3 flex h-14 w-14 cursor-pointer flex-col items-center justify-center rounded-full bg-white text-[#3a0900] transition-all duration-300 ease-out hover:h-44 hover:w-20"
           aria-label="Back to top"
         >
-          <ArrowUp width={20} height={40} />
+          <MoveUp className="h-5 w-5 shrink-0 transition-transform duration-300 " />
+          <span className="pointer-events-none mt-2 max-h-0 overflow-hidden text-xs  tracking-[0.34em] [writing-mode:vertical-rl] [text-orientation:mixed] opacity-0 transition-all duration-200 group-hover:max-h-20 group-hover:opacity-100">
+            GO TO TOP
+          </span>
         </button>
 
         <div className="mt-1 flex items-center gap-2 md:mt-0">

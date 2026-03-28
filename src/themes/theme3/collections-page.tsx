@@ -53,7 +53,7 @@ export function Theme3CollectionsPage({ slug, store, products }: ThemeHomeProps)
 
       <Theme3Navbar slug={slug} logoText={store.logoText || store.businessName} />
 
-      <main className="mx-auto w-full max-w-470 px-2 py-5 md:px-4 rounded-t-2xl bg-[#fcf5f4]">
+      <main className="mx-auto w-full max-w-470 p-2 md:px-4 rounded-t-2xl bg-[#fcf5f4]">
         <section className="relative overflow-hidden rounded-2xl border border-rose-200 bg-[#3f0e07]">
           <div className="relative aspect-1898/420 w-full">
             {bannerMedia ? (
@@ -97,7 +97,7 @@ export function Theme3CollectionsPage({ slug, store, products }: ThemeHomeProps)
               href={`/${slug}/collections/${collection.slug}`}
               className="group"
             >
-              <div className="overflow-hidden ">
+              <div className="overflow-hidden py-2 bg-[#fae9e6] rounded-2xl">
                 <div className="relative h-80 w-full overflow-hidden">
                   {collection.cover ? (
                     isVideoUrl(collection.cover) ? (
@@ -114,19 +114,22 @@ export function Theme3CollectionsPage({ slug, store, products }: ThemeHomeProps)
                         src={collection.cover}
                         alt={collection.label}
                         fill
-                        className="object-contain border border-pink-50 rounded-3xl transition duration-500 group-hover:scale-105"
+                        className="object-contain transition duration-500 group-hover:scale-105"
                         sizes="( max-width: 640px ) 100vw, ( max-width: 1024px ) 50vw, 33vw"
                       />
                     )
                   ) : (
-                    <div className="grid h-full w-full place-items-center text-rose-400">
+                    <div className="grid h-full w-full place-items-center text-[#3f2019]">
                       No media
                     </div>
                   )}
                 </div>
               </div>
-              <div className="mt-2 flex items-center justify-center text-sm text-rose-800">
+              <div className="mt-2 mx-4 flex items-center justify-between text-sm text-[#3f2019]">
                 <span>{collection.label}</span>
+                <span className="ml-2 rounded-full bg-[#cc5639] px-2 py-0.5 text-xs font-semibold text-white">
+                  {collection.count}
+                </span>
               </div>
             </Link>
           ))}

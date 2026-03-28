@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { MoveLeft, MoveRight } from "lucide-react";
 import { useMemo, useState } from "react";
 
 import { useCartStorage } from "@/hooks/useCartStorage";
@@ -118,16 +118,16 @@ export function Theme3Home({ slug, store, products }: ThemeHomeProps) {
                   <button
                     type="button"
                     onClick={goPrev}
-                    className="inline-flex h-10 w-10 items-center justify-center rounded-md bg-[#cc5639]/70 text-white transition hover:bg-[#cc5639]"
+                    className="inline-flex h-10 w-16 items-center justify-center rounded-md bg-[#cc5639]/70 text-[#3a0900] transition hover:bg-[#cc5639]"
                   >
-                    <ChevronLeft size={18} />
+                    <MoveLeft size={18} />
                   </button>
                   <button
                     type="button"
                     onClick={goNext}
-                    className="inline-flex h-10 w-10 items-center justify-center rounded-md bg-[#cc5639]/70 text-white transition hover:bg-[#cc5639]"
+                    className="inline-flex h-10 w-16 items-center justify-center rounded-md bg-[#cc5639]/70 text-[#3a0900] transition hover:bg-[#cc5639]"
                   >
-                    <ChevronRight size={18} />
+                    <MoveRight size={18} />
                   </button>
                 </div>
               ) : null}

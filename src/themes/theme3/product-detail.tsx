@@ -24,7 +24,7 @@ export function Theme3ProductDetail({ slug, product }: ThemeProductDetailProps) 
   return (
     <article className="grid gap-8 lg:grid-cols-[1.05fr_1fr] lg:p-8">
       <div>
-        <div className="overflow-hidden rounded-2xl border border-rose-200 bg-[#fbecef]">
+        <div className="overflow-hidden rounded-2xl border border-[#fae9e6] bg-[#fae9e6]">
           {isVideoUrl(activeMedia) ? (
             <video src={activeMedia} className="h-125 w-full object-cover" controls autoPlay muted />
           ) : (
