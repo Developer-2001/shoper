@@ -32,6 +32,10 @@ export const productSchema = z.object({
   inStock: z.coerce.number().int().min(0).default(0),
 });
 
+export const categorySchema = z.object({
+  name: z.string().min(2).max(80),
+});
+
 export const storeConfigSchema = z.object({
   companyName: z.string().min(2),
   logoText: z.string().min(1),

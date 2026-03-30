@@ -25,7 +25,10 @@ export async function PUT(
 
   const product = await Product.findOneAndUpdate(
     { _id: routeParams.id, storeId: auth.payload.storeId },
-    parsed.data,
+    {
+      ...parsed.data,
+      category: parsed.data.category.trim().replace(/\s+/g, " "),
+    },
     { new: true }
   );
 
