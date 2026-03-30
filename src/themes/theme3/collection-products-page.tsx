@@ -5,10 +5,6 @@ import { SlidersHorizontal } from "lucide-react";
 import { useMemo, useState } from "react";
 
 import { useCartStorage } from "@/hooks/useCartStorage";
-import {
-  SHARED_THEME_IMAGE_URL,
-  THEME3_ANNOUNCEMENT_TEXT,
-} from "@/themes/theme-defaults";
 import { Theme3Footer } from "@/themes/theme3/footer";
 import { Theme3Navbar } from "@/themes/theme3/navbar";
 import { Theme3ProductCard } from "@/themes/theme3/product-card";
@@ -33,7 +29,7 @@ export function Theme3CollectionProductsPage({
   useCartStorage();
 
   const [sortBy, setSortBy] = useState("featured");
-  const bannerMedia = SHARED_THEME_IMAGE_URL;
+  const bannerMedia = "https://storage.googleapis.com/canada-ecommerce-assets/ranka/theme3-collection-labels/a-1774629332806.avif";
 
   const sortedProducts = useMemo(() => {
     if (sortBy === "price-asc") {
@@ -51,7 +47,7 @@ export function Theme3CollectionProductsPage({
   return (
     <div className="min-h-screen bg-[#fae9e6] text-rose-950">
       <div className="mx-auto w-full max-w-3xl rounded-b-[28px] bg-[#cc5639] px-6 py-2 text-center text-sm font-semibold text-white">
-        {THEME3_ANNOUNCEMENT_TEXT}
+        Free Shipping On Orders Over $200
       </div>
 
       <Theme3Navbar slug={slug} logoText={store.logoText || store.businessName} />

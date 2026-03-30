@@ -1,6 +1,5 @@
 "use client";
 
-import { THEME3_ANNOUNCEMENT_TEXT } from "@/themes/theme-defaults";
 import { Theme3Navbar } from "@/themes/theme3/navbar";
 import { Theme3Footer } from "@/themes/theme3/footer";
 import { Theme3ProductDetail } from "@/themes/theme3/product-detail";
@@ -10,7 +9,7 @@ export function Theme3ProductDetailPage({ slug, store, product }: ThemeProductDe
   return (
     <div className="min-h-screen bg-[#fae9e6] text-rose-950">
       <div className="mx-auto w-full max-w-3xl rounded-b-[28px] bg-[#cc5639] px-6 py-2 text-center text-sm font-semibold text-white">
-        {THEME3_ANNOUNCEMENT_TEXT}
+        Free Shipping On Orders Over $200
       </div>
       <Theme3Navbar slug={slug} logoText={store.logoText || store.businessName} />
 

@@ -7,16 +7,12 @@ import { useCartStorage } from "@/hooks/useCartStorage";
 import { Theme2Navbar } from "@/themes/theme2/navbar";
 import { Theme2Footer } from "@/themes/theme2/footer";
 import { Theme2ProductCard } from "@/themes/theme2/product-card";
-import { SHARED_THEME_IMAGE_URL, SHARED_THEME_MEDIA_LIST } from "@/themes/theme-defaults";
 import type { ThemeHomeProps } from "@/themes/types";
-import { isVideoUrl } from "@/utils/media";
 
 export function Theme2Home({ slug, store, products }: ThemeHomeProps) {
   useCartStorage();
 
   const featuredProducts = products.slice(0, 6);
-  const heroImage = SHARED_THEME_IMAGE_URL;
-  const sliderImages = SHARED_THEME_MEDIA_LIST;
 
   return (
     <div className="min-h-screen bg-[radial-gradient(circle_at_top,#fff3d6_0%,#fff8e7_40%,#fff_100%)] text-amber-950">
@@ -48,57 +44,44 @@ export function Theme2Home({ slug, store, products }: ThemeHomeProps) {
           </div>
         </div>
 
-        {heroImage ? (
-          isVideoUrl(heroImage) ? (
-            <video
-              src={heroImage}
-              className="h-105 w-full rounded-4xl border border-amber-200 object-cover shadow-[0_40px_80px_-60px_rgba(146,64,14,0.9)]"
-              controls
-              autoPlay
-              muted
-            />
-          ) : (
-            <Image
-              src={heroImage}
-              alt={store.businessName}
-              width={1200}
-              height={900}
-              className="h-105 w-full rounded-4xl  border border-amber-200 object-cover shadow-[0_40px_80px_-60px_rgba(146,64,14,0.9)]"
-              sizes="(max-width: 1024px) 100vw, 45vw"
-            />
-          )
-        ) : (
-          <div className="grid h-105 w-full place-items-center rounded-4xl border border-dashed border-amber-300 text-amber-600">No hero media</div>
-        )}
+        <Image
+          src="https://storage.googleapis.com/canada-ecommerce-assets/ranka/theme3-collection-labels/a-1774629332806.avif"
+          alt={store.businessName}
+          width={1200}
+          height={900}
+          className="h-105 w-full rounded-4xl  border border-amber-200 object-cover shadow-[0_40px_80px_-60px_rgba(146,64,14,0.9)]"
+          sizes="(max-width: 1024px) 100vw, 45vw"
+        />
       </section>
 
-      {sliderImages.length ? (
-        <section className="mx-auto w-full max-w-7xl px-6">
-          <div className="flex snap-x gap-4 overflow-x-auto pb-2">
-            {sliderImages.map((media, index) =>
-              isVideoUrl(media) ? (
-                <video
-                  key={`${slug}-theme2-${index}`}
-                  src={media}
-                  className="h-52 w-[85%] min-w-[85%] snap-start rounded-3xl border border-amber-200 object-cover md:h-64 md:w-[48%] md:min-w-[48%]"
-                  controls
-                  muted
-                />
-              ) : (
-                <Image
-                  key={`${slug}-theme2-${index}`}
-                  src={media}
-                  alt={`showcase-${index + 1}`}
-                  width={1100}
-                  height={760}
-                  className="h-52 w-[85%] min-w-[85%] snap-start rounded-3xl border border-amber-200 object-cover md:h-64 md:w-[48%] md:min-w-[48%]"
-                  sizes="(max-width: 768px) 85vw, 48vw"
-                />
-              )
-            )}
-          </div>
-        </section>
-      ) : null}
+      <section className="mx-auto w-full max-w-7xl px-6">
+        <div className="flex snap-x gap-4 overflow-x-auto pb-2">
+          <Image
+            src="https://storage.googleapis.com/canada-ecommerce-assets/ranka/theme3-collection-labels/a-1774629332806.avif"
+            alt="showcase-1"
+            width={1100}
+            height={760}
+            className="h-52 w-[85%] min-w-[85%] snap-start rounded-3xl border border-amber-200 object-cover md:h-64 md:w-[48%] md:min-w-[48%]"
+            sizes="(max-width: 768px) 85vw, 48vw"
+          />
+          <Image
+            src="https://storage.googleapis.com/canada-ecommerce-assets/ranka/theme3-collection-labels/a-1774629332806.avif"
+            alt="showcase-2"
+            width={1100}
+            height={760}
+            className="h-52 w-[85%] min-w-[85%] snap-start rounded-3xl border border-amber-200 object-cover md:h-64 md:w-[48%] md:min-w-[48%]"
+            sizes="(max-width: 768px) 85vw, 48vw"
+          />
+          <Image
+            src="https://storage.googleapis.com/canada-ecommerce-assets/ranka/theme3-collection-labels/a-1774629332806.avif"
+            alt="showcase-3"
+            width={1100}
+            height={760}
+            className="h-52 w-[85%] min-w-[85%] snap-start rounded-3xl border border-amber-200 object-cover md:h-64 md:w-[48%] md:min-w-[48%]"
+            sizes="(max-width: 768px) 85vw, 48vw"
+          />
+        </div>
+      </section>
 
       <section className="mx-auto mt-12 w-full max-w-7xl px-6">
         <div className="flex items-end justify-between gap-4">

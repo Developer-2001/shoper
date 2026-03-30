@@ -6,43 +6,47 @@ import { MoveLeft, MoveRight } from "lucide-react";
 import { useMemo, useState } from "react";
 
 import { useCartStorage } from "@/hooks/useCartStorage";
-import {
-  SHARED_THEME_IMAGE_URL,
-  SHARED_THEME_MEDIA_LIST,
-  THEME3_ANNOUNCEMENT_TEXT,
-  THEME3_COLLECTION_LABELS,
-  THEME3_FEATURED_HEADING,
-} from "@/themes/theme-defaults";
 import { Theme3Navbar } from "@/themes/theme3/navbar";
 import { Theme3Footer } from "@/themes/theme3/footer";
 import { Theme3ProductCard } from "@/themes/theme3/product-card";
 import { toCollectionSlug } from "@/themes/theme3/collection-utils";
 import type { ThemeHomeProps } from "@/themes/types";
-import { isVideoUrl } from "@/utils/media";
 
 const MAX_COLLECTION_CARDS = 8;
+const THEME3_ANNOUNCEMENT_TEXT = "Free Shipping On Orders Over $200";
+const THEME3_FEATURED_HEADING = "Sparkling New Pieces";
+const THEME3_COLLECTION_LABELS = [
+  "Rings",
+  "Bracelets",
+  "Necklaces",
+  "Earrings",
+  "Pendants",
+  "Bangles",
+  "Anklet",
+  "Pearls",
+];
 
 export function Theme3Home({ slug, store, products }: ThemeHomeProps) {
   useCartStorage();
 
-  const sliderMedia = SHARED_THEME_MEDIA_LIST;
+  const sliderMedia = [
+    "https://storage.googleapis.com/canada-ecommerce-assets/skl/themeimages/slider1-1774845449106.webp",
+    "https://storage.googleapis.com/canada-ecommerce-assets/skl/themeimages/slider2-1774845547454.webp",
+  ];
   const [activeSlide, setActiveSlide] = useState(0);
 
   const collections = THEME3_COLLECTION_LABELS;
-  const collectionImages = useMemo(() => {
-    return Array.from({ length: MAX_COLLECTION_CARDS }, () => SHARED_THEME_IMAGE_URL);
-  }, []);
   const collectionTiles = useMemo(() => {
     const size = Math.min(
       MAX_COLLECTION_CARDS,
-      Math.max(collections.length, collectionImages.length, THEME3_COLLECTION_LABELS.length),
+      Math.max(collections.length, THEME3_COLLECTION_LABELS.length),
     );
 
     return Array.from({ length: size }, (_, index) => ({
       label: collections[index] || THEME3_COLLECTION_LABELS[index] || `Collection ${index + 1}`,
-      imageUrl: collectionImages[index] || "",
+      imageUrl: "https://storage.googleapis.com/canada-ecommerce-assets/ranka/theme3-collection-labels/a-1774629332806.avif",
     }));
-  }, [collections, collectionImages]);
+  }, [collections]);
   const availableCollectionSlugs = useMemo(
     () =>
       new Set(
@@ -55,7 +59,6 @@ export function Theme3Home({ slug, store, products }: ThemeHomeProps) {
 
   const activeMedia = sliderMedia[activeSlide] || "";
   const featuredProducts = products.slice(0, 4);
-  const announcementText = THEME3_ANNOUNCEMENT_TEXT;
 
   function goPrev() {
     if (!sliderMedia.length) return;
@@ -70,7 +73,7 @@ export function Theme3Home({ slug, store, products }: ThemeHomeProps) {
   return (
     <div className="min-h-screen bg-[#fae9e6] text-rose-950">
       <div className="mx-auto w-full max-w-3xl rounded-b-[28px] bg-[#cc5639] px-6 py-2 text-center text-sm font-semibold text-white">
-        {announcementText}
+        {THEME3_ANNOUNCEMENT_TEXT}
       </div>
 
       <Theme3Navbar slug={slug} logoText={store.logoText || store.businessName} />
@@ -79,11 +82,7 @@ export function Theme3Home({ slug, store, products }: ThemeHomeProps) {
           <div className="relative overflow-hidden rounded-2xl border border-rose-200 bg-black/10">
             <div className="relative aspect-1898/742 w-full">
               {activeMedia ? (
-                isVideoUrl(activeMedia) ? (
-                  <video src={activeMedia} className="h-full w-full object-cover" muted autoPlay loop playsInline controls />
-                ) : (
-                  <Image src={activeMedia} alt={store.businessName} fill className="object-cover" sizes="100vw" />
-                )
+                <Image src={activeMedia} alt={store.businessName} fill className="object-cover" sizes="100vw" />
               ) : (
                 <div className="grid h-full w-full place-items-center text-rose-300">Add slider media (1898x742)</div>
               )}
