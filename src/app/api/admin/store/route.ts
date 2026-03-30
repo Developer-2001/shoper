@@ -44,6 +44,7 @@ export async function PUT(request: Request) {
       socialLinks: parsed.data.socialLinks,
       theme: parsed.data.theme,
       footerLinks: parsed.data.footerLinks,
+      paymentSettings: parsed.data.paymentSettings,
     },
     { new: true }
   ).lean();

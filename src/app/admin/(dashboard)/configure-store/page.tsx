@@ -19,6 +19,8 @@ const defaultForm = {
   youtube: "",
   themeLayout: "theme1",
   footerLinks: "",
+  stripeEnabled: false,
+  stripeAccountId: "",
 };
 
 export default function ConfigureStorePage() {
@@ -56,6 +58,8 @@ export default function ConfigureStorePage() {
           footerLinks: (store.footerLinks || [])
             .map((item: { label: string; href: string }) => `${item.label}|${item.href}`)
             .join(","),
+          stripeEnabled: store.paymentSettings?.stripe?.enabled || false,
+          stripeAccountId: store.paymentSettings?.stripe?.accountId || "",
         });
       } catch (loadError) {
         console.error(loadError);
@@ -96,6 +100,12 @@ export default function ConfigureStorePage() {
           const [label, href] = item.split("|");
           return { label: label || "Link", href: href || "/" };
         }),
+      paymentSettings: {
+        stripe: {
+          enabled: form.stripeEnabled,
+          accountId: form.stripeAccountId,
+        },
+      },
     };
 
     try {
@@ -261,6 +271,84 @@ export default function ConfigureStorePage() {
               placeholder="footerLinks (label|href, label|href)"
               className="min-h-24 rounded-xl border border-slate-300 px-4 py-2 md:col-span-2"
             />
+          </div>
+
+          <div className="mt-8 border-t border-slate-100 pt-8">
+            <h3 className="mb-4 text-lg font-bold text-slate-900">Payment Provider (Canada)</h3>
+            
+            <div className="max-w-md">
+              {/* Stripe Section */}
+              <div className="rounded-2xl border border-slate-200 p-5 bg-slate-50/50">
+                <div className="flex items-center justify-between mb-4">
+                   <div className="flex items-center gap-3">
+                      <h4 className="font-bold text-slate-800 text-lg">Stripe Connect</h4>
+                      {form.stripeEnabled && form.stripeAccountId ? (
+                        <span className="bg-green-100 text-green-700 text-xs px-2 py-1 rounded-full font-bold">Connected</span>
+                      ) : (
+                        <span className="bg-slate-200 text-slate-600 text-xs px-2 py-1 rounded-full font-bold">Not Connected</span>
+                      )}
+                   </div>
+                </div>
+                
+                <p className="text-sm text-slate-600 mb-6">
+                  {form.stripeEnabled 
+                    ? "Your store is connected to Stripe. Customers can now pay you directly." 
+                    : "Connect your Stripe account to receive direct payments from customers. No technical setup required."}
+                </p>
+
+                {form.stripeEnabled && form.stripeAccountId ? (
+                  <div className="space-y-4">
+                    <div className="text-sm text-slate-500 font-mono bg-white p-3 rounded-xl border border-slate-200">
+                      ID: {form.stripeAccountId}
+                    </div>
+                    <button
+                      type="button"
+                      onClick={async () => {
+                        if (!confirm("Are you sure you want to disconnect Stripe? Customers won't be able to buy from your store.")) return;
+                        setSaving(true);
+                        try {
+                           const res = await fetch("/api/admin/store", {
+                             method: "PUT",
+                             headers: { "Content-Type": "application/json" },
+                             body: JSON.stringify({
+                               ...form,
+                               paymentSettings: { stripe: { enabled: false, accountId: "" } }
+                             })
+                           });
+                           if (res.ok) window.location.reload();
+                        } catch (err) { alert("Failed to disconnect"); }
+                        finally { setSaving(false); }
+                      }}
+                      className="text-sm text-red-600 hover:text-red-700 font-semibold underline"
+                    >
+                      Disconnect account
+                    </button>
+                  </div>
+                ) : (
+                  <button
+                    type="button"
+                    disabled={saving}
+                    onClick={async () => {
+                      setSaving(true);
+                      try {
+                        const res = await fetch("/api/admin/stripe/onboard");
+                        const data = await res.json();
+                        if (data.url) window.location.href = data.url;
+                        else alert(data.error || "Failed to start onboarding.");
+                      } catch (err) {
+                        alert("A network error occurred.");
+                      } finally {
+                        setSaving(false);
+                      }
+                    }}
+                    className="w-full flex items-center justify-center gap-2 rounded-xl bg-[#635BFF] py-3 font-semibold text-white hover:bg-[#5851E0] disabled:opacity-50 transition-colors shadow-sm"
+                  >
+                    {saving ? <Spinner size={16} /> : null}
+                    Connect with Stripe
+                  </button>
+                )}
+              </div>
+            </div>
           </div>
 
           <button

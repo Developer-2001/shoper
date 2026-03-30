@@ -8,11 +8,14 @@ import { clearSlugCart } from "@/store/slices/cartSlice";
 import { useAppDispatch, useAppSelector } from "@/hooks/useRedux";
 import { formatMoney } from "@/utils/currency";
 
+import type { StorefrontStore } from "@/themes/types";
+
 type Theme1CheckoutFormProps = {
   slug: string;
+  store: StorefrontStore;
 };
 
-export function Theme1CheckoutForm({ slug }: Theme1CheckoutFormProps) {
+export function Theme1CheckoutForm({ slug, store }: Theme1CheckoutFormProps) {
   const router = useRouter();
   const dispatch = useAppDispatch();
   const items = useAppSelector((state) => state.cart.items.filter((item) => item.slug === slug));
@@ -28,34 +31,51 @@ export function Theme1CheckoutForm({ slug }: Theme1CheckoutFormProps) {
     postalCode: "",
   });
   const [error, setError] = useState("");
+  
+  const availableProviders = [
+    ...(store.paymentSettings?.stripe?.enabled ? ["stripe"] : []),
+  ];
+  
+  const [provider, setProvider] = useState(availableProviders[0] || "none");
 
   const total = items.reduce((sum, item) => sum + item.price * item.quantity, 0);
 
   async function handleSubmit(event: React.FormEvent) {
     event.preventDefault();
+    
+    if (provider === "none") {
+      setError("Please select a payment method.");
+      return;
+    }
+
     setLoading(true);
     try {
-      const response = await fetch(`/api/store/${slug}/orders`, {
+      const response = await fetch(`/api/store/${slug}/payment/session`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           ...form,
           items: items.map((item) => ({ productId: item.productId, quantity: item.quantity })),
+          provider,
         }),
       });
 
       if (!response.ok) {
         const data = await response.json().catch(() => ({}));
-        setError(data.error || "Failed to place order. Please check your details.");
+        setError(data.error || "Failed to initiate payment. Please check your details.");
         return;
       }
 
-      dispatch(clearSlugCart({ slug }));
-      alert("Order confirmed successfully");
-      router.push(`/${slug}`);
+      const { url } = await response.json();
+      if (url) {
+        // Redux cart will be cleared on successful callback (webhook/success page)
+        window.location.href = url;
+      } else {
+        setError("Payment session initialization failed.");
+      }
     } catch (err) {
       console.error(err);
-      setError("A network error occurred while placing your order.");
+      setError("A network error occurred while starting your payment.");
     } finally {
       setLoading(false);
     }
@@ -93,12 +113,16 @@ export function Theme1CheckoutForm({ slug }: Theme1CheckoutFormProps) {
         
         {error ? <p className="mt-3 text-sm font-semibold text-red-600">{error}</p> : null}
 
+        {!store.paymentSettings?.stripe?.enabled ? (
+          <p className="mt-4 text-sm text-red-500 italic">This store is currently not accepting payments.</p>
+        ) : null}
+
         <button 
-          disabled={loading} 
-          className="flex items-center justify-center gap-2 mt-4 w-full rounded-xl bg-slate-900 py-3 font-semibold text-white disabled:opacity-50"
+          disabled={loading || !store.paymentSettings?.stripe?.enabled} 
+          className="flex items-center justify-center gap-2 mt-6 w-full rounded-xl bg-slate-900 py-3 font-semibold text-white disabled:opacity-50"
         >
           {loading && <Spinner size={16} className="text-white" />}
-          {loading ? "Placing order..." : "Buy now"}
+          {loading ? "Initializing..." : "Buy now"}
         </button>
       </section>
     </form>

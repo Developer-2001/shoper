@@ -31,6 +31,12 @@ export type StoreDocument = {
   theme: {
     layout: ThemeLayout;
   };
+  paymentSettings: {
+    stripe: {
+      enabled: boolean;
+      accountId: string;
+    };
+  };
   footerLinks: { label: string; href: string }[];
 };
 
@@ -64,6 +70,12 @@ const StoreSchema = new Schema<StoreDocument>(
         type: String,
         enum: THEME_LAYOUTS,
         default: DEFAULT_THEME_LAYOUT,
+      },
+    },
+    paymentSettings: {
+      stripe: {
+        enabled: { type: Boolean, default: false },
+        accountId: { type: String, default: "" },
       },
     },
     footerLinks: {

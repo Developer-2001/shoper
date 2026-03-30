@@ -25,6 +25,9 @@ export type OrderDocument = {
   };
   subtotal: number;
   status: "confirmed" | "packed" | "shipped" | "delivered";
+  paymentStatus: "unpaid" | "paid" | "failed";
+  paymentProvider: "stripe" | "none";
+  paymentId: string;
 };
 
 const OrderSchema = new Schema<OrderDocument>(
@@ -58,6 +61,17 @@ const OrderSchema = new Schema<OrderDocument>(
       enum: ["confirmed", "packed", "shipped", "delivered"],
       default: "confirmed",
     },
+    paymentStatus: {
+      type: String,
+      enum: ["unpaid", "paid", "failed"],
+      default: "unpaid",
+    },
+    paymentProvider: {
+      type: String,
+      enum: ["stripe", "none"],
+      default: "none",
+    },
+    paymentId: { type: String, default: "" },
   },
   { timestamps: true }
 );

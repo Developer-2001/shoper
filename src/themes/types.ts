@@ -18,6 +18,9 @@ export type StorefrontStore = {
   theme: {
     layout?: ThemeLayout | string;
   };
+  paymentSettings?: {
+    stripe: { enabled: boolean };
+  };
 };
 
 export type StorefrontProduct = {
