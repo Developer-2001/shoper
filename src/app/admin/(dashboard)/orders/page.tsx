@@ -1,19 +1,69 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 import { AdminTopbar } from "@/components/admin/admin-topbar";
 import { TableSkeleton } from "@/components/admin/ui/skeleton";
+import { formatMoney } from "@/utils/currency";
+
+type OrderAddress = {
+  country?: string;
+  firstName?: string;
+  lastName?: string;
+  shippingAddress?: string;
+  city?: string;
+  state?: string;
+  postalCode?: string;
+};
 
 type Order = {
   _id: string;
   orderNumber: string;
-  customer: { customerName: string; email: string; mobile: string };
-  shipping: { shippingAddress: string; city: string; state: string; postalCode: string };
+  customer: {
+    firstName?: string;
+    lastName?: string;
+    email?: string;
+  };
+  shipping?: OrderAddress;
+  billing?: OrderAddress;
+  useShippingAsBilling?: boolean;
+  cartNote?: string;
   items: { name: string; quantity: number; price: number }[];
-  subtotal: number;
+  itemCount?: number;
+  currency?: string;
+  subtotal?: number;
+  discountCode?: string;
+  discountPercentage?: number;
+  discountAmount?: number;
+  shippingCharge?: number;
+  taxPercentage?: number;
+  taxAmount?: number;
+  total?: number;
   status: string;
+  createdAt?: string;
 };
+
+function AddressBlock({
+  title,
+  address,
+}: {
+  title: string;
+  address?: OrderAddress;
+}) {
+  return (
+    <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
+      <p className="text-sm font-semibold text-slate-900">{title}</p>
+      <p className="mt-2 text-sm text-slate-700">
+        {[address?.firstName, address?.lastName].filter(Boolean).join(" ")}
+      </p>
+      <p className="text-sm text-slate-700">{address?.shippingAddress || "-"}</p>
+      <p className="text-sm text-slate-700">
+        {[address?.city, address?.state, address?.postalCode].filter(Boolean).join(", ")}
+      </p>
+      <p className="text-sm text-slate-700">{address?.country || "-"}</p>
+    </div>
+  );
+}
 
 export default function OrdersPage() {
   const [orders, setOrders] = useState<Order[]>([]);
@@ -44,62 +94,152 @@ export default function OrdersPage() {
     load();
   }, []);
 
+  const hasOrders = useMemo(() => orders.length > 0, [orders]);
+
   return (
     <div>
-      <AdminTopbar title="Orders" subtitle="View customer and shipping details with expand/collapse." />
+      <AdminTopbar
+        title="Orders"
+        subtitle="Track customer, address, discount, tax and total breakdown for each order."
+      />
 
       {error ? (
         <div className="mb-6 rounded-2xl border border-red-200 bg-red-50 p-5 text-red-700">
-          <p className="font-semibold text-sm">{error}</p>
+          <p className="text-sm font-semibold">{error}</p>
         </div>
       ) : null}
 
       {loading ? (
         <TableSkeleton rows={5} />
+      ) : !hasOrders ? (
+        <div className="rounded-2xl border border-slate-200 bg-white p-6 text-sm text-slate-600">
+          No orders found yet.
+        </div>
       ) : (
         <div className="space-y-4">
-        {orders.map((order) => (
-          <article key={order._id} className="rounded-2xl border border-slate-200 bg-white p-5">
-            <div className="flex flex-wrap items-center justify-between gap-3">
-              <div>
-                <p className="font-bold text-slate-900">{order.orderNumber}</p>
-                <p className="text-sm text-slate-600">
-                  {order.customer.customerName} - {order.customer.email}
-                </p>
-              </div>
-              <button
-                type="button"
-                onClick={() => setExpanded((prev) => (prev === order._id ? null : order._id))}
-                className="rounded-xl border border-slate-300 px-4 py-2 text-sm"
-              >
-                {expanded === order._id ? "Collapse" : "Expand"}
-              </button>
-            </div>
+          {orders.map((order) => {
+            const currency = order.currency || "INR";
+            const itemCount =
+              order.itemCount ??
+              order.items.reduce((sum, item) => sum + item.quantity, 0);
+            const subtotal =
+              order.subtotal ??
+              order.items.reduce((sum, item) => sum + item.price * item.quantity, 0);
+            const discountAmount = order.discountAmount ?? 0;
+            const shippingCharge = order.shippingCharge ?? 0;
+            const taxAmount = order.taxAmount ?? 0;
+            const total =
+              order.total ??
+              subtotal - discountAmount + shippingCharge + taxAmount;
+            const customerName =
+              [order.customer.firstName, order.customer.lastName]
+                .filter(Boolean)
+                .join(" ")
+                .trim() ||
+              [order.shipping?.firstName, order.shipping?.lastName]
+                .filter(Boolean)
+                .join(" ")
+                .trim() ||
+              "Unknown customer";
 
-            {expanded === order._id ? (
-              <div className="mt-4 grid gap-4 text-sm text-slate-700 md:grid-cols-2">
-                <div>
-                  <p className="font-semibold">Shipping</p>
-                  <p>{order.shipping.shippingAddress}</p>
-                  <p>
-                    {order.shipping.city}, {order.shipping.state} {order.shipping.postalCode}
-                  </p>
-                  <p className="mt-2">Mobile: {order.customer.mobile}</p>
-                </div>
-                <div>
-                  <p className="font-semibold">Items</p>
-                  {order.items.map((item, index) => (
-                    <p key={`${order._id}-${index}`}>
-                      {item.name} x {item.quantity} = {item.price * item.quantity}
+            return (
+              <article key={order._id} className="rounded-2xl border border-slate-200 bg-white p-5">
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                  <div>
+                    <p className="font-bold text-slate-900">{order.orderNumber}</p>
+                    <p className="text-sm text-slate-600">
+                      {customerName} - {order.customer.email || "No email"}
                     </p>
-                  ))}
-                  <p className="mt-2 font-bold">Subtotal: {order.subtotal}</p>
+                    <p className="text-xs text-slate-500">
+                      {order.createdAt
+                        ? new Date(order.createdAt).toLocaleString()
+                        : "Date unavailable"}
+                    </p>
+                  </div>
+
+                  <div className="text-right">
+                    <p className="text-sm font-semibold uppercase text-slate-500">
+                      {order.status}
+                    </p>
+                    <p className="text-lg font-bold text-slate-900">
+                      {formatMoney(total, currency)}
+                    </p>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setExpanded((prev) => (prev === order._id ? null : order._id))
+                    }
+                    className="rounded-xl border border-slate-300 px-4 py-2 text-sm"
+                  >
+                    {expanded === order._id ? "Collapse" : "Expand"}
+                  </button>
                 </div>
-              </div>
-            ) : null}
-          </article>
-        ))}
-      </div>
+
+                {expanded === order._id ? (
+                  <div className="mt-4 space-y-4 text-sm text-slate-700">
+                    <div className="grid gap-4 lg:grid-cols-2">
+                      <AddressBlock title="Shipping Address" address={order.shipping} />
+                      <AddressBlock title="Billing Address" address={order.billing} />
+                    </div>
+
+                    <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
+                      <p className="font-semibold text-slate-900">Customer Info</p>
+                      <p className="mt-2">Email: {order.customer.email || "-"}</p>
+                      <p>
+                        Use shipping as billing:{" "}
+                        {order.useShippingAsBilling ? "Yes" : "No"}
+                      </p>
+                      {order.cartNote ? (
+                        <p className="mt-2 rounded-lg bg-white p-2 text-xs text-slate-700">
+                          Note: {order.cartNote}
+                        </p>
+                      ) : null}
+                    </div>
+
+                    <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
+                      <p className="font-semibold text-slate-900">Items</p>
+                      <div className="mt-2 space-y-1">
+                        {order.items.map((item, index) => (
+                          <p key={`${order._id}-${index}`}>
+                            {index + 1}. {item.name} x {item.quantity} ={" "}
+                            {formatMoney(item.price * item.quantity, currency)}
+                          </p>
+                        ))}
+                      </div>
+                    </div>
+
+                    <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
+                      <p className="font-semibold text-slate-900">Price Breakdown</p>
+                      <div className="mt-2 grid gap-1 sm:grid-cols-2">
+                        <p>Item count: {itemCount}</p>
+                        <p>Subtotal: {formatMoney(subtotal, currency)}</p>
+                        <p>Shipping: {formatMoney(shippingCharge, currency)}</p>
+                        <p>
+                          Tax ({order.taxPercentage ?? 3}%):{" "}
+                          {formatMoney(taxAmount, currency)}
+                        </p>
+                        <p>
+                          Discount:{" "}
+                          {order.discountCode
+                            ? `${order.discountCode} (${order.discountPercentage ?? 0}%)`
+                            : "N/A"}
+                        </p>
+                        <p>
+                          Discount amount: -{formatMoney(discountAmount, currency)}
+                        </p>
+                      </div>
+                      <p className="mt-3 text-base font-bold text-slate-900">
+                        Grand total: {formatMoney(total, currency)}
+                      </p>
+                    </div>
+                  </div>
+                ) : null}
+              </article>
+            );
+          })}
+        </div>
       )}
     </div>
   );

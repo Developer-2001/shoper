@@ -73,18 +73,29 @@ export const updateStoreStatusSchema = z.object({
   status: z.enum(["active", "inactive"]),
 });
 
-export const checkoutSchema = z.object({
-  customerName: z.string().min(2),
-  email: z.string().email(),
-  mobile: z.string().min(8),
+const checkoutItemsSchema = z.array(
+  z.object({
+    productId: z.string().min(1),
+    quantity: z.coerce.number().int().min(1),
+  })
+);
+
+const checkoutAddressSchema = z.object({
+  country: z.string().min(2),
+  firstName: z.string().min(1),
+  lastName: z.string().min(1),
   shippingAddress: z.string().min(6),
   city: z.string().min(2),
   state: z.string().min(2),
   postalCode: z.string().min(3),
-  items: z.array(
-    z.object({
-      productId: z.string().min(1),
-      quantity: z.coerce.number().int().min(1),
-    })
-  ),
+});
+
+export const checkoutSchema = z.object({
+  email: z.string().email(),
+  shipping: checkoutAddressSchema,
+  useShippingAsBilling: z.boolean().default(true),
+  billing: checkoutAddressSchema.optional(),
+  cartNote: z.string().optional().default(""),
+  discountCode: z.string().optional().default(""),
+  items: checkoutItemsSchema,
 });

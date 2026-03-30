@@ -10,14 +10,11 @@ export function Theme3CheckoutPage({ slug, store }: ThemeCheckoutProps) {
   useCartStorage();
 
   return (
-    <div className="min-h-screen bg-[#fff2f5] text-rose-950">
+    <div className="min-h-screen bg-[#eef0f2] text-rose-950">
       <Theme3Navbar slug={slug} logoText={store.logoText || store.businessName} />
 
-      <main className="mx-auto w-full max-w-7xl px-6 py-10">
-        <h1 className="text-4xl font-semibold">Checkout</h1>
-        <div className="mt-6">
-          <Theme3CheckoutForm slug={slug} />
-        </div>
+      <main className="mx-auto w-full max-w-470 px-2 py-4 md:px-4">
+        <Theme3CheckoutForm slug={slug} />
       </main>
 
       <Theme3Footer

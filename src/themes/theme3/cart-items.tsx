@@ -3,7 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { Minus, Plus, Trash2, X, PlusIcon } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 import { removeFromCart, updateCartQty } from "@/store/slices/cartSlice";
 import { useAppDispatch, useAppSelector } from "@/hooks/useRedux";
@@ -54,6 +54,25 @@ export function Theme3CartItems({ slug }: { slug: string }) {
     () => formatMoney(grandTotal, currency),
     [grandTotal, currency],
   );
+  const checkoutMetaKey = `theme3CheckoutMeta:${slug}`;
+
+  useEffect(() => {
+    localStorage.setItem(
+      checkoutMetaKey,
+      JSON.stringify({
+        cartNote,
+        discountCode: appliedDiscountCode,
+        discountPercentage: appliedDiscountPercent,
+        discountAmount,
+      }),
+    );
+  }, [
+    checkoutMetaKey,
+    cartNote,
+    appliedDiscountCode,
+    appliedDiscountPercent,
+    discountAmount,
+  ]);
 
   function clearDiscountState() {
     setDiscountCode("");
