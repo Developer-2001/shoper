@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { MoveLeft, MoveRight } from "lucide-react";
+import { MoveLeft, MoveRight, X } from "lucide-react";
 import { useMemo, useRef, useState } from "react";
 
 import { useCartStorage } from "@/hooks/useCartStorage";
@@ -14,6 +14,7 @@ import type { ThemeHomeProps } from "@/themes/types";
 
 const MAX_COLLECTION_CARDS = 8;
 const THEME3_ANNOUNCEMENT_TEXT = "Free Shipping On Orders Over $200";
+const THEME3_ANNOUNCEMENT_DISMISS_KEY = "theme3_home_announcement_dismissed";
 const THEME3_FEATURED_HEADING = "Sparkling New Pieces";
 const THEME3_COLLECTION_LABELS = [
   "Rings",
@@ -56,6 +57,14 @@ export function Theme3Home({ slug, store, products }: ThemeHomeProps) {
     },
   ];
   const [activeSlide, setActiveSlide] = useState(0);
+  const [showAnnouncement, setShowAnnouncement] = useState(() => {
+    if (typeof window === "undefined") return true;
+    try {
+      return window.localStorage.getItem(THEME3_ANNOUNCEMENT_DISMISS_KEY) !== "1";
+    } catch {
+      return true;
+    }
+  });
   const dragStartXRef = useRef<number | null>(null);
 
   const collections = THEME3_COLLECTION_LABELS;
@@ -125,11 +134,30 @@ export function Theme3Home({ slug, store, products }: ThemeHomeProps) {
     dragStartXRef.current = null;
   }
 
+  function dismissAnnouncement() {
+    setShowAnnouncement(false);
+    try {
+      window.localStorage.setItem(THEME3_ANNOUNCEMENT_DISMISS_KEY, "1");
+    } catch {
+      // ignore storage errors
+    }
+  }
+
   return (
     <div className="min-h-screen bg-[#fae9e6] text-rose-950">
-      <div className="mx-auto w-full max-w-3xl rounded-b-[28px] bg-[#cc5639] px-6 py-2 text-center text-sm font-semibold text-white">
-        {THEME3_ANNOUNCEMENT_TEXT}
-      </div>
+      {showAnnouncement ? (
+        <div className="relative mx-auto flex w-full max-w-3xl items-center justify-center rounded-b-[28px] bg-[#cc5639] px-10 py-2 text-center text-sm font-semibold text-white">
+          <span>{THEME3_ANNOUNCEMENT_TEXT}</span>
+          <button
+            type="button"
+            onClick={dismissAnnouncement}
+            className="absolute right-4 inline-flex h-7 w-7 items-center justify-center rounded-full bg-white/15 text-white transition hover:bg-white/25"
+            aria-label="Dismiss announcement"
+          >
+            <X size={14} />
+          </button>
+        </div>
+      ) : null}
 
       <Theme3Navbar
         slug={slug}
@@ -148,7 +176,7 @@ export function Theme3Home({ slug, store, products }: ThemeHomeProps) {
           >
             {sliderItems.length ? (
               <div
-                className="flex h-full w-full transition-transform duration-500 ease-out"
+                className="flex h-full w-full transition-transform duration-500 ease-in"
                 style={{ transform: `translateX(-${activeSlide * 100}%)` }}
               >
                 {sliderItems.map((item, index) => (

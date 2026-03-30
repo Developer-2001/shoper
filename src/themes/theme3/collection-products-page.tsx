@@ -46,10 +46,6 @@ export function Theme3CollectionProductsPage({
 
   return (
     <div className="min-h-screen bg-[#fae9e6] text-rose-950">
-      <div className="mx-auto w-full max-w-3xl rounded-b-[28px] bg-[#cc5639] px-6 py-2 text-center text-sm font-semibold text-white">
-        Free Shipping On Orders Over $200
-      </div>
-
       <Theme3Navbar slug={slug} logoText={store.logoText || store.businessName} />
 
       <main className="mx-auto w-full max-w-470 px-2 py-5 md:px-4  rounded-t-2xl bg-[#fcf5f4]">
