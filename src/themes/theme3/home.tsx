@@ -3,7 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { MoveLeft, MoveRight } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 
 import { useCartStorage } from "@/hooks/useCartStorage";
 import { Theme3Navbar } from "@/themes/theme3/navbar";
@@ -56,6 +56,7 @@ export function Theme3Home({ slug, store, products }: ThemeHomeProps) {
     },
   ];
   const [activeSlide, setActiveSlide] = useState(0);
+  const dragStartXRef = useRef<number | null>(null);
 
   const collections = THEME3_COLLECTION_LABELS;
   const collectionTiles = useMemo(() => {
@@ -71,11 +72,9 @@ export function Theme3Home({ slug, store, products }: ThemeHomeProps) {
     return Array.from({ length: size }, (_, index) => ({
       label:
         collections[index] ||
-        THEME3_COLLECTION_LABELS[index] ||
-        `Collection ${index + 1}`,
+        THEME3_COLLECTION_LABELS[index],
       imageUrl:
-        THEME3_COLLECTION_IMAGE_URLS[index] ||
-        "https://storage.googleapis.com/canada-ecommerce-assets/ranka/theme3-collection-labels/a-1774629332806.avif",
+        THEME3_COLLECTION_IMAGE_URLS[index] 
     }));
   }, [collections]);
   const availableCollectionSlugs = useMemo(
@@ -88,8 +87,6 @@ export function Theme3Home({ slug, store, products }: ThemeHomeProps) {
     [products],
   );
 
-  const activeItem = sliderItems[activeSlide] || sliderItems[0];
-  const activeMedia = activeItem?.imageUrl || "";
   const featuredProducts = products.slice(0, 4);
 
   function goPrev() {
@@ -104,6 +101,30 @@ export function Theme3Home({ slug, store, products }: ThemeHomeProps) {
     setActiveSlide((prev) => (prev + 1) % sliderItems.length);
   }
 
+  function startSwipe(clientX: number) {
+    dragStartXRef.current = clientX;
+  }
+
+  function endSwipe(clientX: number) {
+    if (dragStartXRef.current === null) return;
+
+    const deltaX = clientX - dragStartXRef.current;
+    dragStartXRef.current = null;
+
+    if (Math.abs(deltaX) < 40) return;
+
+    if (deltaX < 0) {
+      goNext();
+      return;
+    }
+
+    goPrev();
+  }
+
+  function cancelSwipe() {
+    dragStartXRef.current = null;
+  }
+
   return (
     <div className="min-h-screen bg-[#fae9e6] text-rose-950">
       <div className="mx-auto w-full max-w-3xl rounded-b-[28px] bg-[#cc5639] px-6 py-2 text-center text-sm font-semibold text-white">
@@ -116,48 +137,83 @@ export function Theme3Home({ slug, store, products }: ThemeHomeProps) {
       />
 
       <section className="mx-auto mt-6 w-full max-w-475 px-4">
+        {/* Slider */}
         <div className="relative overflow-hidden rounded-2xl border border-rose-200 bg-black/10">
-          <div className="relative aspect-1898/742 w-full">
-            {activeMedia ? (
-              <Image
-                src={activeMedia}
-                alt={store.businessName}
-                fill
-                className="object-cover"
-                sizes="100vw"
-              />
+          <div
+            className="relative aspect-1898/742 w-full overflow-hidden touch-pan-y"
+            onPointerDown={(event) => startSwipe(event.clientX)}
+            onPointerUp={(event) => endSwipe(event.clientX)}
+            onPointerCancel={cancelSwipe}
+            onPointerLeave={cancelSwipe}
+          >
+            {sliderItems.length ? (
+              <div
+                className="flex h-full w-full transition-transform duration-500 ease-out"
+                style={{ transform: `translateX(-${activeSlide * 100}%)` }}
+              >
+                {sliderItems.map((item, index) => (
+                  <div key={`${item.imageUrl}-${index}`} className="relative h-full w-full shrink-0">
+                    <Image
+                      src={item.imageUrl}
+                      alt={`${store.businessName}-${index + 1}`}
+                      fill
+                      className="object-cover"
+                      sizes="100vw"
+                    />
+                    <div className="absolute inset-0 bg-linear-to-r from-black/55 via-black/20 to-transparent" />
+                    <div className="absolute left-8 bottom-4 max-w-xl text-white md:left-12 md:bottom-14">
+                      <div className="mb-4 flex gap-2">
+                        <span className="rounded-md bg-white/90 px-3 py-1 text-xs font-semibold text-[#cc5639]">
+                          Necklace
+                        </span>
+                        <span className="rounded-md bg-white/90 px-3 py-1 text-xs font-semibold text-[#cc5639]">
+                          Ring
+                        </span>
+                      </div>
+                      <h1 className="text-4xl font-semibold leading-tight md:text-6xl">
+                        {item.title}
+                      </h1>
+                      <p className="mt-4 text-sm text-white/90 md:text-base">
+                        {item.description}
+                      </p>
+                      <Link
+                        href={`/${slug}/collections`}
+                        className="mt-6 inline-block rounded-xl bg-[#cc5639] px-6 py-3 text-sm font-bold text-white transition hover:bg-[#b84c32]"
+                      >
+                        Shop Now
+                      </Link>
+                    </div>
+                  </div>
+                ))}
+              </div>
             ) : (
               <div className="grid h-full w-full place-items-center text-rose-300">
                 Add slider media (1898x742)
               </div>
             )}
 
-            <div className="absolute inset-0 bg-linear-to-r from-black/55 via-black/20 to-transparent" />
-            <div className="absolute left-8 bottom-4 max-w-xl text-white md:left-12 md:bottom-14">
-              <div className="mb-4 flex gap-2">
-                <span className="rounded-md bg-white/90 px-3 py-1 text-xs font-semibold text-[#cc5639]">
-                  Necklace
-                </span>
-                <span className="rounded-md bg-white/90 px-3 py-1 text-xs font-semibold text-[#cc5639]">
-                  Ring
-                </span>
+            {sliderItems.length > 1 ? (
+              <div className="absolute bottom-7 left-8 z-10 flex items-center gap-2 md:left-12">
+                {sliderItems.map((item, index) => (
+                  <button
+                    key={`${item.imageUrl}-indicator`}
+                    type="button"
+                    onClick={() => setActiveSlide(index)}
+                    className="cursor-pointer"
+                    aria-label={`Go to slide ${index + 1}`}
+                  >
+                    <span
+                      className={`block h-1 rounded-full transition-all duration-300 ${
+                        index === activeSlide ? "w-10 bg-white" : "w-6 bg-white/50"
+                      }`}
+                    />
+                  </button>
+                ))}
               </div>
-              <h1 className="text-4xl font-semibold leading-tight md:text-6xl">
-                {activeItem?.title}
-              </h1>
-              <p className="mt-4 text-sm text-white/90 md:text-base">
-                {activeItem?.description}
-              </p>
-              <Link
-                href={`/${slug}/collections`}
-                className="mt-6 inline-block rounded-xl bg-[#cc5639] px-6 py-3 text-sm font-bold text-white transition hover:bg-[#b84c32]"
-              >
-                Shop Now
-              </Link>
-            </div>
+            ) : null}
 
             {sliderItems.length > 1 ? (
-              <div className="absolute bottom-6 right-6 flex gap-2">
+              <div className="absolute bottom-6 right-6 z-10 flex gap-2">
                 <button
                   type="button"
                   onClick={goPrev}
