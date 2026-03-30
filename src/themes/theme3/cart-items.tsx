@@ -2,94 +2,340 @@
 
 import Image from "next/image";
 import Link from "next/link";
+import { Minus, Plus, Trash2, X, PlusIcon } from "lucide-react";
+import { useMemo, useState } from "react";
 
 import { removeFromCart, updateCartQty } from "@/store/slices/cartSlice";
 import { useAppDispatch, useAppSelector } from "@/hooks/useRedux";
 import { formatMoney } from "@/utils/currency";
 import { isVideoUrl } from "@/utils/media";
 
+const CART_DISCOUNT_CODES: Record<string, { code: string; percent: number }> = {
+  deva123: { code: "Deva123", percent: 20 },
+  vinayak123: { code: "Vinayak123", percent: 30 },
+};
+
 export function Theme3CartItems({ slug }: { slug: string }) {
   const dispatch = useAppDispatch();
-  const items = useAppSelector((state) => state.cart.items.filter((item) => item.slug === slug));
+  const items = useAppSelector((state) =>
+    state.cart.items.filter((item) => item.slug === slug),
+  );
 
-  const total = items.reduce((sum, item) => sum + item.price * item.quantity, 0);
+  const [isNoteOpen, setIsNoteOpen] = useState(false);
+  const [cartNote, setCartNote] = useState("");
+  const [isDiscountOpen, setIsDiscountOpen] = useState(false);
+  const [discountCode, setDiscountCode] = useState("");
+  const [appliedDiscountCode, setAppliedDiscountCode] = useState("");
+  const [appliedDiscountPercent, setAppliedDiscountPercent] = useState(0);
+  const [discountError, setDiscountError] = useState("");
+
+  const total = items.reduce(
+    (sum, item) => sum + item.price * item.quantity,
+    0,
+  );
   const currency = items[0]?.currency || "INR";
+  const subtotalText = useMemo(
+    () => formatMoney(total, currency),
+    [total, currency],
+  );
+  const discountAmount = useMemo(
+    () => (total * appliedDiscountPercent) / 100,
+    [total, appliedDiscountPercent],
+  );
+  const grandTotal = useMemo(
+    () => Math.max(0, total - discountAmount),
+    [total, discountAmount],
+  );
+  const discountAmountText = useMemo(
+    () => formatMoney(discountAmount, currency),
+    [discountAmount, currency],
+  );
+  const grandTotalText = useMemo(
+    () => formatMoney(grandTotal, currency),
+    [grandTotal, currency],
+  );
+
+  function clearDiscountState() {
+    setDiscountCode("");
+    setAppliedDiscountCode("");
+    setAppliedDiscountPercent(0);
+    setDiscountError("");
+  }
+
+  function applyDiscountCode() {
+    const normalizedCode = discountCode.trim().toLowerCase();
+
+    if (!normalizedCode) {
+      setDiscountError("Please enter a discount code.");
+      setAppliedDiscountCode("");
+      setAppliedDiscountPercent(0);
+      return;
+    }
+
+    const matchedCode = CART_DISCOUNT_CODES[normalizedCode];
+    if (!matchedCode) {
+      setDiscountError("Invalid code. Try Deva123 or Vinayak123.");
+      setAppliedDiscountCode("");
+      setAppliedDiscountPercent(0);
+      return;
+    }
+
+    setAppliedDiscountCode(matchedCode.code);
+    setAppliedDiscountPercent(matchedCode.percent);
+    setDiscountError("");
+  }
 
   if (!items.length) {
     return (
-      <div className="rounded-3xl border border-dashed border-rose-300 bg-rose-50 p-7 text-center text-rose-900">
-        Your cart is empty.{" "}
-        <Link href={`/${slug}/collections`} className="font-semibold underline">
-          Explore collections
+      <div className="rounded-2xl border border-dashed border-[#d3b6b1] bg-[#f7e9e6] p-8 text-center text-[#3f2019]">
+        <p className="text-[24px] font-semibold">Your cart is empty</p>
+        <p className="mt-2 text-[16px] text-[#6d4a42]">
+          Browse collections and add your favorite pieces.
+        </p>
+        <Link
+          href={`/${slug}/collections`}
+          className="mt-5 inline-flex rounded-xl bg-[#cc5639] px-6 py-3 text-[16px] font-semibold text-white transition hover:bg-[#b94d31]"
+        >
+          Continue shopping
         </Link>
       </div>
     );
   }
 
   return (
-    <div className="grid gap-6 lg:grid-cols-[1fr_340px]">
-      <div className="space-y-4">
-        {items.map((item) => (
-          <div key={item.productId} className="flex gap-4 rounded-3xl border border-rose-200 bg-[#fff7f8] p-4">
-            {isVideoUrl(item.image) ? (
-              <video src={item.image} className="h-24 w-24 rounded-2xl object-cover" muted controls />
-            ) : (
-              <Image src={item.image} alt={item.name} className="h-24 w-24 rounded-2xl object-cover" width={96} height={96} />
-            )}
-            <div className="flex-1">
-              <p className="font-semibold text-rose-950">{item.name}</p>
-              <p className="text-rose-800">{formatMoney(item.price, item.currency)}</p>
-              <div className="mt-3 flex flex-wrap items-center gap-2">
-                <button
-                  className="h-8 w-8 rounded-full border border-rose-300 text-rose-900"
-                  onClick={() =>
-                    dispatch(
-                      updateCartQty({
-                        productId: item.productId,
-                        slug,
-                        quantity: Math.max(1, item.quantity - 1),
-                      }),
-                    )
-                  }
-                >
-                  -
-                </button>
-                <span className="w-8 text-center font-semibold">{item.quantity}</span>
-                <button
-                  className="h-8 w-8 rounded-full border border-rose-300 text-rose-900"
-                  onClick={() =>
-                    dispatch(
-                      updateCartQty({
-                        productId: item.productId,
-                        slug,
-                        quantity: item.quantity + 1,
-                      }),
-                    )
-                  }
-                >
-                  +
-                </button>
-                <button className="ml-2 text-sm font-semibold text-red-600" onClick={() => dispatch(removeFromCart({ productId: item.productId, slug }))}>
-                  Remove
-                </button>
-              </div>
-            </div>
-          </div>
-        ))}
+    <div className="space-y-7 pb-6">
+      <div className="flex flex-wrap items-center justify-between gap-4 px-1">
+        <h2 className="text-lg font-semibold text-[#2f1f1a]">
+          Cart Item - ({items.length})
+        </h2>
+        <Link
+          href={`/${slug}/collections`}
+          className="rounded-xl bg-[#cc5639] px-4 py-2 text-md font-semibold  tracking-wide text-white transition hover:bg-[#b94d31]"
+        >
+          Continue shopping
+        </Link>
       </div>
 
-      <div className="h-fit rounded-3xl border border-rose-200 bg-[#fff7f8] p-5">
-        <p className="text-lg font-semibold text-rose-950">Order Summary</p>
-        <div className="mt-4 flex items-center justify-between text-sm text-rose-800">
-          <span>Total</span>
-          <span className="text-2xl font-bold text-rose-950">{formatMoney(total, currency)}</span>
+      <div className="grid gap-8 xl:grid-cols-[1fr_560px]">
+        <div className="rounded-2xl bg-[#fae9e6] p-5 md:p-8">
+          <div className="divide-y divide-[#c7b4b0]">
+            {items.map((item, index) => {
+              return (
+                <div
+                  key={`${item.productId}-${index}`}
+                  className={`grid gap-5 py-6 md:grid-cols-[180px_1fr_220px] ${index === 0 ? "pt-2" : ""}`}
+                >
+                  <div className="relative h-44 overflow-hidden rounded-xl bg-[#fae9e6]">
+                    {isVideoUrl(item.image) ? (
+                      <video
+                        src={item.image}
+                        className="h-full w-full object-cover"
+                        muted
+                        controls
+                      />
+                    ) : (
+                      <Image
+                        src={item.image}
+                        alt={item.name}
+                        className="h-full w-full object-contain"
+                        width={220}
+                        height={220}
+                      />
+                    )}
+                  </div>
+
+                  <div className="space-y-2 md:pt-2">
+                    <p className="text-sm font-semibold uppercase tracking-[0.06em] text-[#8f5d53]">
+                      Item {index + 1}
+                    </p>
+                    <p className="text-lg font-medium leading-tight text-[#2f1f1a]">
+                      {item.name}
+                    </p>
+                    <div className="mt-1 flex flex-wrap items-center gap-4">
+                      <span className="text-xl font-medium text-[#2f1f1a]">
+                        {formatMoney(item.price, item.currency)}
+                      </span>
+                      <span className="text-xl text-[#735953]">
+                        Qty: {item.quantity}
+                      </span>
+                    </div>
+                    <p className="text-lg text-[#4f403a]">
+                      Item total:{" "}
+                      {formatMoney(item.price * item.quantity, item.currency)}
+                    </p>
+                  </div>
+
+                  <div className="space-y-3 md:justify-self-end">
+                    <div className="flex h-14 items-center justify-between rounded-xl border border-[#8f7a74] bg-[#f8ece9] px-3">
+                      <button
+                        className="inline-flex h-9 w-9 items-center justify-center rounded-md text-[#cc5639] transition hover:bg-[#ecd7d2]"
+                        onClick={() =>
+                          dispatch(
+                            updateCartQty({
+                              productId: item.productId,
+                              slug,
+                              quantity: Math.max(1, item.quantity - 1),
+                            }),
+                          )
+                        }
+                      >
+                        <Minus size={18} />
+                      </button>
+                      <span className="w-8 text-center text-xl font-medium text-[#2f1f1a]">
+                        {item.quantity}
+                      </span>
+                      <button
+                        className="inline-flex h-9 w-9 items-center justify-center rounded-md text-[#cc5639] transition hover:bg-[#ecd7d2]"
+                        onClick={() =>
+                          dispatch(
+                            updateCartQty({
+                              productId: item.productId,
+                              slug,
+                              quantity: item.quantity + 1,
+                            }),
+                          )
+                        }
+                      >
+                        <Plus size={18} />
+                      </button>
+                    </div>
+                    <button
+                      className="flex h-14 w-full items-center justify-center gap-2 rounded-xl bg-[#cc5639] px-4 text-[16px] font-semibold tracking-wide text-white transition hover:bg-[#b94d31]"
+                      onClick={() =>
+                        dispatch(
+                          removeFromCart({ productId: item.productId, slug }),
+                        )
+                      }
+                    >
+                      <Trash2 size={18} />
+                      Remove
+                    </button>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
         </div>
-        <Link
-          href={`/${slug}/checkout`}
-          className="mt-5 block rounded-full bg-[#cc5639] py-3 text-center text-sm font-bold uppercase tracking-wide text-white transition hover:bg-[#b84c32]"
-        >
-          Continue To Checkout
-        </Link>
+        {/* Note Section */}
+        <div className="h-fit space-y-4 self-start xl:sticky xl:top-6">
+          <div className="rounded-xl bg-[#f2e2df] p-4">
+            <button
+              type="button"
+              onClick={() => setIsNoteOpen((prev) => !prev)}
+              className="flex w-full items-center justify-between text-left"
+            >
+              <span className="text-lg font-semibold text-[#2f1f1a]">
+                Add cart note
+              </span>
+              {isNoteOpen ? <X size={24} /> : <PlusIcon size={24} />}
+            </button>
+
+            {isNoteOpen ? (
+              <div className="mt-1">
+                <textarea
+                  value={cartNote}
+                  onChange={(event) => setCartNote(event.target.value)}
+                  placeholder="Write a note for your order"
+                  className="min-h-24 w-full rounded-xl border border-[#d2c0bc] bg-white px-3 py-2 text-sm text-[#2f1f1a]"
+                />
+              </div>
+            ) : null}
+          </div>
+
+          <div className="rounded-xl bg-[#f2e2df] p-4">
+            <button
+              type="button"
+              onClick={() => setIsDiscountOpen((prev) => !prev)}
+              className="flex w-full items-center justify-between text-left"
+            >
+              <span className="text-lg font-semibold text-[#2f1f1a]">
+                Discount
+              </span>
+              {isDiscountOpen ? <X size={24} /> : <PlusIcon size={24} />}
+            </button>
+
+            {isDiscountOpen ? (
+              <div className="">
+                <p className="text-sm text-[#5f4d47]">Enter discount code *</p>
+                <p className="mt-1 text-xs text-[#6e534c]">
+                  Available: Deva123 (20%), Vinayak123 (30%)
+                </p>
+                <div className="relative mt-2">
+                  <input
+                    value={discountCode}
+                    onChange={(event) => {
+                      setDiscountCode(event.target.value);
+                      if (discountError) {
+                        setDiscountError("");
+                      }
+                    }}
+                    placeholder="Enter discount code"
+                    className="h-12 w-full rounded-xl border border-[#d2c0bc] bg-white px-3 pr-10 text-[16px] text-[#2f1f1a]"
+                  />
+                  {discountCode ? (
+                    <button
+                      type="button"
+                      onClick={clearDiscountState}
+                      className="absolute right-2 top-1/2 inline-flex h-7 w-7 -translate-y-1/2 items-center justify-center rounded-full text-[#755a53] transition hover:bg-[#f5e6e2] hover:text-[#2f1f1a]"
+                      aria-label="Clear discount code"
+                    >
+                      <X size={16} />
+                    </button>
+                  ) : null}
+                </div>
+                <button
+                  type="button"
+                  onClick={applyDiscountCode}
+                  className="mt-3 h-12 w-full rounded-xl bg-[#cc5639] text-md font-semibold tracking-wide text-white transition hover:border hover:bg-[#f5e2de] hover:text-[#2f1f1a]"
+                >
+                  Apply
+                </button>
+                {discountError ? (
+                  <p className="mt-2 text-xs text-red-600">{discountError}</p>
+                ) : null}
+                {appliedDiscountCode ? (
+                  <p className="mt-2 text-xs text-emerald-700">
+                    Code applied: {appliedDiscountCode} (
+                    {appliedDiscountPercent}% off)
+                  </p>
+                ) : null}
+              </div>
+            ) : null}
+          </div>
+
+          <div className="pt-1">
+            <div className="flex items-center justify-between">
+              <span className="text-lg font-semibold text-[#2f1f1a]">
+                Subtotal:
+              </span>
+              <span className="text-lg font-bold text-[#2f1f1a]">
+                {subtotalText}
+              </span>
+            </div>
+            {appliedDiscountCode ? (
+              <div className="mt-2 flex items-center justify-between">
+                <span className="text-md font-medium text-[#5f4d47]">
+                  Discount ({appliedDiscountPercent}%)
+                </span>
+                <span className="text-md font-semibold text-emerald-700">
+                  -{discountAmountText}
+                </span>
+              </div>
+            ) : null}
+            <p className="mt-4 text-md text-[#5f4d47]">
+              Taxes, discounts and shipping calculated at checkout.
+            </p>
+            <Link
+              href={`/${slug}/checkout`}
+              className="mt-4 block rounded-xl bg-[#cc5639] py-3 text-center text-[16px] font-semibold tracking-wide text-white transition hover:border hover:bg-[#f5e2de] hover:text-[#2f1f1a]"
+            >
+              Checkout
+            </Link>
+            <p className="mt-2 text-right text-lg font-medium text-[#5f4d47]">
+              Grand total: {grandTotalText}
+            </p>
+          </div>
+        </div>
       </div>
     </div>
   );
