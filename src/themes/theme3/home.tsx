@@ -13,19 +13,6 @@ import { Theme3ProductCard } from "@/themes/theme3/product-card";
 import { toCollectionSlug } from "@/themes/theme3/collection-utils";
 import type { ThemeHomeProps } from "@/themes/types";
 
-const MAX_COLLECTION_CARDS = 8;
-const THEME3_ANNOUNCEMENT_TEXT = "Free Shipping On Orders Over $200";
-const THEME3_FEATURED_HEADING = "Sparkling New Pieces";
-const THEME3_COLLECTION_LABELS = [
-  "Rings",
-  "Bracelets",
-  "Necklaces",
-  "Earrings",
-  "Pendants",
-  "Bangles",
-  "Anklet",
-  "Pearls",
-];
 const THEME3_COLLECTION_IMAGE_URLS = [
   "https://storage.googleapis.com/canada-ecommerce-assets/skl/themeimages/a-1774845949350.avif",
   "https://storage.googleapis.com/canada-ecommerce-assets/skl/themeimages/b-1774848444266.avif",
@@ -37,7 +24,7 @@ const THEME3_COLLECTION_IMAGE_URLS = [
   "https://storage.googleapis.com/canada-ecommerce-assets/skl/themeimages/h-1774848555240.avif",
 ];
 
-export function Theme3Home({ slug, store, products }: ThemeHomeProps) {
+export function Theme3Home({ slug, store, products, categories = [] }: ThemeHomeProps) {
   useCartStorage();
 
   const sliderItems = [
@@ -59,22 +46,21 @@ export function Theme3Home({ slug, store, products }: ThemeHomeProps) {
   const [activeSlide, setActiveSlide] = useState(0);
   const dragStartXRef = useRef<number | null>(null);
 
-  const collections = THEME3_COLLECTION_LABELS;
-  const collectionTiles = useMemo(() => {
-    const size = Math.min(
-      MAX_COLLECTION_CARDS,
-      Math.max(
-        collections.length,
-        THEME3_COLLECTION_LABELS.length,
-        THEME3_COLLECTION_IMAGE_URLS.length,
-      ),
-    );
+  const collectionLabels = useMemo(
+    () =>
+      categories
+        .map((category) => category.name?.trim())
+        .filter((label): label is string => !!label)
+        .slice(0, 8),
+    [categories],
+  );
 
-    return Array.from({ length: size }, (_, index) => ({
-      label: collections[index] || THEME3_COLLECTION_LABELS[index],
-      imageUrl: THEME3_COLLECTION_IMAGE_URLS[index],
+  const collectionTiles = useMemo(() => {
+    return collectionLabels.map((label, index) => ({
+      label,
+      imageUrl: THEME3_COLLECTION_IMAGE_URLS[index] || THEME3_COLLECTION_IMAGE_URLS[0],
     }));
-  }, [collections]);
+  }, [collectionLabels]);
   const availableCollectionSlugs = useMemo(
     () =>
       new Set(
@@ -130,7 +116,7 @@ export function Theme3Home({ slug, store, products }: ThemeHomeProps) {
           slug={slug}
           logoText={store.logoText || store.businessName}
         />
-        <Theme3Announcement text={THEME3_ANNOUNCEMENT_TEXT} />
+        <Theme3Announcement />
       </div>
 
       <section className="mx-auto mt-4 w-full max-w-475 px-4">
@@ -275,7 +261,7 @@ export function Theme3Home({ slug, store, products }: ThemeHomeProps) {
             Just Dropped
           </span>
           <h2 className="mt-4 text-4xl font-semibold text-rose-950">
-            {THEME3_FEATURED_HEADING}
+            Sparkling New Pieces
           </h2>
         </div>
 

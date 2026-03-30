@@ -1,4 +1,5 @@
 import { connectToDatabase } from "@/lib/mongodb";
+import { Category } from "@/models/Category";
 import { Product } from "@/models/Product";
 import { Store } from "@/models/Store";
 
@@ -47,13 +48,17 @@ export async function getStorefrontHomeData(slug: string) {
   const store = await Store.findOne({ slug }).lean();
   if (!store || store.status === "inactive") return null;
 
-  const products = await Product.find({ storeId: store._id, isPublished: true })
-    .sort({ createdAt: -1 })
-    .lean();
+  const [products, categories] = await Promise.all([
+    Product.find({ storeId: store._id, isPublished: true })
+      .sort({ createdAt: -1 })
+      .lean(),
+    Category.find({ storeId: store._id }).sort({ createdAt: 1 }).lean(),
+  ]);
 
   return {
     store: toPlain(store),
     products: toPlain(products),
+    categories: toPlain(categories),
   };
 }
 

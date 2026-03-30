@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 
 import { connectToDatabase } from "@/lib/mongodb";
+import { Category } from "@/models/Category";
 import { Store } from "@/models/Store";
 import { Product } from "@/models/Product";
 
@@ -22,9 +23,12 @@ export async function GET(
     return NextResponse.json({ error: "Store is inactive" }, { status: 403 });
   }
 
-  const products = await Product.find({ storeId: store._id, isPublished: true })
-    .sort({ createdAt: -1 })
-    .lean();
+  const [products, categories] = await Promise.all([
+    Product.find({ storeId: store._id, isPublished: true })
+      .sort({ createdAt: -1 })
+      .lean(),
+    Category.find({ storeId: store._id }).sort({ createdAt: 1 }).lean(),
+  ]);
 
-  return NextResponse.json({ store, products });
+  return NextResponse.json({ store, products, categories });
 }

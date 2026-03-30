@@ -5,13 +5,12 @@ import { useEffect, useState } from "react";
 
 const THEME3_ANNOUNCEMENT_DISMISS_KEY = "theme3_home_announcement_dismissed";
 
-type Theme3AnnouncementProps = {
-  text: string;
-};
 
-export function Theme3Announcement({ text }: Theme3AnnouncementProps) {
+
+export function Theme3Announcement() {
   const [visible, setVisible] = useState(true);
   const [entered, setEntered] = useState(false);
+  const text = "Free Shipping On Orders Over $200"; // You can customize the announcement text here
 
   useEffect(() => {
     try {
