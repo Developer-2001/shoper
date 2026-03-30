@@ -1,10 +1,10 @@
 "use client";
 
 import Image from "next/image";
-import { SlidersHorizontal } from "lucide-react";
 import { useMemo, useState } from "react";
 
 import { useCartStorage } from "@/hooks/useCartStorage";
+import { Theme3CollectionFilters } from "@/themes/theme3/collection-filters";
 import { Theme3Footer } from "@/themes/theme3/footer";
 import { Theme3Navbar } from "@/themes/theme3/navbar";
 import { Theme3ProductCard } from "@/themes/theme3/product-card";
@@ -29,21 +29,72 @@ export function Theme3CollectionProductsPage({
   useCartStorage();
 
   const [sortBy, setSortBy] = useState("featured");
+  const [isFilterOpen, setIsFilterOpen] = useState(false);
+  const [appliedFromPrice, setAppliedFromPrice] = useState("");
+  const [appliedToPrice, setAppliedToPrice] = useState("");
+  const [appliedDiscount, setAppliedDiscount] = useState<number | null>(null);
+  const [draftFromPrice, setDraftFromPrice] = useState("");
+  const [draftToPrice, setDraftToPrice] = useState("");
+  const [draftDiscount, setDraftDiscount] = useState<number | null>(null);
   const bannerMedia =
     "https://storage.googleapis.com/canada-ecommerce-assets/skl/themeimages/slider1-1774845449106.webp";
+  const discountOptions = [10, 20, 30, 40, 50];
+
+  const filteredProducts = useMemo(() => {
+    const hasFrom = appliedFromPrice.trim() !== "";
+    const hasTo = appliedToPrice.trim() !== "";
+    const from = Number(appliedFromPrice);
+    const to = Number(appliedToPrice);
+
+    return categoryProducts.filter((product) => {
+      if (hasFrom && !Number.isNaN(from) && product.price < from) {
+        return false;
+      }
+      if (hasTo && !Number.isNaN(to) && product.price > to) {
+        return false;
+      }
+      if (
+        appliedDiscount !== null &&
+        (product.discountPercentage || 0) > appliedDiscount
+      ) {
+        return false;
+      }
+      return true;
+    });
+  }, [categoryProducts, appliedFromPrice, appliedToPrice, appliedDiscount]);
 
   const sortedProducts = useMemo(() => {
     if (sortBy === "price-asc") {
-      return [...categoryProducts].sort((a, b) => a.price - b.price);
+      return [...filteredProducts].sort((a, b) => a.price - b.price);
     }
     if (sortBy === "price-desc") {
-      return [...categoryProducts].sort((a, b) => b.price - a.price);
+      return [...filteredProducts].sort((a, b) => b.price - a.price);
     }
     if (sortBy === "name") {
-      return [...categoryProducts].sort((a, b) => a.name.localeCompare(b.name));
+      return [...filteredProducts].sort((a, b) => a.name.localeCompare(b.name));
     }
-    return categoryProducts;
-  }, [categoryProducts, sortBy]);
+    return filteredProducts;
+  }, [filteredProducts, sortBy]);
+
+  function openFilters() {
+    setDraftFromPrice(appliedFromPrice);
+    setDraftToPrice(appliedToPrice);
+    setDraftDiscount(appliedDiscount);
+    setIsFilterOpen(true);
+  }
+
+  function clearDraftFilters() {
+    setDraftFromPrice("");
+    setDraftToPrice("");
+    setDraftDiscount(null);
+  }
+
+  function applyFilters() {
+    setAppliedFromPrice(draftFromPrice.trim());
+    setAppliedToPrice(draftToPrice.trim());
+    setAppliedDiscount(draftDiscount);
+    setIsFilterOpen(false);
+  }
 
   return (
     <div className="min-h-screen bg-[#fae9e6] text-rose-950">
@@ -94,22 +145,33 @@ export function Theme3CollectionProductsPage({
 
         <section className="mt-8">
           <div className="flex flex-wrap items-center justify-between gap-3">
-            <button
-              type="button"
-              className="inline-flex items-center gap-2 rounded-lg bg-rose-100 px-4 py-2 text-sm font-semibold text-rose-800"
-            >
-              <SlidersHorizontal size={16} />
-              Filter
-            </button>
+            <Theme3CollectionFilters
+              isOpen={isFilterOpen}
+              fromPrice={draftFromPrice}
+              toPrice={draftToPrice}
+              selectedDiscount={draftDiscount}
+              discountOptions={discountOptions}
+              onOpen={openFilters}
+              onClose={() => setIsFilterOpen(false)}
+              onChangeFromPrice={setDraftFromPrice}
+              onChangeToPrice={setDraftToPrice}
+              onToggleDiscount={(value) =>
+                setDraftDiscount((current) =>
+                  current === value ? null : value,
+                )
+              }
+              onClear={clearDraftFilters}
+              onApply={applyFilters}
+            />
 
             <div className="flex items-center gap-3 text-sm text-rose-900">
-              <span>Total products: {categoryProducts.length}</span>
+              <span>Total products: {sortedProducts.length}</span>
               <label className="inline-flex items-center gap-2">
                 Sort by:
                 <select
                   value={sortBy}
                   onChange={(event) => setSortBy(event.target.value)}
-                  className="rounded-lg border border-rose-200 bg-rose-50 px-3 py-2"
+                  className="rounded-lg border border-[#fae9e6] bg-[#fae9e6] px-3 py-2"
                 >
                   <option value="featured">Best selling</option>
                   <option value="price-asc">Price low to high</option>
