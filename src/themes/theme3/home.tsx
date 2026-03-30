@@ -25,13 +25,35 @@ const THEME3_COLLECTION_LABELS = [
   "Anklet",
   "Pearls",
 ];
+const THEME3_COLLECTION_IMAGE_URLS = [
+  "https://storage.googleapis.com/canada-ecommerce-assets/skl/themeimages/a-1774845949350.avif",
+  "https://storage.googleapis.com/canada-ecommerce-assets/skl/themeimages/b-1774848444266.avif",
+  "https://storage.googleapis.com/canada-ecommerce-assets/skl/themeimages/c-1774848489198.webp",
+  "https://storage.googleapis.com/canada-ecommerce-assets/skl/themeimages/d-1774848498740.webp",
+  "https://storage.googleapis.com/canada-ecommerce-assets/skl/themeimages/e-1774848516907.webp",
+  "https://storage.googleapis.com/canada-ecommerce-assets/skl/themeimages/f-1774848530264.webp",
+  "https://storage.googleapis.com/canada-ecommerce-assets/skl/themeimages/g-1774848542532.webp",
+  "https://storage.googleapis.com/canada-ecommerce-assets/skl/themeimages/h-1774848555240.avif",
+];
 
 export function Theme3Home({ slug, store, products }: ThemeHomeProps) {
   useCartStorage();
 
-  const sliderMedia = [
-    "https://storage.googleapis.com/canada-ecommerce-assets/skl/themeimages/slider1-1774845449106.webp",
-    "https://storage.googleapis.com/canada-ecommerce-assets/skl/themeimages/slider2-1774845547454.webp",
+  const sliderItems = [
+    {
+      imageUrl:
+        "https://storage.googleapis.com/canada-ecommerce-assets/skl/themeimages/slider1-1774845449106.webp",
+      title: "Elevate Your Style with the Perfect Accessory",
+      description:
+        "From everyday essentials to statement pieces, discover accessories that add the perfect finishing touch.",
+    },
+    {
+      imageUrl:
+        "https://storage.googleapis.com/canada-ecommerce-assets/skl/themeimages/slider2-1774845547454.webp",
+      title: "Shine Brighter With Timeless Jewelry",
+      description:
+        "Discover beautifully crafted pieces designed to add elegance and confidence to every moment, elevating your look with timeless charm and grace.",
+    },
   ];
   const [activeSlide, setActiveSlide] = useState(0);
 
@@ -39,12 +61,21 @@ export function Theme3Home({ slug, store, products }: ThemeHomeProps) {
   const collectionTiles = useMemo(() => {
     const size = Math.min(
       MAX_COLLECTION_CARDS,
-      Math.max(collections.length, THEME3_COLLECTION_LABELS.length),
+      Math.max(
+        collections.length,
+        THEME3_COLLECTION_LABELS.length,
+        THEME3_COLLECTION_IMAGE_URLS.length,
+      ),
     );
 
     return Array.from({ length: size }, (_, index) => ({
-      label: collections[index] || THEME3_COLLECTION_LABELS[index] || `Collection ${index + 1}`,
-      imageUrl: "https://storage.googleapis.com/canada-ecommerce-assets/ranka/theme3-collection-labels/a-1774629332806.avif",
+      label:
+        collections[index] ||
+        THEME3_COLLECTION_LABELS[index] ||
+        `Collection ${index + 1}`,
+      imageUrl:
+        THEME3_COLLECTION_IMAGE_URLS[index] ||
+        "https://storage.googleapis.com/canada-ecommerce-assets/ranka/theme3-collection-labels/a-1774629332806.avif",
     }));
   }, [collections]);
   const availableCollectionSlugs = useMemo(
@@ -57,17 +88,20 @@ export function Theme3Home({ slug, store, products }: ThemeHomeProps) {
     [products],
   );
 
-  const activeMedia = sliderMedia[activeSlide] || "";
+  const activeItem = sliderItems[activeSlide] || sliderItems[0];
+  const activeMedia = activeItem?.imageUrl || "";
   const featuredProducts = products.slice(0, 4);
 
   function goPrev() {
-    if (!sliderMedia.length) return;
-    setActiveSlide((prev) => (prev - 1 + sliderMedia.length) % sliderMedia.length);
+    if (!sliderItems.length) return;
+    setActiveSlide(
+      (prev) => (prev - 1 + sliderItems.length) % sliderItems.length,
+    );
   }
 
   function goNext() {
-    if (!sliderMedia.length) return;
-    setActiveSlide((prev) => (prev + 1) % sliderMedia.length);
+    if (!sliderItems.length) return;
+    setActiveSlide((prev) => (prev + 1) % sliderItems.length);
   }
 
   return (
@@ -76,93 +110,112 @@ export function Theme3Home({ slug, store, products }: ThemeHomeProps) {
         {THEME3_ANNOUNCEMENT_TEXT}
       </div>
 
-      <Theme3Navbar slug={slug} logoText={store.logoText || store.businessName} />
+      <Theme3Navbar
+        slug={slug}
+        logoText={store.logoText || store.businessName}
+      />
 
       <section className="mx-auto mt-6 w-full max-w-475 px-4">
-          <div className="relative overflow-hidden rounded-2xl border border-rose-200 bg-black/10">
-            <div className="relative aspect-1898/742 w-full">
-              {activeMedia ? (
-                <Image src={activeMedia} alt={store.businessName} fill className="object-cover" sizes="100vw" />
-              ) : (
-                <div className="grid h-full w-full place-items-center text-rose-300">Add slider media (1898x742)</div>
-              )}
-
-              <div className="absolute inset-0 bg-linear-to-r from-black/55 via-black/20 to-transparent" />
-              <div className="absolute left-8 top-8 max-w-xl text-white md:left-12 md:top-14">
-                <div className="mb-4 flex gap-2">
-                  <span className="rounded-md bg-white/90 px-3 py-1 text-xs font-semibold text-[#cc5639]">Necklace</span>
-                  <span className="rounded-md bg-white/90 px-3 py-1 text-xs font-semibold text-[#cc5639]">Ring</span>
-                </div>
-                <h1 className="text-4xl font-semibold leading-tight md:text-6xl">Elevate Your Style with the Perfect Accessory</h1>
-                <p className="mt-4 text-sm text-white/90 md:text-base">
-                  From everyday essentials to statement pieces, discover accessories that add the perfect finishing touch.
-                </p>
-                <Link
-                  href={`/${slug}/collections`}
-                  className="mt-6 inline-block rounded-xl bg-[#cc5639] px-6 py-3 text-sm font-bold text-white transition hover:bg-[#b84c32]"
-                >
-                  Shop Now
-                </Link>
+        <div className="relative overflow-hidden rounded-2xl border border-rose-200 bg-black/10">
+          <div className="relative aspect-1898/742 w-full">
+            {activeMedia ? (
+              <Image
+                src={activeMedia}
+                alt={store.businessName}
+                fill
+                className="object-cover"
+                sizes="100vw"
+              />
+            ) : (
+              <div className="grid h-full w-full place-items-center text-rose-300">
+                Add slider media (1898x742)
               </div>
+            )}
 
-              {sliderMedia.length > 1 ? (
-                <div className="absolute bottom-6 right-6 flex gap-2">
-                  <button
-                    type="button"
-                    onClick={goPrev}
-                    className="inline-flex h-10 w-16 items-center justify-center rounded-md bg-[#cc5639]/70 text-[#3a0900] transition hover:bg-[#cc5639]"
-                  >
-                    <MoveLeft size={18} />
-                  </button>
-                  <button
-                    type="button"
-                    onClick={goNext}
-                    className="inline-flex h-10 w-16 items-center justify-center rounded-md bg-[#cc5639]/70 text-[#3a0900] transition hover:bg-[#cc5639]"
-                  >
-                    <MoveRight size={18} />
-                  </button>
-                </div>
-              ) : null}
+            <div className="absolute inset-0 bg-linear-to-r from-black/55 via-black/20 to-transparent" />
+            <div className="absolute left-8 bottom-4 max-w-xl text-white md:left-12 md:bottom-14">
+              <div className="mb-4 flex gap-2">
+                <span className="rounded-md bg-white/90 px-3 py-1 text-xs font-semibold text-[#cc5639]">
+                  Necklace
+                </span>
+                <span className="rounded-md bg-white/90 px-3 py-1 text-xs font-semibold text-[#cc5639]">
+                  Ring
+                </span>
+              </div>
+              <h1 className="text-4xl font-semibold leading-tight md:text-6xl">
+                {activeItem?.title}
+              </h1>
+              <p className="mt-4 text-sm text-white/90 md:text-base">
+                {activeItem?.description}
+              </p>
+              <Link
+                href={`/${slug}/collections`}
+                className="mt-6 inline-block rounded-xl bg-[#cc5639] px-6 py-3 text-sm font-bold text-white transition hover:bg-[#b84c32]"
+              >
+                Shop Now
+              </Link>
             </div>
-          </div>
 
-          <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-8">
-            {collectionTiles.map((collection, index) => {
-              const collectionSlug = toCollectionSlug(collection.label);
-              const href = availableCollectionSlugs.has(collectionSlug)
-                ? `/${slug}/collections/${collectionSlug}`
-                : `/${slug}/collections`;
-
-              return (
-                <Link
-                  key={`${collection.label}-${index}`}
-                  href={href}
-                  className="group relative aspect-258/90 overflow-hidden rounded-xl border border-rose-200 bg-white/70 text-left"
+            {sliderItems.length > 1 ? (
+              <div className="absolute bottom-6 right-6 flex gap-2">
+                <button
+                  type="button"
+                  onClick={goPrev}
+                  className="inline-flex h-10 w-16 items-center justify-center rounded-md bg-[#cc5639]/70 text-[#3a0900] transition hover:bg-[#cc5639]"
                 >
-                  {collection.imageUrl ? (
-                    <Image
-                      src={collection.imageUrl}
-                      alt={collection.label}
-                      fill
-                      className="object-cover transition duration-300 group-hover:scale-[1.03]"
-                      sizes="(max-width: 1024px) 50vw, 12vw"
-                    />
-                  ) : (
-                    <div className="absolute inset-0 bg-linear-to-r from-rose-200 to-rose-100" />
-                  )}
-                  <div className="absolute inset-0 bg-linear-to-t from-black/55 via-black/15 to-transparent" />
-                  <div className="collection_title_overlay absolute inset-x-0 bottom-0 px-2 py-2 text-center text-sm font-medium text-white">
-                    {collection.label}
-                  </div>
-                </Link>
-              );
-            })}
+                  <MoveLeft size={18} />
+                </button>
+                <button
+                  type="button"
+                  onClick={goNext}
+                  className="inline-flex h-10 w-16 items-center justify-center rounded-md bg-[#cc5639]/70 text-[#3a0900] transition hover:bg-[#cc5639]"
+                >
+                  <MoveRight size={18} />
+                </button>
+              </div>
+            ) : null}
           </div>
+        </div>
+
+        <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-8">
+          {collectionTiles.map((collection, index) => {
+            const collectionSlug = toCollectionSlug(collection.label);
+            const href = availableCollectionSlugs.has(collectionSlug)
+              ? `/${slug}/collections/${collectionSlug}`
+              : `/${slug}/collections`;
+
+            return (
+              <Link
+                key={`${collection.label}-${index}`}
+                href={href}
+                className="group relative aspect-258/90 overflow-hidden rounded-xl border border-rose-200 bg-white/70 text-left"
+              >
+                {collection.imageUrl ? (
+                  <Image
+                    src={collection.imageUrl}
+                    alt={collection.label}
+                    fill
+                    className="object-cover transition duration-300 group-hover:scale-[1.03]"
+                    sizes="(max-width: 1024px) 50vw, 12vw"
+                  />
+                ) : (
+                  <div className="absolute inset-0 bg-linear-to-r from-rose-200 to-rose-100" />
+                )}
+                <div className="absolute inset-0 bg-linear-to-t from-black/55 via-black/15 to-transparent" />
+                <div className="collection_title_overlay absolute inset-x-0 bottom-0 px-2 py-2 text-center text-sm font-medium text-white">
+                  {collection.label}
+                </div>
+              </Link>
+            );
+          })}
+        </div>
       </section>
 
       <section className="mx-auto mt-4 py-8  w-full px-6 bg-[#fcf5f4]">
         <div className="text-center">
-          <span className="rounded-full bg-[#cc5639] px-4 py-1 text-xs font-bold uppercase tracking-wider text-white">Just Dropped</span>
+          <span className="rounded-full bg-[#cc5639] px-4 py-1 text-xs font-bold uppercase tracking-wider text-white">
+            Just Dropped
+          </span>
           <h2 className="mt-4 text-4xl font-semibold text-rose-950">
             {THEME3_FEATURED_HEADING}
           </h2>
@@ -170,7 +223,11 @@ export function Theme3Home({ slug, store, products }: ThemeHomeProps) {
 
         <div className="mt-8 grid gap-5 md:grid-cols-2 xl:grid-cols-4">
           {featuredProducts.map((product) => (
-            <Theme3ProductCard key={product._id} slug={slug} product={product} />
+            <Theme3ProductCard
+              key={product._id}
+              slug={slug}
+              product={product}
+            />
           ))}
         </div>
       </section>
