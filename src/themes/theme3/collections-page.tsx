@@ -17,7 +17,11 @@ type CollectionTile = {
   cover: string;
 };
 
-export function Theme3CollectionsPage({ slug, store, products }: ThemeHomeProps) {
+export function Theme3CollectionsPage({
+  slug,
+  store,
+  products,
+}: ThemeHomeProps) {
   useCartStorage();
 
   const collectionMap = new Map<string, CollectionTile>();
@@ -43,11 +47,15 @@ export function Theme3CollectionsPage({ slug, store, products }: ThemeHomeProps)
   const collections = Array.from(collectionMap.values()).sort((a, b) =>
     a.label.localeCompare(b.label),
   );
-  const bannerMedia = "https://storage.googleapis.com/canada-ecommerce-assets/ranka/theme3-collection-labels/a-1774629332806.avif";
+  const bannerMedia =
+    "https://storage.googleapis.com/canada-ecommerce-assets/skl/themeimages/slider1-1774845449106.webp";
 
   return (
     <div className="min-h-screen bg-[#fae9e6] text-rose-950">
-      <Theme3Navbar slug={slug} logoText={store.logoText || store.businessName} />
+      <Theme3Navbar
+        slug={slug}
+        logoText={store.logoText || store.businessName}
+      />
 
       <main className="mx-auto w-full max-w-470 p-2 md:px-4 rounded-t-2xl bg-[#fcf5f4]">
         <section className="relative overflow-hidden rounded-2xl border border-rose-200 bg-[#3f0e07]">
@@ -78,7 +86,9 @@ export function Theme3CollectionsPage({ slug, store, products }: ThemeHomeProps)
             )}
             <div className="absolute inset-0 bg-linear-to-r from-black/60 via-black/20 to-transparent" />
             <div className="absolute left-4 top-1/2 -translate-y-1/2 text-white md:left-8">
-              <h1 className="text-5xl font-semibold leading-tight">All Collections</h1>
+              <h1 className="text-5xl font-semibold leading-tight">
+                All Collections
+              </h1>
               <p className="mt-2 text-sm text-white/90 md:text-xl">
                 Curated styles designed for everyday glow.
               </p>

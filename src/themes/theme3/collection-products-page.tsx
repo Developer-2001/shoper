@@ -29,7 +29,8 @@ export function Theme3CollectionProductsPage({
   useCartStorage();
 
   const [sortBy, setSortBy] = useState("featured");
-  const bannerMedia = "https://storage.googleapis.com/canada-ecommerce-assets/ranka/theme3-collection-labels/a-1774629332806.avif";
+  const bannerMedia =
+    "https://storage.googleapis.com/canada-ecommerce-assets/skl/themeimages/slider1-1774845449106.webp";
 
   const sortedProducts = useMemo(() => {
     if (sortBy === "price-asc") {
@@ -46,7 +47,10 @@ export function Theme3CollectionProductsPage({
 
   return (
     <div className="min-h-screen bg-[#fae9e6] text-rose-950">
-      <Theme3Navbar slug={slug} logoText={store.logoText || store.businessName} />
+      <Theme3Navbar
+        slug={slug}
+        logoText={store.logoText || store.businessName}
+      />
 
       <main className="mx-auto w-full max-w-470 px-2 py-5 md:px-4  rounded-t-2xl bg-[#fcf5f4]">
         <section className="relative overflow-hidden rounded-2xl border border-rose-200 bg-[#fcf5f4]">
@@ -77,9 +81,12 @@ export function Theme3CollectionProductsPage({
             )}
             <div className="absolute inset-0 bg-linear-to-r from-black/60 via-black/20 to-transparent" />
             <div className="absolute left-4 top-1/2 -translate-y-1/2 text-white md:left-8">
-              <h1 className="text-5xl font-semibold leading-tight">{categoryLabel}</h1>
+              <h1 className="text-5xl font-semibold leading-tight">
+                {categoryLabel}
+              </h1>
               <p className="mt-2 text-sm text-white/90 md:text-xl">
-                Discover the complete collection where timeless elegance meets modern sophistication.
+                Discover the complete collection where timeless elegance meets
+                modern sophistication.
               </p>
             </div>
           </div>

@@ -2,10 +2,11 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { MoveLeft, MoveRight, X } from "lucide-react";
+import { MoveLeft, MoveRight } from "lucide-react";
 import { useMemo, useRef, useState } from "react";
 
 import { useCartStorage } from "@/hooks/useCartStorage";
+import { Theme3Announcement } from "@/themes/theme3/announcement";
 import { Theme3Navbar } from "@/themes/theme3/navbar";
 import { Theme3Footer } from "@/themes/theme3/footer";
 import { Theme3ProductCard } from "@/themes/theme3/product-card";
@@ -14,7 +15,6 @@ import type { ThemeHomeProps } from "@/themes/types";
 
 const MAX_COLLECTION_CARDS = 8;
 const THEME3_ANNOUNCEMENT_TEXT = "Free Shipping On Orders Over $200";
-const THEME3_ANNOUNCEMENT_DISMISS_KEY = "theme3_home_announcement_dismissed";
 const THEME3_FEATURED_HEADING = "Sparkling New Pieces";
 const THEME3_COLLECTION_LABELS = [
   "Rings",
@@ -57,14 +57,6 @@ export function Theme3Home({ slug, store, products }: ThemeHomeProps) {
     },
   ];
   const [activeSlide, setActiveSlide] = useState(0);
-  const [showAnnouncement, setShowAnnouncement] = useState(() => {
-    if (typeof window === "undefined") return true;
-    try {
-      return window.localStorage.getItem(THEME3_ANNOUNCEMENT_DISMISS_KEY) !== "1";
-    } catch {
-      return true;
-    }
-  });
   const dragStartXRef = useRef<number | null>(null);
 
   const collections = THEME3_COLLECTION_LABELS;
@@ -79,11 +71,8 @@ export function Theme3Home({ slug, store, products }: ThemeHomeProps) {
     );
 
     return Array.from({ length: size }, (_, index) => ({
-      label:
-        collections[index] ||
-        THEME3_COLLECTION_LABELS[index],
-      imageUrl:
-        THEME3_COLLECTION_IMAGE_URLS[index] 
+      label: collections[index] || THEME3_COLLECTION_LABELS[index],
+      imageUrl: THEME3_COLLECTION_IMAGE_URLS[index],
     }));
   }, [collections]);
   const availableCollectionSlugs = useMemo(
@@ -134,41 +123,21 @@ export function Theme3Home({ slug, store, products }: ThemeHomeProps) {
     dragStartXRef.current = null;
   }
 
-  function dismissAnnouncement() {
-    setShowAnnouncement(false);
-    try {
-      window.localStorage.setItem(THEME3_ANNOUNCEMENT_DISMISS_KEY, "1");
-    } catch {
-      // ignore storage errors
-    }
-  }
-
   return (
     <div className="min-h-screen bg-[#fae9e6] text-rose-950">
-      {showAnnouncement ? (
-        <div className="relative mx-auto flex w-full max-w-3xl items-center justify-center rounded-b-[28px] bg-[#cc5639] px-10 py-2 text-center text-sm font-semibold text-white">
-          <span>{THEME3_ANNOUNCEMENT_TEXT}</span>
-          <button
-            type="button"
-            onClick={dismissAnnouncement}
-            className="absolute right-4 inline-flex h-7 w-7 items-center justify-center rounded-full bg-white/15 text-white transition hover:bg-white/25"
-            aria-label="Dismiss announcement"
-          >
-            <X size={14} />
-          </button>
-        </div>
-      ) : null}
+      <div className="relative">
+        <Theme3Navbar
+          slug={slug}
+          logoText={store.logoText || store.businessName}
+        />
+        <Theme3Announcement text={THEME3_ANNOUNCEMENT_TEXT} />
+      </div>
 
-      <Theme3Navbar
-        slug={slug}
-        logoText={store.logoText || store.businessName}
-      />
-
-      <section className="mx-auto mt-6 w-full max-w-475 px-4">
+      <section className="mx-auto mt-4 w-full max-w-475 px-4">
         {/* Slider */}
         <div className="relative overflow-hidden rounded-2xl border border-rose-200 bg-black/10">
           <div
-            className="relative aspect-1898/742 w-full overflow-hidden touch-pan-y"
+            className="relative aspect-1898/742 w-full overflow-hidden cursor-pointer touch-pan-y"
             onPointerDown={(event) => startSwipe(event.clientX)}
             onPointerUp={(event) => endSwipe(event.clientX)}
             onPointerCancel={cancelSwipe}
@@ -180,7 +149,10 @@ export function Theme3Home({ slug, store, products }: ThemeHomeProps) {
                 style={{ transform: `translateX(-${activeSlide * 100}%)` }}
               >
                 {sliderItems.map((item, index) => (
-                  <div key={`${item.imageUrl}-${index}`} className="relative h-full w-full shrink-0">
+                  <div
+                    key={`${item.imageUrl}-${index}`}
+                    className="relative h-full w-full shrink-0"
+                  >
                     <Image
                       src={item.imageUrl}
                       alt={`${store.businessName}-${index + 1}`}
@@ -232,7 +204,9 @@ export function Theme3Home({ slug, store, products }: ThemeHomeProps) {
                   >
                     <span
                       className={`block h-1 rounded-full transition-all duration-300 ${
-                        index === activeSlide ? "w-10 bg-white" : "w-6 bg-white/50"
+                        index === activeSlide
+                          ? "w-10 bg-white"
+                          : "w-6 bg-white/50"
                       }`}
                     />
                   </button>
