@@ -1,8 +1,8 @@
 "use client";
 
 import Image from "next/image";
-import { FormEvent, type Dispatch, type SetStateAction } from "react";
-import { Plus, Sparkles, X } from "lucide-react";
+import { FormEvent, type Dispatch, type SetStateAction, useState } from "react";
+import { ChevronDown, Plus, Sparkles, X } from "lucide-react";
 
 import { CategoryDropdown } from "@/components/admin/category-dropdown";
 import { Spinner } from "@/components/admin/ui/loader";
@@ -79,6 +79,8 @@ export function ProductFormModal({
   setNewCategoryName,
   onCreateCategory,
 }: ProductFormModalProps) {
+  const [isMediaExpanded, setIsMediaExpanded] = useState(false);
+
   if (!isOpen) return null;
 
   return (
@@ -91,7 +93,7 @@ export function ProductFormModal({
           className="flex max-h-[92vh] w-full max-w-5xl flex-col overflow-hidden rounded-2xl bg-white shadow-2xl"
           onClick={(event) => event.stopPropagation()}
         >
-          <div className="flex items-center justify-between border-b border-slate-200 px-5 py-4">
+          <div className="flex items-center justify-between border-b border-slate-200 px-5 py-2">
             <div>
               <h3 className="text-lg font-bold text-slate-900">
                 {isEditing ? "Edit Product" : "Add Product"}
@@ -111,57 +113,94 @@ export function ProductFormModal({
 
           <div className="overflow-y-auto px-5 py-4">
             <form onSubmit={onSubmit} className="space-y-4">
-              <div className="grid gap-3 md:grid-cols-2">
-                <input
-                  required
-                  value={form.name}
-                  onChange={(event) =>
-                    setForm((prev) => ({ ...prev, name: event.target.value }))
-                  }
-                  placeholder="name"
-                  className="rounded-xl border border-slate-300 px-4 py-2"
-                />
-                <CategoryDropdown
-                  value={form.category}
-                  options={categories}
-                  loading={categoriesLoading}
-                  onSelect={(name) =>
-                    setForm((prev) => ({ ...prev, category: name }))
-                  }
-                  onAddNew={onOpenCategoryModal}
-                />
-                <textarea
-                  value={form.description}
-                  onChange={(event) =>
-                    setForm((prev) => ({
-                      ...prev,
-                      description: event.target.value,
-                    }))
-                  }
-                  placeholder="description"
-                  className="min-h-24 rounded-xl border border-slate-300 px-4 py-2 md:col-span-2"
-                />
+              <div className="rounded-2xl border border-slate-200 bg-slate-50/50 p-4">
+                <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+                  Basic Details
+                </p>
+                <div className="mt-3 grid gap-3 md:grid-cols-2">
+                  <div className="space-y-1.5">
+                    <label className="text-sm font-medium text-slate-700">
+                      Product Name
+                    </label>
+                    <input
+                      required
+                      value={form.name}
+                      onChange={(event) =>
+                        setForm((prev) => ({
+                          ...prev,
+                          name: event.target.value,
+                        }))
+                      }
+                      placeholder="Enter product name"
+                      className="h-11 w-full rounded-xl border border-slate-300 bg-white px-4 text-sm text-slate-900 outline-hidden transition focus:border-slate-500"
+                    />
+                  </div>
 
-                <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4 md:col-span-2">
-                  <div className="flex flex-wrap items-center justify-between gap-3">
-                    <p className="text-sm font-semibold text-slate-800">
-                      Product Media
-                    </p>
+                  <div className="space-y-1.5">
+                    <label className="text-sm font-medium text-slate-700">
+                      Category
+                    </label>
+                    <CategoryDropdown
+                      value={form.category}
+                      options={categories}
+                      loading={categoriesLoading}
+                      onSelect={(name) =>
+                        setForm((prev) => ({ ...prev, category: name }))
+                      }
+                      onAddNew={onOpenCategoryModal}
+                    />
+                  </div>
+
+                  <div className="space-y-1.5 md:col-span-2">
+                    <label className="text-sm font-medium text-slate-700">
+                      Description
+                    </label>
+                    <textarea
+                      value={form.description}
+                      onChange={(event) =>
+                        setForm((prev) => ({
+                          ...prev,
+                          description: event.target.value,
+                        }))
+                      }
+                      placeholder="Write a short product description"
+                      className="min-h-24 w-full rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm text-slate-900 outline-hidden transition focus:border-slate-500"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                <button
+                  type="button"
+                  onClick={() => setIsMediaExpanded((prev) => !prev)}
+                  className="flex w-full items-center justify-between gap-3 text-left"
+                >
+                  <p className="text-sm font-semibold text-slate-800">Product Media</p>
+                  <div className="flex items-center gap-2">
                     <span className="text-xs text-slate-500">
                       {form.images.length}/{maxProductMedia}
                     </span>
+                    <ChevronDown
+                      size={16}
+                      className={`text-slate-500 transition ${isMediaExpanded ? "rotate-180" : ""}`}
+                    />
                   </div>
-                  <input
-                    id="product-add-input"
-                    type="file"
-                    accept="image/*,video/*"
-                    multiple
-                    className="hidden"
-                    onChange={(event) => onAddPendingFiles(event.target.files)}
-                  />
+                </button>
 
-                  <div className="mt-3 grid gap-3 sm:grid-cols-3 lg:grid-cols-3">
-                    {form.images.map((url, index) => (
+                {isMediaExpanded ? (
+                  <>
+                    <input
+                      id="product-add-input"
+                      type="file"
+                      accept="image/*,video/*"
+                      multiple
+                      className="hidden"
+                      onChange={(event) => onAddPendingFiles(event.target.files)}
+                    />
+
+                    <div className="mt-3 grid gap-3 sm:grid-cols-3 lg:grid-cols-3">
+                      {form.images.map((url, index) => (
                       <div
                         key={url}
                         className="group relative h-44 overflow-hidden rounded-2xl border border-slate-300 bg-white"
@@ -224,9 +263,9 @@ export function ProductFormModal({
                           }}
                         />
                       </div>
-                    ))}
+                      ))}
 
-                    {pendingProductPreviews.map((preview, index) => (
+                      {pendingProductPreviews.map((preview, index) => (
                       <div
                         key={preview.url}
                         className="group relative h-44 overflow-hidden rounded-2xl border border-amber-200 bg-white"
@@ -286,80 +325,118 @@ export function ProductFormModal({
                           Pending
                         </div>
                       </div>
-                    ))}
+                      ))}
 
-                    {form.images.length + pendingProductPreviews.length <
-                      maxProductMedia && (
-                      <button
-                        type="button"
-                        onClick={() =>
-                          document.getElementById("product-add-input")?.click()
-                        }
-                        className="flex h-44 flex-col items-center justify-center rounded-2xl border border-slate-300 bg-white text-slate-700 transition hover:border-slate-400"
-                      >
-                        <Plus size={26} />
-                        <span className="mt-2 text-sm font-medium">
-                          Choose Media
-                        </span>
-                      </button>
-                    )}
+                      {form.images.length + pendingProductPreviews.length <
+                        maxProductMedia && (
+                        <button
+                          type="button"
+                          onClick={() =>
+                            document.getElementById("product-add-input")?.click()
+                          }
+                          className="flex h-44 flex-col items-center justify-center rounded-2xl border border-slate-300 bg-white text-slate-700 transition hover:border-slate-400"
+                        >
+                          <Plus size={26} />
+                          <span className="mt-2 text-sm font-medium">
+                            Choose Media
+                          </span>
+                        </button>
+                      )}
+                    </div>
+                  </>
+                ) : null}
+              </div>
+
+              <div className="rounded-2xl border border-slate-200 bg-slate-50/50 p-4">
+                <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+                  Pricing And Inventory
+                </p>
+                <div className="mt-3 grid gap-4 grid-cols-1 sm:grid-cols-2 md:grid-cols-2">
+                  <div className="space-y-1.5">
+                    <label className="text-sm font-medium text-slate-700">
+                      Price
+                    </label>
+                    <input
+                      required
+                      type="number"
+                      min="0"
+                      step="0.01"
+                      value={form.price}
+                      onChange={(event) =>
+                        setForm((prev) => ({
+                          ...prev,
+                          price: event.target.value,
+                        }))
+                      }
+                      placeholder="0.00"
+                      className="h-11 w-full rounded-xl border border-slate-300 bg-white px-4 text-sm text-slate-900 outline-hidden transition focus:border-slate-500"
+                    />
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <label className="text-sm font-medium text-slate-700">
+                      Currency
+                    </label>
+                    <select
+                      required
+                      value={form.currency}
+                      onChange={(event) =>
+                        setForm((prev) => ({
+                          ...prev,
+                          currency: event.target.value,
+                        }))
+                      }
+                      className="h-11 w-full rounded-xl border border-slate-300 bg-white px-4 text-sm text-slate-900 outline-hidden transition focus:border-slate-500"
+                    >
+                      {currencyOptions.map((option) => (
+                        <option key={option.value} value={option.value}>
+                          {option.label}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <label className="text-sm font-medium text-slate-700">
+                      Discount Percentage
+                    </label>
+                    <input
+                      required
+                      type="number"
+                      min="0"
+                      max="90"
+                      value={form.discountPercentage}
+                      onChange={(event) =>
+                        setForm((prev) => ({
+                          ...prev,
+                          discountPercentage: event.target.value,
+                        }))
+                      }
+                      placeholder="0"
+                      className="h-11 w-full rounded-xl border border-slate-300 bg-white px-4 text-sm text-slate-900 outline-hidden transition focus:border-slate-500"
+                    />
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <label className="text-sm font-medium text-slate-700">
+                      Stock Quantity
+                    </label>
+                    <input
+                      required
+                      type="number"
+                      min="0"
+                      value={form.inStock}
+                      onChange={(event) =>
+                        setForm((prev) => ({
+                          ...prev,
+                          inStock: event.target.value,
+                        }))
+                      }
+                      placeholder="0"
+                      className="h-11 w-full rounded-xl border border-slate-300 bg-white px-4 text-sm text-slate-900 outline-hidden transition focus:border-slate-500"
+                    />
                   </div>
                 </div>
-
-                <input
-                  required
-                  type="number"
-                  min="0"
-                  step="0.01"
-                  value={form.price}
-                  onChange={(event) =>
-                    setForm((prev) => ({ ...prev, price: event.target.value }))
-                  }
-                  placeholder="price"
-                  className="rounded-xl border border-slate-300 px-4 py-2"
-                />
-
-                <select
-                  required
-                  value={form.currency}
-                  onChange={(event) =>
-                    setForm((prev) => ({
-                      ...prev,
-                      currency: event.target.value,
-                    }))
-                  }
-                  className="rounded-xl border border-slate-300 px-4 py-2"
-                >
-                  {currencyOptions.map((option) => (
-                    <option key={option.value} value={option.value}>
-                      {option.label}
-                    </option>
-                  ))}
-                </select>
-                <input
-                  required
-                  value={form.discountPercentage}
-                  onChange={(event) =>
-                    setForm((prev) => ({
-                      ...prev,
-                      discountPercentage: event.target.value,
-                    }))
-                  }
-                  placeholder="discountPercentage"
-                  className="rounded-xl border border-slate-300 px-4 py-2"
-                />
-                <input
-                  required
-                  value={form.inStock}
-                  onChange={(event) =>
-                    setForm((prev) => ({
-                      ...prev,
-                      inStock: event.target.value,
-                    }))
-                  }
-                  placeholder="inStock"
-                  className="rounded-xl border border-slate-300 px-4 py-2"
-                />
               </div>
 
               <div className="flex justify-end">
