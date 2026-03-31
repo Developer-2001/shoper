@@ -61,6 +61,7 @@ export default function ProductsPage() {
   const [loading, setLoading] = useState(true);
   const [categories, setCategories] = useState<CategoryOption[]>([]);
   const [categoriesLoading, setCategoriesLoading] = useState(true);
+  const [storeCurrency, setStoreCurrency] = useState("INR");
   const [nameFilter, setNameFilter] = useState<string[]>([]);
   const [categoryFilter, setCategoryFilter] = useState<string[]>([]);
   const [isCategoryModalOpen, setIsCategoryModalOpen] = useState(false);
@@ -160,6 +161,21 @@ export default function ProductsPage() {
     }
   }
 
+  async function fetchStoreCurrency(signal?: AbortSignal) {
+    try {
+      const response = await fetch("/api/admin/store", { signal });
+      if (!response.ok) return "INR";
+      const data = await response.json();
+      return data?.store?.currency || "INR";
+    } catch (err) {
+      if (err instanceof Error && err.name === "AbortError") {
+        return "INR";
+      }
+      console.error(err);
+      return "INR";
+    }
+  }
+
   async function refreshProducts() {
     setLoading(true);
     const nextProducts = await fetchProducts();
@@ -182,13 +198,16 @@ export default function ProductsPage() {
       try {
         setLoading(true);
         setCategoriesLoading(true);
-        const [nextProducts, nextCategories] = await Promise.all([
+        const [nextProducts, nextCategories, nextStoreCurrency] = await Promise.all([
           fetchProducts(controller.signal),
           fetchCategories(controller.signal),
+          fetchStoreCurrency(controller.signal),
         ]);
         if (active) {
           setProducts(nextProducts);
           setCategories(nextCategories);
+          setStoreCurrency(nextStoreCurrency);
+          setForm((prev) => ({ ...prev, currency: nextStoreCurrency }));
         }
       } catch {
         // ignore abort/network errors for initial load
@@ -430,6 +449,7 @@ export default function ProductsPage() {
 
     const payload = {
       ...form,
+      currency: storeCurrency,
       images: finalImages,
     };
 
@@ -504,7 +524,7 @@ export default function ProductsPage() {
       description: product.description || "",
       images: (product.images || []).slice(0, MAX_PRODUCT_MEDIA),
       price: String(product.price),
-      currency: product.currency,
+      currency: storeCurrency,
       category: product.category,
       discountPercentage: String(product.discountPercentage),
       inStock: String(product.inStock),
@@ -514,7 +534,7 @@ export default function ProductsPage() {
 
   function openAddProductModal() {
     setEditingId(null);
-    setForm(initialForm);
+    setForm({ ...initialForm, currency: storeCurrency });
     setPendingProductFiles([]);
     setIsFormModalOpen(true);
   }
@@ -593,6 +613,7 @@ export default function ProductsPage() {
         pendingProductFiles={pendingProductFiles}
         pendingProductPreviews={pendingProductPreviews}
         maxProductMedia={MAX_PRODUCT_MEDIA}
+        storeCurrency={storeCurrency}
         categories={categories}
         categoriesLoading={categoriesLoading}
         isCategoryModalOpen={isCategoryModalOpen}
@@ -601,7 +622,7 @@ export default function ProductsPage() {
         onClose={() => {
           setIsFormModalOpen(false);
           setEditingId(null);
-          setForm(initialForm);
+          setForm({ ...initialForm, currency: storeCurrency });
           setPendingProductFiles([]);
         }}
         onSubmit={handleSubmit}

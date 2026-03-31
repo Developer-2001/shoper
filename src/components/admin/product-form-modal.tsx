@@ -6,7 +6,6 @@ import { ChevronDown, Plus, Sparkles, X } from "lucide-react";
 
 import { CategoryDropdown } from "@/components/admin/category-dropdown";
 import { Spinner } from "@/components/admin/ui/loader";
-import { currencyOptions } from "@/utils/currency";
 import { isVideoUrl } from "@/utils/media";
 
 type ProductFormState = {
@@ -34,6 +33,7 @@ type ProductFormModalProps = {
   pendingProductFiles: File[];
   pendingProductPreviews: { url: string; file: File }[];
   maxProductMedia: number;
+  storeCurrency: string;
   categories: CategoryOption[];
   categoriesLoading: boolean;
   isCategoryModalOpen: boolean;
@@ -61,6 +61,7 @@ export function ProductFormModal({
   setForm,
   pendingProductPreviews,
   maxProductMedia,
+  storeCurrency,
   categories,
   categoriesLoading,
   isCategoryModalOpen,
@@ -377,23 +378,11 @@ export function ProductFormModal({
                     <label className="text-sm font-medium text-slate-700">
                       Currency
                     </label>
-                    <select
-                      required
-                      value={form.currency}
-                      onChange={(event) =>
-                        setForm((prev) => ({
-                          ...prev,
-                          currency: event.target.value,
-                        }))
-                      }
-                      className="h-11 w-full rounded-xl border border-slate-300 bg-white px-4 text-sm text-slate-900 outline-hidden transition focus:border-slate-500"
-                    >
-                      {currencyOptions.map((option) => (
-                        <option key={option.value} value={option.value}>
-                          {option.label}
-                        </option>
-                      ))}
-                    </select>
+                    <input
+                      value={storeCurrency}
+                      disabled
+                      className="h-11 w-full cursor-not-allowed rounded-xl border border-slate-300 bg-slate-100 px-4 text-sm text-slate-700 outline-hidden"
+                    />
                   </div>
 
                   <div className="space-y-1.5">

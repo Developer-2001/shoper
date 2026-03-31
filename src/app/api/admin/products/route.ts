@@ -4,6 +4,7 @@ import { connectToDatabase } from "@/lib/mongodb";
 import { requireAdmin } from "@/lib/api-auth";
 import { productSchema } from "@/lib/validations";
 import { Product } from "@/models/Product";
+import { Store } from "@/models/Store";
 
 export async function GET() {
   await connectToDatabase();
@@ -21,6 +22,11 @@ export async function POST(request: Request) {
   const auth = await requireAdmin();
   if (auth.error) return auth.error;
 
+  const store = await Store.findById(auth.payload.storeId).select("currency").lean();
+  if (!store) {
+    return NextResponse.json({ error: "Store not found" }, { status: 404 });
+  }
+
   const body = await request.json();
   const parsed = productSchema.safeParse(body);
 
@@ -30,6 +36,7 @@ export async function POST(request: Request) {
 
   const product = await Product.create({
     ...parsed.data,
+    currency: store.currency,
     category: parsed.data.category.trim().replace(/\s+/g, " "),
     storeId: auth.payload.storeId,
   });
