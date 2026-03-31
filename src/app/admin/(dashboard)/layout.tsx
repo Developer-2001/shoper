@@ -13,7 +13,7 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
         isOpen={isSidebarOpen} 
         onClose={() => setSidebarOpen(false)} 
       />
-      <main className="flex-1 min-w-0 overflow-hidden p-5 lg:p-8">
+      <main className="flex-1 min-w-0 overflow-hidden p-2 lg:p-4">
         {children}
       </main>
     </div>
