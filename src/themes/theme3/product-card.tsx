@@ -7,6 +7,7 @@ import { useMemo, useState } from "react";
 
 import { addToCart } from "@/store/slices/cartSlice";
 import { useAppDispatch } from "@/hooks/useRedux";
+import { useTheme3CartToast } from "@/themes/theme3/cart-toast";
 import { formatMoney, salePrice } from "@/utils/currency";
 import { isVideoUrl } from "@/utils/media";
 import type { StorefrontProduct } from "@/themes/types";
@@ -24,6 +25,7 @@ export function Theme3ProductCard({
   href,
 }: Theme3ProductCardProps) {
   const dispatch = useAppDispatch();
+  const { showAddedToCart } = useTheme3CartToast();
   const finalPrice = salePrice(product.price, product.discountPercentage);
   const mediaList = useMemo(
     () => (product.images.length ? product.images.slice(0, 5) : ["/file.svg"]),
@@ -50,6 +52,7 @@ export function Theme3ProductCard({
         quantity: 1,
       }),
     );
+    showAddedToCart(product.name);
   }
 
   return (

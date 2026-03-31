@@ -5,6 +5,7 @@ import { useMemo, useState } from "react";
 import { useCartStorage } from "@/hooks/useCartStorage";
 import { Theme3Navbar } from "@/themes/theme3/navbar";
 import { Theme3Footer } from "@/themes/theme3/footer";
+import { Theme3CartToastProvider } from "@/themes/theme3/cart-toast";
 import { Theme3ProductCard } from "@/themes/theme3/product-card";
 import type { ThemeProductsProps } from "@/themes/types";
 
@@ -42,8 +43,9 @@ export function Theme3ProductsPage({ slug, store, products }: ThemeProductsProps
   }, [products, search, category, sortBy, stockOnly]);
 
   return (
-    <div className="min-h-screen bg-[#fff2f5] text-rose-950">
-      <Theme3Navbar slug={slug} logoText={store.logoText || store.businessName} />
+    <Theme3CartToastProvider>
+      <div className="min-h-screen bg-[#fff2f5] text-rose-950">
+        <Theme3Navbar slug={slug} logoText={store.logoText || store.businessName} />
 
       <main className="mx-auto w-full max-w-7xl px-6 py-10">
         <h1 className="text-4xl font-semibold">Jewellery Collection</h1>
@@ -87,17 +89,18 @@ export function Theme3ProductsPage({ slug, store, products }: ThemeProductsProps
         ) : null}
       </main>
 
-      <Theme3Footer
-        slug={slug}
-        companyName={store.businessName}
-        about={store.about}
-        address={store.address}
-        contactEmail={store.contactEmail}
-        contactPhone={store.contactPhone}
-        footerLinks={store.footerLinks || []}
-        socialLinks={store.socialLinks}
-      />
-    </div>
+        <Theme3Footer
+          slug={slug}
+          companyName={store.businessName}
+          about={store.about}
+          address={store.address}
+          contactEmail={store.contactEmail}
+          contactPhone={store.contactPhone}
+          footerLinks={store.footerLinks || []}
+          socialLinks={store.socialLinks}
+        />
+      </div>
+    </Theme3CartToastProvider>
   );
 }
 

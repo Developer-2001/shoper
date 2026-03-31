@@ -10,6 +10,7 @@ import { Theme3Announcement } from "@/themes/theme3/announcement";
 import { Theme3Navbar } from "@/themes/theme3/navbar";
 import { Theme3Footer } from "@/themes/theme3/footer";
 import { Theme3ProductCard } from "@/themes/theme3/product-card";
+import { Theme3CartToastProvider } from "@/themes/theme3/cart-toast";
 import { toCollectionSlug } from "@/themes/theme3/collection-utils";
 import type { ThemeHomeProps } from "@/themes/types";
 
@@ -110,14 +111,15 @@ export function Theme3Home({ slug, store, products, categories = [] }: ThemeHome
   }
 
   return (
-    <div className="min-h-screen bg-[#fae9e6] text-rose-950">
-      <div className="relative">
-        <Theme3Navbar
-          slug={slug}
-          logoText={store.logoText || store.businessName}
-        />
-        <Theme3Announcement />
-      </div>
+    <Theme3CartToastProvider>
+      <div className="min-h-screen bg-[#fae9e6] text-rose-950">
+        <div className="relative">
+          <Theme3Navbar
+            slug={slug}
+            logoText={store.logoText || store.businessName}
+          />
+          <Theme3Announcement />
+        </div>
 
       <section className="mx-auto mt-4 w-full max-w-475 px-4">
         {/* Slider */}
@@ -276,16 +278,17 @@ export function Theme3Home({ slug, store, products, categories = [] }: ThemeHome
         </div>
       </section>
 
-      <Theme3Footer
-        slug={slug}
-        companyName={store.businessName}
-        about={store.about}
-        address={store.address}
-        contactEmail={store.contactEmail}
-        contactPhone={store.contactPhone}
-        footerLinks={store.footerLinks || []}
-        socialLinks={store.socialLinks}
-      />
-    </div>
+        <Theme3Footer
+          slug={slug}
+          companyName={store.businessName}
+          about={store.about}
+          address={store.address}
+          contactEmail={store.contactEmail}
+          contactPhone={store.contactPhone}
+          footerLinks={store.footerLinks || []}
+          socialLinks={store.socialLinks}
+        />
+      </div>
+    </Theme3CartToastProvider>
   );
 }

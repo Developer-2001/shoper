@@ -7,12 +7,14 @@ import { useMemo, useState } from "react";
 import { addToCart } from "@/store/slices/cartSlice";
 import { useAppDispatch } from "@/hooks/useRedux";
 import { useCartStorage } from "@/hooks/useCartStorage";
+import { useTheme3CartToast } from "@/themes/theme3/cart-toast";
 import { formatMoney, salePrice } from "@/utils/currency";
 import { isVideoUrl } from "@/utils/media";
 import type { ThemeProductDetailProps } from "@/themes/types";
 
 export function Theme3ProductDetail({ slug, product }: ThemeProductDetailProps) {
   const dispatch = useAppDispatch();
+  const { showAddedToCart } = useTheme3CartToast();
   useCartStorage();
 
   const mediaList = useMemo(() => product.images.slice(0, 6), [product.images]);
@@ -20,6 +22,22 @@ export function Theme3ProductDetail({ slug, product }: ThemeProductDetailProps) 
   const activeMedia = mediaList[activeIndex] || product.images[0] || "/file.svg";
 
   const finalPrice = salePrice(product.price, product.discountPercentage);
+
+  function handleAddToCart() {
+    dispatch(
+      addToCart({
+        slug,
+        productId: product._id,
+        name: product.name,
+        image: product.images[0] || "/file.svg",
+        price: finalPrice,
+        currency: product.currency,
+        quantity: 1,
+      }),
+    );
+
+    showAddedToCart(product.name);
+  }
 
   return (
     <article className="grid gap-8 lg:grid-cols-[1.05fr_1fr] lg:p-8">
@@ -73,19 +91,7 @@ export function Theme3ProductDetail({ slug, product }: ThemeProductDetailProps) 
         <div className="mt-6 flex flex-wrap gap-3">
           <button
             type="button"
-            onClick={() =>
-              dispatch(
-                addToCart({
-                  slug,
-                  productId: product._id,
-                  name: product.name,
-                  image: product.images[0] || "/file.svg",
-                  price: finalPrice,
-                  currency: product.currency,
-                  quantity: 1,
-                }),
-              )
-            }
+            onClick={handleAddToCart}
             className="rounded-full bg-[#cc5639] px-7 py-3 text-sm font-bold uppercase tracking-wide text-white transition hover:bg-[#b84c32]"
           >
             Add To Cart
