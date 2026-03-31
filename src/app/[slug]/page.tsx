@@ -20,6 +20,7 @@ export default async function StoreBySlugPage({
       slug={routeParams.slug}
       store={storefrontData.store}
       products={storefrontData.products}
+      categories={storefrontData.categories}
     />
   );
 }

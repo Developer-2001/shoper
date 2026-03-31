@@ -1,11 +1,11 @@
 "use client";
 
-import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Spinner } from "@/components/admin/ui/loader";
+import { useState } from "react";
 
-import { clearSlugCart } from "@/store/slices/cartSlice";
+import { Spinner } from "@/components/admin/ui/loader";
 import { useAppDispatch, useAppSelector } from "@/hooks/useRedux";
+import { clearSlugCart } from "@/store/slices/cartSlice";
 import { formatMoney } from "@/utils/currency";
 
 import type { StorefrontStore } from "@/themes/types";
@@ -15,34 +15,53 @@ type Theme1CheckoutFormProps = {
   store: StorefrontStore;
 };
 
+type AddressState = {
+  country: string;
+  firstName: string;
+  lastName: string;
+  shippingAddress: string;
+  city: string;
+  state: string;
+  postalCode: string;
+};
+
+const EMPTY_ADDRESS: AddressState = {
+  country: "India",
+  firstName: "",
+  lastName: "",
+  shippingAddress: "",
+  city: "",
+  state: "",
+  postalCode: "",
+};
+
 export function Theme1CheckoutForm({ slug, store }: Theme1CheckoutFormProps) {
   const router = useRouter();
   const dispatch = useAppDispatch();
-  const items = useAppSelector((state) => state.cart.items.filter((item) => item.slug === slug));
+  const items = useAppSelector((state) =>
+    state.cart.items.filter((item) => item.slug === slug),
+  );
 
   const [loading, setLoading] = useState(false);
-  const [form, setForm] = useState({
-    customerName: "",
-    email: "",
-    mobile: "",
-    shippingAddress: "",
-    city: "",
-    state: "",
-    postalCode: "",
-  });
+  const [email, setEmail] = useState("");
+  const [shipping, setShipping] = useState<AddressState>(EMPTY_ADDRESS);
   const [error, setError] = useState("");
-  
+
   const availableProviders = [
     ...(store.paymentSettings?.stripe?.enabled ? ["stripe"] : []),
   ];
-  
+
   const [provider, setProvider] = useState(availableProviders[0] || "none");
 
   const total = items.reduce((sum, item) => sum + item.price * item.quantity, 0);
 
+  function updateShipping(field: keyof AddressState, value: string) {
+    setShipping((prev) => ({ ...prev, [field]: value }));
+  }
+
   async function handleSubmit(event: React.FormEvent) {
     event.preventDefault();
-    
+
     if (provider === "none") {
       setError("Please select a payment method.");
       return;
@@ -54,8 +73,14 @@ export function Theme1CheckoutForm({ slug, store }: Theme1CheckoutFormProps) {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          ...form,
-          items: items.map((item) => ({ productId: item.productId, quantity: item.quantity })),
+          email,
+          shipping,
+          useShippingAsBilling: true,
+          billing: shipping,
+          items: items.map((item) => ({
+            productId: item.productId,
+            quantity: item.quantity,
+          })),
           provider,
         }),
       });
@@ -89,16 +114,22 @@ export function Theme1CheckoutForm({ slug, store }: Theme1CheckoutFormProps) {
     <form onSubmit={handleSubmit} className="grid gap-6 lg:grid-cols-[1fr_340px]">
       <section className="space-y-4 rounded-2xl border border-slate-200 bg-white p-5">
         <h2 className="text-xl font-bold text-slate-900">Shipping details</h2>
-        {Object.keys(form).map((key) => (
+
+        <input
+          required
+          value={email}
+          onChange={(event) => setEmail(event.target.value)}
+          placeholder="email"
+          className="w-full rounded-xl border border-slate-300 px-4 py-2"
+        />
+
+        {Object.keys(shipping).map((key) => (
           <input
             key={key}
             required
-            value={form[key as keyof typeof form]}
+            value={shipping[key as keyof AddressState]}
             onChange={(event) =>
-              setForm((prev) => ({
-                ...prev,
-                [key]: event.target.value,
-              }))
+              updateShipping(key as keyof AddressState, event.target.value)
             }
             placeholder={key}
             className="w-full rounded-xl border border-slate-300 px-4 py-2"
@@ -109,16 +140,18 @@ export function Theme1CheckoutForm({ slug, store }: Theme1CheckoutFormProps) {
       <section className="h-fit rounded-2xl border border-slate-200 bg-white p-5">
         <h3 className="text-lg font-bold text-slate-900">Summary</h3>
         <p className="mt-3 text-slate-600">Items: {items.length}</p>
-        <p className="text-xl font-bold text-slate-900">{formatMoney(total, items[0].currency)}</p>
-        
+        <p className="text-xl font-bold text-slate-900">
+          {formatMoney(total, items[0].currency)}
+        </p>
+
         {error ? <p className="mt-3 text-sm font-semibold text-red-600">{error}</p> : null}
 
         {!store.paymentSettings?.stripe?.enabled ? (
           <p className="mt-4 text-sm text-red-500 italic">This store is currently not accepting payments.</p>
         ) : null}
 
-        <button 
-          disabled={loading || !store.paymentSettings?.stripe?.enabled} 
+        <button
+          disabled={loading || !store.paymentSettings?.stripe?.enabled}
           className="flex items-center justify-center gap-2 mt-6 w-full rounded-xl bg-slate-900 py-3 font-semibold text-white disabled:opacity-50"
         >
           {loading && <Spinner size={16} className="text-white" />}

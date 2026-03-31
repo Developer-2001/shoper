@@ -18,7 +18,7 @@ export function Theme3Navbar({ slug, logoText }: Theme3NavbarProps) {
   );
 
   return (
-    <header className="">
+    <header className="relative z-40">
       <div className="mx-auto flex w-full items-center justify-between gap-4 px-6 py-3">
         <nav className="hidden items-center gap-6 text-sm font-semibold text-[#331f17] lg:flex">
           <Link href={`/${slug}`} className="transition ">

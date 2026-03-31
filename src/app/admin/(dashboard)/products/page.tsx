@@ -2,9 +2,10 @@
 
 import Image from "next/image";
 import { FormEvent, useEffect, useMemo, useState } from "react";
-import { Plus, Sparkles, X, Eye } from "lucide-react";
+import { Eye, Plus, Sparkles, X } from "lucide-react";
 
 import { AdminTopbar } from "@/components/admin/admin-topbar";
+import { CategoryDropdown } from "@/components/admin/category-dropdown";
 import { Spinner } from "@/components/admin/ui/loader";
 import { TableSkeleton } from "@/components/admin/ui/skeleton";
 import {
@@ -30,6 +31,11 @@ type Product = {
   inStock: number;
 };
 
+type CategoryOption = {
+  id: string;
+  name: string;
+};
+
 const initialForm = {
   name: "",
   description: "",
@@ -52,6 +58,11 @@ export default function ProductsPage() {
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const [categories, setCategories] = useState<CategoryOption[]>([]);
+  const [categoriesLoading, setCategoriesLoading] = useState(true);
+  const [isCategoryModalOpen, setIsCategoryModalOpen] = useState(false);
+  const [newCategoryName, setNewCategoryName] = useState("");
+  const [creatingCategory, setCreatingCategory] = useState(false);
 
   const pendingProductPreviews = useMemo(
     () =>
@@ -87,11 +98,33 @@ export default function ProductsPage() {
     }
   }
 
+  async function fetchCategories(signal?: AbortSignal) {
+    try {
+      const response = await fetch("/api/admin/categories", { signal });
+      if (!response.ok) return [] as CategoryOption[];
+      const data = await response.json();
+      return (data.categories || []) as CategoryOption[];
+    } catch (err) {
+      if (err instanceof Error && err.name === "AbortError") {
+        return [] as CategoryOption[];
+      }
+      console.error(err);
+      return [] as CategoryOption[];
+    }
+  }
+
   async function refreshProducts() {
     setLoading(true);
     const nextProducts = await fetchProducts();
     setProducts(nextProducts);
     setLoading(false);
+  }
+
+  async function refreshCategories() {
+    setCategoriesLoading(true);
+    const nextCategories = await fetchCategories();
+    setCategories(nextCategories);
+    setCategoriesLoading(false);
   }
 
   useEffect(() => {
@@ -101,15 +134,21 @@ export default function ProductsPage() {
     void (async () => {
       try {
         setLoading(true);
-        const nextProducts = await fetchProducts(controller.signal);
+        setCategoriesLoading(true);
+        const [nextProducts, nextCategories] = await Promise.all([
+          fetchProducts(controller.signal),
+          fetchCategories(controller.signal),
+        ]);
         if (active) {
           setProducts(nextProducts);
+          setCategories(nextCategories);
         }
       } catch {
         // ignore abort/network errors for initial load
       } finally {
         if (active) {
           setLoading(false);
+          setCategoriesLoading(false);
         }
       }
     })();
@@ -235,10 +274,6 @@ export default function ProductsPage() {
     }
   }
 
-  async function removePendingProductMedia(index: number) {
-    setPendingProductFiles((prev) => prev.filter((_, i) => i !== index));
-  }
-
   async function replaceProductMedia(index: number, file: File) {
     const currentUrl = form.images[index];
     if (!currentUrl) return;
@@ -267,8 +302,56 @@ export default function ProductsPage() {
     }));
   }
 
+  async function handleCreateCategory() {
+    const name = newCategoryName.trim();
+
+    if (name.length < 2) {
+      alert("Category name must be at least 2 characters.");
+      return;
+    }
+
+    setCreatingCategory(true);
+
+    try {
+      const response = await fetch("/api/admin/categories", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name }),
+      });
+
+      if (!response.ok) {
+        const data = await response
+          .json()
+          .catch(() => ({ error: "Failed to create category" }));
+        alert(data.error || "Failed to create category");
+        return;
+      }
+
+      const data = await response.json();
+      const createdCategory = data?.category as CategoryOption | undefined;
+
+        if (createdCategory?.name) {
+          setForm((prev) => ({ ...prev, category: createdCategory.name }));
+        }
+
+        await refreshCategories();
+        setNewCategoryName("");
+        setIsCategoryModalOpen(false);
+      } catch (err) {
+      console.error(err);
+      alert("Network error while creating category.");
+    } finally {
+      setCreatingCategory(false);
+    }
+  }
+
   async function handleSubmit(event: FormEvent) {
     event.preventDefault();
+
+    if (!form.category.trim()) {
+      alert("Please select a category.");
+      return;
+    }
 
     if (!form.images.length && !pendingProductFiles.length) {
       alert("Please upload at least one product media.");
@@ -359,6 +442,13 @@ export default function ProductsPage() {
 
   function editProduct(product: Product) {
     setEditingId(product._id);
+    setCategories((prev) => {
+      if (!product.category.trim()) return prev;
+      if (prev.some((category) => category.name === product.category)) return prev;
+      return [...prev, { id: `temp-${product.category}`, name: product.category }].sort((a, b) =>
+        a.name.localeCompare(b.name),
+      );
+    });
     setForm({
       name: product.name,
       description: product.description || "",
@@ -393,14 +483,15 @@ export default function ProductsPage() {
                 placeholder="name"
                 className="rounded-xl border border-slate-300 px-4 py-2"
               />
-              <input
-                required
+              <CategoryDropdown
                 value={form.category}
-                onChange={(event) =>
-                  setForm((prev) => ({ ...prev, category: event.target.value }))
-                }
-                placeholder="category"
-                className="rounded-xl border border-slate-300 px-4 py-2"
+                options={categories}
+                loading={categoriesLoading}
+                onSelect={(name) => setForm((prev) => ({ ...prev, category: name }))}
+                onAddNew={(initialName) => {
+                  setNewCategoryName(initialName);
+                  setIsCategoryModalOpen(true);
+                }}
               />
               <textarea
                 value={form.description}
@@ -721,6 +812,52 @@ export default function ProductsPage() {
           </div>
         </div>
       )}
+
+      {isCategoryModalOpen ? (
+        <div
+          className="fixed inset-0 z-60 flex items-center justify-center bg-black/40 p-4"
+          onClick={() => {
+            if (creatingCategory) return;
+            setIsCategoryModalOpen(false);
+          }}
+        >
+          <div
+            className="w-full max-w-md rounded-2xl bg-white p-5 shadow-2xl"
+            onClick={(event) => event.stopPropagation()}
+          >
+            <h3 className="text-lg font-bold text-slate-900">Create Category</h3>
+            <p className="mt-1 text-sm text-slate-600">
+              Add a new category for this store.
+            </p>
+            <input
+              autoFocus
+              value={newCategoryName}
+              onChange={(event) => setNewCategoryName(event.target.value)}
+              placeholder="Category name"
+              className="mt-4 w-full rounded-xl border border-slate-300 px-4 py-2"
+            />
+            <div className="mt-4 flex items-center justify-end gap-2">
+              <button
+                type="button"
+                onClick={() => setIsCategoryModalOpen(false)}
+                className="rounded-lg border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700"
+                disabled={creatingCategory}
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={handleCreateCategory}
+                disabled={creatingCategory}
+                className="inline-flex items-center gap-2 rounded-lg bg-slate-900 px-4 py-2 text-sm font-semibold text-white disabled:opacity-60"
+              >
+                {creatingCategory ? <Spinner size={14} className="text-white" /> : <Plus size={14} />}
+                {creatingCategory ? "Creating..." : "Create"}
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
 
       <AIEnhanceModal
         isOpen={isAIEnhanceModalOpen}

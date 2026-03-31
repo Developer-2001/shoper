@@ -12,6 +12,28 @@ function createOrderNumber() {
   return `ORD-${stamp}${random}`;
 }
 
+function roundPrice(value: number) {
+  return Math.round(value * 100) / 100;
+}
+
+const ORDER_DISCOUNT_CODES: Record<
+  string,
+  { code: string; percent: number }
+> = {
+  deva123: { code: "Deva123", percent: 20 },
+  vinayak123: { code: "Vinayak123", percent: 30 },
+};
+
+type AddressPayload = {
+  country: string;
+  firstName: string;
+  lastName: string;
+  shippingAddress: string;
+  city: string;
+  state: string;
+  postalCode: string;
+};
+
 type OrderItem = {
   productId: string;
   name: string;
@@ -25,73 +47,137 @@ export async function POST(
   request: Request,
   { params }: { params: Promise<{ slug: string }> }
 ) {
-  await connectToDatabase();
+  try {
+    await connectToDatabase();
 
-  const routeParams = await params;
-  const store = await Store.findOne({ slug: routeParams.slug }).lean();
+    const routeParams = await params;
+    const store = await Store.findOne({ slug: routeParams.slug }).lean();
 
-  if (!store) {
-    return NextResponse.json({ error: "Store not found" }, { status: 404 });
+    if (!store) {
+      return NextResponse.json({ error: "Store not found" }, { status: 404 });
+    }
+
+    if (store.status === "inactive") {
+      return NextResponse.json({ error: "Store is inactive" }, { status: 403 });
+    }
+
+    const body = await request.json();
+    const parsed = checkoutSchema.safeParse(body);
+
+    if (!parsed.success) {
+      return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
+    }
+
+    const payload = parsed.data;
+    const shipping: AddressPayload = payload.shipping;
+    const useShippingAsBilling = payload.useShippingAsBilling ?? true;
+    const billing: AddressPayload =
+      useShippingAsBilling || !payload.billing ? payload.shipping : payload.billing;
+    const customerEmail = payload.email;
+    const cartNote = payload.cartNote || "";
+    const requestedDiscountCode = payload.discountCode || "";
+
+    const ids = payload.items.map((item) => item.productId);
+    const products = await Product.find({ _id: { $in: ids }, storeId: store._id }).lean();
+
+    if (!products.length) {
+      return NextResponse.json({ error: "No valid items" }, { status: 400 });
+    }
+
+    const items = payload.items.reduce<OrderItem[]>((acc, item) => {
+      const product = products.find((entry) => entry._id.toString() === item.productId);
+      if (!product) return acc;
+
+      acc.push({
+        productId: product._id.toString(),
+        name: product.name,
+        image: product.images[0],
+        price: product.price,
+        quantity: item.quantity,
+        currency: product.currency,
+      });
+
+      return acc;
+    }, []);
+
+    if (!items.length) {
+      return NextResponse.json({ error: "No valid items" }, { status: 400 });
+    }
+
+    const subtotal = items.reduce((sum, item) => sum + item.price * item.quantity, 0);
+    const itemCount = items.reduce((sum, item) => sum + item.quantity, 0);
+    const normalizedDiscountCode = requestedDiscountCode.trim().toLowerCase();
+    const matchedDiscount = ORDER_DISCOUNT_CODES[normalizedDiscountCode];
+    const discountCode = matchedDiscount?.code ?? "";
+    const discountPercentage = matchedDiscount?.percent ?? 0;
+    const discountAmount = roundPrice((subtotal * discountPercentage) / 100);
+    const shippingCharge = roundPrice(itemCount * 50);
+    const taxableAmount = Math.max(0, subtotal - discountAmount);
+    const taxPercentage = 3;
+    const taxAmount = roundPrice((taxableAmount * taxPercentage) / 100);
+    const total = roundPrice(taxableAmount + shippingCharge + taxAmount);
+    const currency = items[0]?.currency || "INR";
+
+    let order = null;
+    let attempts = 0;
+    while (!order && attempts < 3) {
+      attempts += 1;
+      try {
+        order = await Order.create({
+          storeId: store._id,
+          orderNumber: createOrderNumber(),
+          items,
+          customer: {
+            firstName: shipping.firstName,
+            lastName: shipping.lastName,
+            email: customerEmail,
+          },
+          shipping,
+          billing,
+          useShippingAsBilling,
+          cartNote,
+          discountCode,
+          discountPercentage,
+          discountAmount,
+          itemCount,
+          shippingCharge,
+          taxPercentage,
+          taxAmount,
+          subtotal,
+          total,
+          currency,
+          status: "confirmed",
+        });
+      } catch (createError: unknown) {
+        if (
+          typeof createError === "object" &&
+          createError !== null &&
+          "code" in createError &&
+          (createError as { code?: number }).code === 11000
+        ) {
+          continue;
+        }
+        throw createError;
+      }
+    }
+
+    if (!order) {
+      return NextResponse.json(
+        { error: "Could not generate unique order number. Please try again." },
+        { status: 500 }
+      );
+    }
+
+    return NextResponse.json({ order }, { status: 201 });
+  } catch (error: unknown) {
+    const message =
+      typeof error === "object" &&
+      error !== null &&
+      "message" in error &&
+      typeof (error as { message?: string }).message === "string"
+        ? (error as { message: string }).message
+        : "Failed to place order.";
+
+    return NextResponse.json({ error: message }, { status: 500 });
   }
-
-  if (store.status === "inactive") {
-    return NextResponse.json({ error: "Store is inactive" }, { status: 403 });
-  }
-
-  const body = await request.json();
-  const parsed = checkoutSchema.safeParse(body);
-
-  if (!parsed.success) {
-    return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
-  }
-
-  const ids = parsed.data.items.map((item) => item.productId);
-  const products = await Product.find({ _id: { $in: ids }, storeId: store._id }).lean();
-
-  if (!products.length) {
-    return NextResponse.json({ error: "No valid items" }, { status: 400 });
-  }
-
-  const items = parsed.data.items.reduce<OrderItem[]>((acc, item) => {
-    const product = products.find((entry) => entry._id.toString() === item.productId);
-    if (!product) return acc;
-
-    acc.push({
-      productId: product._id.toString(),
-      name: product.name,
-      image: product.images[0],
-      price: product.price,
-      quantity: item.quantity,
-      currency: product.currency,
-    });
-
-    return acc;
-  }, []);
-
-  if (!items.length) {
-    return NextResponse.json({ error: "No valid items" }, { status: 400 });
-  }
-
-  const subtotal = items.reduce((sum, item) => sum + item.price * item.quantity, 0);
-
-  const order = await Order.create({
-    storeId: store._id,
-    orderNumber: createOrderNumber(),
-    items,
-    customer: {
-      customerName: parsed.data.customerName,
-      email: parsed.data.email,
-      mobile: parsed.data.mobile,
-    },
-    shipping: {
-      shippingAddress: parsed.data.shippingAddress,
-      city: parsed.data.city,
-      state: parsed.data.state,
-      postalCode: parsed.data.postalCode,
-    },
-    subtotal,
-    status: "confirmed",
-  });
-
-  return NextResponse.json({ order }, { status: 201 });
 }

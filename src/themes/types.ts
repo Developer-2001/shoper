@@ -35,10 +35,18 @@ export type StorefrontProduct = {
   inStock: number;
 };
 
+export type StorefrontCategory = {
+  _id: string;
+  storeId: string;
+  name: string;
+  normalizedName: string;
+};
+
 export type ThemeHomeProps = {
   slug: string;
   store: StorefrontStore;
   products: StorefrontProduct[];
+  categories?: StorefrontCategory[];
 };
 
 export type ThemeProductsProps = ThemeHomeProps;

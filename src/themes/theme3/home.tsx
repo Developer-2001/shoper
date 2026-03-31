@@ -6,25 +6,13 @@ import { MoveLeft, MoveRight } from "lucide-react";
 import { useMemo, useRef, useState } from "react";
 
 import { useCartStorage } from "@/hooks/useCartStorage";
+import { Theme3Announcement } from "@/themes/theme3/announcement";
 import { Theme3Navbar } from "@/themes/theme3/navbar";
 import { Theme3Footer } from "@/themes/theme3/footer";
 import { Theme3ProductCard } from "@/themes/theme3/product-card";
 import { toCollectionSlug } from "@/themes/theme3/collection-utils";
 import type { ThemeHomeProps } from "@/themes/types";
 
-const MAX_COLLECTION_CARDS = 8;
-const THEME3_ANNOUNCEMENT_TEXT = "Free Shipping On Orders Over $200";
-const THEME3_FEATURED_HEADING = "Sparkling New Pieces";
-const THEME3_COLLECTION_LABELS = [
-  "Rings",
-  "Bracelets",
-  "Necklaces",
-  "Earrings",
-  "Pendants",
-  "Bangles",
-  "Anklet",
-  "Pearls",
-];
 const THEME3_COLLECTION_IMAGE_URLS = [
   "https://storage.googleapis.com/canada-ecommerce-assets/skl/themeimages/a-1774845949350.avif",
   "https://storage.googleapis.com/canada-ecommerce-assets/skl/themeimages/b-1774848444266.avif",
@@ -36,7 +24,7 @@ const THEME3_COLLECTION_IMAGE_URLS = [
   "https://storage.googleapis.com/canada-ecommerce-assets/skl/themeimages/h-1774848555240.avif",
 ];
 
-export function Theme3Home({ slug, store, products }: ThemeHomeProps) {
+export function Theme3Home({ slug, store, products, categories = [] }: ThemeHomeProps) {
   useCartStorage();
 
   const sliderItems = [
@@ -58,25 +46,21 @@ export function Theme3Home({ slug, store, products }: ThemeHomeProps) {
   const [activeSlide, setActiveSlide] = useState(0);
   const dragStartXRef = useRef<number | null>(null);
 
-  const collections = THEME3_COLLECTION_LABELS;
-  const collectionTiles = useMemo(() => {
-    const size = Math.min(
-      MAX_COLLECTION_CARDS,
-      Math.max(
-        collections.length,
-        THEME3_COLLECTION_LABELS.length,
-        THEME3_COLLECTION_IMAGE_URLS.length,
-      ),
-    );
+  const collectionLabels = useMemo(
+    () =>
+      categories
+        .map((category) => category.name?.trim())
+        .filter((label): label is string => !!label)
+        .slice(0, 8),
+    [categories],
+  );
 
-    return Array.from({ length: size }, (_, index) => ({
-      label:
-        collections[index] ||
-        THEME3_COLLECTION_LABELS[index],
-      imageUrl:
-        THEME3_COLLECTION_IMAGE_URLS[index] 
+  const collectionTiles = useMemo(() => {
+    return collectionLabels.map((label, index) => ({
+      label,
+      imageUrl: THEME3_COLLECTION_IMAGE_URLS[index] || THEME3_COLLECTION_IMAGE_URLS[0],
     }));
-  }, [collections]);
+  }, [collectionLabels]);
   const availableCollectionSlugs = useMemo(
     () =>
       new Set(
@@ -127,20 +111,19 @@ export function Theme3Home({ slug, store, products }: ThemeHomeProps) {
 
   return (
     <div className="min-h-screen bg-[#fae9e6] text-rose-950">
-      <div className="mx-auto w-full max-w-3xl rounded-b-[28px] bg-[#cc5639] px-6 py-2 text-center text-sm font-semibold text-white">
-        {THEME3_ANNOUNCEMENT_TEXT}
+      <div className="relative">
+        <Theme3Navbar
+          slug={slug}
+          logoText={store.logoText || store.businessName}
+        />
+        <Theme3Announcement />
       </div>
 
-      <Theme3Navbar
-        slug={slug}
-        logoText={store.logoText || store.businessName}
-      />
-
-      <section className="mx-auto mt-6 w-full max-w-475 px-4">
+      <section className="mx-auto mt-4 w-full max-w-475 px-4">
         {/* Slider */}
         <div className="relative overflow-hidden rounded-2xl border border-rose-200 bg-black/10">
           <div
-            className="relative aspect-1898/742 w-full overflow-hidden touch-pan-y"
+            className="relative aspect-1898/742 w-full overflow-hidden cursor-pointer touch-pan-y"
             onPointerDown={(event) => startSwipe(event.clientX)}
             onPointerUp={(event) => endSwipe(event.clientX)}
             onPointerCancel={cancelSwipe}
@@ -148,11 +131,14 @@ export function Theme3Home({ slug, store, products }: ThemeHomeProps) {
           >
             {sliderItems.length ? (
               <div
-                className="flex h-full w-full transition-transform duration-500 ease-out"
+                className="flex h-full w-full transition-transform duration-500 ease-in"
                 style={{ transform: `translateX(-${activeSlide * 100}%)` }}
               >
                 {sliderItems.map((item, index) => (
-                  <div key={`${item.imageUrl}-${index}`} className="relative h-full w-full shrink-0">
+                  <div
+                    key={`${item.imageUrl}-${index}`}
+                    className="relative h-full w-full shrink-0"
+                  >
                     <Image
                       src={item.imageUrl}
                       alt={`${store.businessName}-${index + 1}`}
@@ -204,7 +190,9 @@ export function Theme3Home({ slug, store, products }: ThemeHomeProps) {
                   >
                     <span
                       className={`block h-1 rounded-full transition-all duration-300 ${
-                        index === activeSlide ? "w-10 bg-white" : "w-6 bg-white/50"
+                        index === activeSlide
+                          ? "w-10 bg-white"
+                          : "w-6 bg-white/50"
                       }`}
                     />
                   </button>
@@ -273,7 +261,7 @@ export function Theme3Home({ slug, store, products }: ThemeHomeProps) {
             Just Dropped
           </span>
           <h2 className="mt-4 text-4xl font-semibold text-rose-950">
-            {THEME3_FEATURED_HEADING}
+            Sparkling New Pieces
           </h2>
         </div>
 

@@ -30,6 +30,7 @@ export async function POST(request: Request) {
 
   const product = await Product.create({
     ...parsed.data,
+    category: parsed.data.category.trim().replace(/\s+/g, " "),
     storeId: auth.payload.storeId,
   });
 
