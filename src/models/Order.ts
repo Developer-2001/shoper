@@ -51,6 +51,7 @@ export type OrderDocument = {
   paymentStatus: "unpaid" | "paid" | "failed";
   paymentProvider: "stripe" | "none";
   paymentId: string;
+  paymentDetails?: any;
 };
 
 const OrderSchema = new Schema<OrderDocument>(
@@ -118,6 +119,7 @@ const OrderSchema = new Schema<OrderDocument>(
       default: "none",
     },
     paymentId: { type: String, default: "" },
+    paymentDetails: { type: Schema.Types.Mixed, default: {} },
   },
   { timestamps: true }
 );

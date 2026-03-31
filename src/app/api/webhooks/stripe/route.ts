@@ -21,8 +21,9 @@ export async function POST(request: Request) {
 
   try {
     event = stripe.webhooks.constructEvent(body, signature, webhookSecret!);
+    console.log(`✅ Webhook received: ${event.type}`);
   } catch (err: any) {
-    console.error(`Webhook signature verification failed: ${err.message}`);
+    console.error(`❌ Webhook signature verification failed: ${err.message}`);
     return NextResponse.json({ error: "Invalid signature" }, { status: 400 });
   }
 
@@ -30,22 +31,25 @@ export async function POST(request: Request) {
     const session = event.data.object as any;
     const { metadata } = session;
 
-    if (!metadata) {
-      console.error("Metadata missing in Stripe session");
+    console.log(`📦 Processing session: ${session.id}`, { metadata });
+
+    if (!metadata || !metadata.orderNumber) {
+      console.error("❌ Metadata or orderNumber missing in Stripe session");
       return NextResponse.json({ error: "Metadata missing" }, { status: 400 });
     }
 
     try {
       await connectToDatabase();
-      
+
       const orderNumber = metadata.orderNumber;
-      
+
       const order = await Order.findOneAndUpdate(
         { orderNumber },
-        { 
+        {
           paymentStatus: "paid",
           paymentProvider: "stripe",
           paymentId: session.id,
+          paymentDetails: session,
         },
         { new: true }
       );
@@ -55,7 +59,6 @@ export async function POST(request: Request) {
         return NextResponse.json({ error: "Order not found" }, { status: 404 });
       }
 
-      console.log(`Order ${order.orderNumber} updated via Stripe webhook`);
     } catch (err: any) {
       console.error(`Error creating order from Stripe webhook: ${err.message}`);
       return NextResponse.json({ error: "Failed to process order" }, { status: 500 });

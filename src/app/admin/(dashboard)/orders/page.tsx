@@ -40,8 +40,30 @@ type Order = {
   taxAmount?: number;
   total?: number;
   status: string;
+  paymentStatus?: "unpaid" | "paid" | "failed";
+  paymentProvider?: "stripe" | "none";
+  paymentId?: string;
   createdAt?: string;
 };
+
+function PaymentBadge({ status }: { status?: string }) {
+  const isPaid = status === "paid";
+  const isFailed = status === "failed";
+
+  return (
+    <span
+      className={`rounded-full px-2.5 py-0.5 text-xs font-bold uppercase tracking-wider ${
+        isPaid
+          ? "bg-green-100 text-green-700"
+          : isFailed
+            ? "bg-red-100 text-red-700"
+            : "bg-amber-100 text-amber-700"
+      }`}
+    >
+      {status || "unpaid"}
+    </span>
+  );
+}
 
 function AddressBlock({
   title,
@@ -157,10 +179,13 @@ export default function OrdersPage() {
                     </p>
                   </div>
 
-                  <div className="text-right">
-                    <p className="text-sm font-semibold uppercase text-slate-500">
-                      {order.status}
-                    </p>
+                  <div className="flex flex-col items-end text-right">
+                    <div className="mb-1 flex items-center gap-2">
+                       <PaymentBadge status={order.paymentStatus} />
+                       <p className="text-xs font-bold uppercase text-slate-500">
+                        {order.status}
+                      </p>
+                    </div>
                     <p className="text-lg font-bold text-slate-900">
                       {formatMoney(total, currency)}
                     </p>
@@ -185,12 +210,14 @@ export default function OrdersPage() {
                     </div>
 
                     <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
-                      <p className="font-semibold text-slate-900">Customer Info</p>
-                      <p className="mt-2">Email: {order.customer.email || "-"}</p>
-                      <p>
-                        Use shipping as billing:{" "}
-                        {order.useShippingAsBilling ? "Yes" : "No"}
-                      </p>
+                      <p className="font-semibold text-slate-900">Payment & Note</p>
+                      <div className="mt-2 grid gap-1 sm:grid-cols-2">
+                         <p>Method: <span className="font-medium capitalize">{order.paymentProvider || "Manual"}</span></p>
+                         <p>Status: <PaymentBadge status={order.paymentStatus} /></p>
+                         {order.paymentId && (
+                           <p className="sm:col-span-2">Payment ID: <code className="rounded bg-white px-1 text-xs">{order.paymentId}</code></p>
+                         )}
+                      </div>
                       {order.cartNote ? (
                         <p className="mt-2 rounded-lg bg-white p-2 text-xs text-slate-700">
                           Note: {order.cartNote}

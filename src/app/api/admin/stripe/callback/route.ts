@@ -21,8 +21,8 @@ export async function GET(request: Request) {
       // Find the store with this account ID and enable it
       const store = await Store.findOneAndUpdate(
         { "paymentSettings.stripe.accountId": accountId },
-        { 
-          $set: { "paymentSettings.stripe.enabled": true } 
+        {
+          $set: { "paymentSettings.stripe.enabled": true }
         },
         { new: true }
       );
@@ -32,7 +32,7 @@ export async function GET(request: Request) {
         return NextResponse.redirect(`${process.env.NEXT_PUBLIC_SITE_URL}/admin/configure-store?stripe_success=false&error=store_not_found`);
       }
 
-      console.log(`Stripe Connect successful for store: ${store.businessName}`);
+
       return NextResponse.redirect(`${process.env.NEXT_PUBLIC_SITE_URL}/admin/configure-store?stripe_success=true`);
     } else {
       console.warn(`Stripe callback: Account ${accountId} details not submitted yet`);

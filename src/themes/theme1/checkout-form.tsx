@@ -87,7 +87,15 @@ export function Theme1CheckoutForm({ slug, store }: Theme1CheckoutFormProps) {
 
       if (!response.ok) {
         const data = await response.json().catch(() => ({}));
-        setError(data.error || "Failed to initiate payment. Please check your details.");
+        let message = "Failed to initiate payment. Please check your details.";
+        if (typeof data.error === "string") {
+          message = data.error;
+        } else if (data.error?.fieldErrors) {
+          // Extract first validation error if it's a Zod error
+          const firstKey = Object.keys(data.error.fieldErrors)[0];
+          message = `${firstKey}: ${data.error.fieldErrors[firstKey][0]}`;
+        }
+        setError(message);
         return;
       }
 

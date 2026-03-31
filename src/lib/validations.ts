@@ -68,19 +68,16 @@ export const storeConfigSchema = z.object({
     .default([]),
   paymentSettings: z
     .object({
-      stripe: z.object({
-        enabled: z.boolean().default(false),
-        accountId: z.string().default(""),
-      }),
-      helcim: z.object({
-        enabled: z.boolean().default(false),
-        accountId: z.string().default(""),
-        apiToken: z.string().default(""),
-      }),
+      stripe: z
+        .object({
+          enabled: z.boolean().default(false),
+          accountId: z.string().default(""),
+        })
+        .default({ enabled: false, accountId: "" }),
     })
+    .optional()
     .default({
       stripe: { enabled: false, accountId: "" },
-      helcim: { enabled: false, accountId: "", apiToken: "" },
     }),
 });
 

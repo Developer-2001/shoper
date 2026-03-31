@@ -14,7 +14,7 @@ export function Theme3CheckoutPage({ slug, store }: ThemeCheckoutProps) {
       <Theme3Navbar slug={slug} logoText={store.logoText || store.businessName} />
 
       <main className="mx-auto w-full max-w-470 px-2 py-4 md:px-4">
-        <Theme3CheckoutForm slug={slug} />
+        <Theme3CheckoutForm slug={slug} store={store} />
       </main>
 
       <Theme3Footer
