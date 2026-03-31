@@ -1,8 +1,8 @@
 import Link from "next/link";
 import { AlertCircle, ArrowLeft } from "lucide-react";
 
-export default function CheckoutCancelPage({ params }: { params: { slug: string } }) {
-  const { slug } = params;
+export default async function CheckoutCancelPage({ params }: { params: Promise<{ slug: string }> }) {
+  const { slug } = await params;
 
   return (
     <div className="flex min-h-screen flex-col items-center justify-center bg-slate-50 px-4 py-8">

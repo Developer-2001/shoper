@@ -10,6 +10,8 @@ import { clearSlugCart } from "@/store/slices/cartSlice";
 import { formatMoney } from "@/utils/currency";
 import { isVideoUrl } from "@/utils/media";
 
+import type { StorefrontStore } from "@/themes/types";
+
 const SHIPPING_CHARGE_PER_ITEM = 50;
 const TAX_PERCENTAGE = 3;
 const CHECKOUT_DISCOUNT_CODES: Record<string, { code: string; percent: number }> = {
@@ -47,7 +49,7 @@ const EMPTY_ADDRESS: AddressFormState = {
   postalCode: "",
 };
 
-export function Theme3CheckoutForm({ slug }: { slug: string }) {
+export function Theme3CheckoutForm({ slug, store }: { slug: string; store: StorefrontStore }) {
   const router = useRouter();
   const dispatch = useAppDispatch();
   const items = useAppSelector((state) =>
@@ -133,6 +135,61 @@ export function Theme3CheckoutForm({ slug }: { slug: string }) {
     }));
   }
 
+  async function handleStripeCheckout() {
+    if (!store.paymentSettings?.stripe?.enabled) {
+      setError("Stripe is not enabled for this store.");
+      return;
+    }
+
+    setLoading(true);
+    setError("");
+
+    try {
+      const response = await fetch(`/api/store/${slug}/payment/session`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          email,
+          shipping,
+          useShippingAsBilling,
+          billing: useShippingAsBilling ? shipping : billing,
+          cartNote: checkoutMeta.cartNote,
+          discountCode,
+          items: items.map((item) => ({
+            productId: item.productId,
+            quantity: item.quantity,
+          })),
+        }),
+      });
+
+      if (!response.ok) {
+        const data = await response.json().catch(() => ({}));
+        let message = "Failed to initiate payment. Please check your details.";
+        if (typeof data.error === "string") {
+          message = data.error;
+        } else if (data.error?.fieldErrors) {
+          // Extract first validation error if it's a Zod error
+          const firstKey = Object.keys(data.error.fieldErrors)[0];
+          message = `${firstKey}: ${data.error.fieldErrors[firstKey][0]}`;
+        }
+        setError(message);
+        return;
+      }
+
+      const { url } = await response.json();
+      if (url) {
+        window.location.href = url;
+      } else {
+        setError("Payment session initialization failed.");
+      }
+    } catch (err) {
+      console.error(err);
+      setError("A network error occurred while starting your payment.");
+    } finally {
+      setLoading(false);
+    }
+  }
+
   async function handleSubmit(event: React.FormEvent) {
     event.preventDefault();
     setLoading(true);
@@ -158,10 +215,14 @@ export function Theme3CheckoutForm({ slug }: { slug: string }) {
 
       if (!response.ok) {
         const data = await response.json().catch(() => ({}));
-        const message =
-          typeof data.error === "string"
-            ? data.error
-            : "Failed to place order. Please check your details.";
+        let message = "Failed to place order. Please check your details.";
+        if (typeof data.error === "string") {
+          message = data.error;
+        } else if (data.error?.fieldErrors) {
+          // Extract first validation error if it's a Zod error
+          const firstKey = Object.keys(data.error.fieldErrors)[0];
+          message = `${firstKey}: ${data.error.fieldErrors[firstKey][0]}`;
+        }
         setError(message);
         return;
       }
@@ -497,11 +558,23 @@ export function Theme3CheckoutForm({ slug }: { slug: string }) {
         <button
           type="submit"
           disabled={loading}
-          className="mt-4 flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-[#cc5639] text-[16px] font-semibold tracking-wide text-white transition hover:bg-[#b94d31] disabled:opacity-50"
+          className="mt-4 flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-slate-900 text-[16px] font-semibold tracking-wide text-white transition hover:bg-slate-800 disabled:opacity-50"
         >
           {loading ? <Spinner size={16} className="text-white" /> : null}
           {loading ? "Placing order..." : "Complete order"}
         </button>
+
+        {store.paymentSettings?.stripe?.enabled && (
+          <button
+            type="button"
+            onClick={handleStripeCheckout}
+            disabled={loading}
+            className="mt-3 flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-[#cc5639] text-[16px] font-semibold tracking-wide text-white transition hover:bg-[#b94d31] disabled:opacity-50"
+          >
+            {loading ? <Spinner size={16} className="text-white" /> : null}
+            {loading ? "Redirecting..." : "Pay now"}
+          </button>
+        )}
       </aside>
     </form>
   );

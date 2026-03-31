@@ -1,11 +1,13 @@
 import Link from "next/link";
 import { CheckCircle2, ShoppingBag } from "lucide-react";
+import { ClearCartClient } from "./clear-cart-client";
 
-export default function CheckoutSuccessPage({ params }: { params: { slug: string } }) {
-  const { slug } = params;
+export default async function CheckoutSuccessPage({ params }: { params: Promise<{ slug: string }> }) {
+  const { slug } = await params;
 
   return (
     <div className="flex min-h-screen flex-col items-center justify-center bg-slate-50 px-4 py-8">
+      <ClearCartClient slug={slug} />
       <div className="w-full max-w-md rounded-3xl bg-white p-8 text-center shadow-xl shadow-slate-200/50 sm:p-12">
         <div className="mx-auto mb-6 flex h-20 w-20 items-center justify-center rounded-full bg-green-100">
           <CheckCircle2 className="h-10 w-10 text-green-600" />
