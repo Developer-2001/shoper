@@ -2,11 +2,12 @@
 
 import Image from "next/image";
 import { FormEvent, useEffect, useMemo, useState } from "react";
-import { Eye, Plus, Sparkles, X } from "lucide-react";
+import { Plus, X } from "lucide-react";
 
 import { AdminTopbar } from "@/components/admin/admin-topbar";
-import { CategoryDropdown } from "@/components/admin/category-dropdown";
-import { Spinner } from "@/components/admin/ui/loader";
+import { ProductFormModal } from "@/components/admin/product-form-modal";
+import { ProductTable } from "@/components/admin/product-table";
+import { FilterDropdown } from "@/components/admin/ui/filter-dropdown";
 import { TableSkeleton } from "@/components/admin/ui/skeleton";
 import {
   encodeStorageObjectPath,
@@ -14,7 +15,6 @@ import {
   isVideoUrl,
 } from "@/utils/media";
 import { AIEnhanceModal } from "@/components/admin/ai-enhance-modal";
-import { currencyOptions } from "@/utils/currency";
 
 const MAX_PRODUCT_MEDIA = 6;
 const PRODUCT_MEDIA_FOLDER = "products";
@@ -50,6 +50,7 @@ const initialForm = {
 export default function ProductsPage() {
   const [products, setProducts] = useState<Product[]>([]);
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [isFormModalOpen, setIsFormModalOpen] = useState(false);
   const [form, setForm] = useState(initialForm);
   const [pendingProductFiles, setPendingProductFiles] = useState<File[]>([]);
   const [uploadingImages, setUploadingImages] = useState(false);
@@ -60,6 +61,8 @@ export default function ProductsPage() {
   const [loading, setLoading] = useState(true);
   const [categories, setCategories] = useState<CategoryOption[]>([]);
   const [categoriesLoading, setCategoriesLoading] = useState(true);
+  const [nameFilter, setNameFilter] = useState<string[]>([]);
+  const [categoryFilter, setCategoryFilter] = useState<string[]>([]);
   const [isCategoryModalOpen, setIsCategoryModalOpen] = useState(false);
   const [newCategoryName, setNewCategoryName] = useState("");
   const [creatingCategory, setCreatingCategory] = useState(false);
@@ -82,6 +85,50 @@ export default function ProductsPage() {
   }, [pendingProductPreviews]);
 
   const [aiEnhanceSource, setAiEnhanceSource] = useState<string>("");
+  const nameFilterOptions = useMemo(
+    () =>
+      Array.from(
+        new Set(products.map((product) => product.name.trim()).filter(Boolean)),
+      )
+        .sort((a, b) => a.localeCompare(b))
+        .map((name) => ({ id: name, label: name, value: name })),
+    [products],
+  );
+  const categoryFilterOptions = useMemo(() => {
+    const names = new Set<string>();
+
+    categories.forEach((category) => {
+      if (category.name.trim()) {
+        names.add(category.name.trim());
+      }
+    });
+
+    products.forEach((product) => {
+      if (product.category.trim()) {
+        names.add(product.category.trim());
+      }
+    });
+
+    return Array.from(names)
+      .sort((a, b) => a.localeCompare(b))
+      .map((name) => ({ id: name, label: name, value: name }));
+  }, [categories, products]);
+  const filteredProducts = useMemo(
+    () =>
+      products.filter((product) => {
+        if (nameFilter.length && !nameFilter.includes(product.name)) {
+          return false;
+        }
+        if (
+          categoryFilter.length &&
+          !categoryFilter.includes(product.category)
+        ) {
+          return false;
+        }
+        return true;
+      }),
+    [products, nameFilter, categoryFilter],
+  );
 
   async function fetchProducts(signal?: AbortSignal) {
     try {
@@ -330,14 +377,14 @@ export default function ProductsPage() {
       const data = await response.json();
       const createdCategory = data?.category as CategoryOption | undefined;
 
-        if (createdCategory?.name) {
-          setForm((prev) => ({ ...prev, category: createdCategory.name }));
-        }
+      if (createdCategory?.name) {
+        setForm((prev) => ({ ...prev, category: createdCategory.name }));
+      }
 
-        await refreshCategories();
-        setNewCategoryName("");
-        setIsCategoryModalOpen(false);
-      } catch (err) {
+      await refreshCategories();
+      setNewCategoryName("");
+      setIsCategoryModalOpen(false);
+    } catch (err) {
       console.error(err);
       alert("Network error while creating category.");
     } finally {
@@ -407,6 +454,7 @@ export default function ProductsPage() {
       setForm(initialForm);
       setEditingId(null);
       setPendingProductFiles([]);
+      setIsFormModalOpen(false);
       refreshProducts();
     } catch (err) {
       console.error(err);
@@ -444,10 +492,12 @@ export default function ProductsPage() {
     setEditingId(product._id);
     setCategories((prev) => {
       if (!product.category.trim()) return prev;
-      if (prev.some((category) => category.name === product.category)) return prev;
-      return [...prev, { id: `temp-${product.category}`, name: product.category }].sort((a, b) =>
-        a.name.localeCompare(b.name),
-      );
+      if (prev.some((category) => category.name === product.category))
+        return prev;
+      return [
+        ...prev,
+        { id: `temp-${product.category}`, name: product.category },
+      ].sort((a, b) => a.name.localeCompare(b.name));
     });
     setForm({
       name: product.name,
@@ -459,405 +509,127 @@ export default function ProductsPage() {
       discountPercentage: String(product.discountPercentage),
       inStock: String(product.inStock),
     });
+    setIsFormModalOpen(true);
+  }
+
+  function openAddProductModal() {
+    setEditingId(null);
+    setForm(initialForm);
+    setPendingProductFiles([]);
+    setIsFormModalOpen(true);
+  }
+
+  function handleEditById(id: string) {
+    const product = products.find((entry) => entry._id === id);
+    if (!product) return;
+    editProduct(product);
   }
 
   return (
     <div>
-      <AdminTopbar title="Products" subtitle="Manage your catalog, stock, and media." />
+      <AdminTopbar
+        title="Products"
+        subtitle="Manage your catalog, stock, and media."
+      />
 
       {loading ? (
         <TableSkeleton rows={5} />
       ) : (
-        <div className="grid gap-6 lg:grid-cols-[1fr_2fr]">
-          <form
-            onSubmit={handleSubmit}
-            className="rounded-2xl border border-slate-200 bg-white p-5"
-          >
-            <div className="grid gap-3 md:grid-cols-2">
-              <input
-                required
-                value={form.name}
-                onChange={(event) =>
-                  setForm((prev) => ({ ...prev, name: event.target.value }))
-                }
-                placeholder="name"
-                className="rounded-xl border border-slate-300 px-4 py-2"
-              />
-              <CategoryDropdown
-                value={form.category}
-                options={categories}
-                loading={categoriesLoading}
-                onSelect={(name) => setForm((prev) => ({ ...prev, category: name }))}
-                onAddNew={(initialName) => {
-                  setNewCategoryName(initialName);
-                  setIsCategoryModalOpen(true);
-                }}
-              />
-              <textarea
-                value={form.description}
-                onChange={(event) =>
-                  setForm((prev) => ({ ...prev, description: event.target.value }))
-                }
-                placeholder="description"
-                className="min-h-24 rounded-xl border border-slate-300 px-4 py-2 md:col-span-2"
-              />
-
-              <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4 md:col-span-2">
-                <div className="flex flex-wrap items-center justify-between gap-3">
-                  <p className="text-sm font-semibold text-slate-800">
-                    Product Media
-                  </p>
-                  <span className="text-xs text-slate-500">
-                    {form.images.length}/{MAX_PRODUCT_MEDIA}
-                  </span>
-                </div>
-                <input
-                  id="product-add-input"
-                  type="file"
-                  accept="image/*,video/*"
-                  multiple
-                  className="hidden"
-                  onChange={(event) => {
-                    const files = Array.from(event.target.files || []);
-                    setPendingProductFiles((prev) => [...prev, ...files]);
-                  }}
+        <div className="space-y-3">
+          {/* Filter and Add Product Controls */}
+          <div className="rounded-2xl p-2">
+            <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+              <div className="grid w-full grid-cols-1 gap-2 sm:grid-cols-2 lg:max-w-xl">
+                <FilterDropdown
+                  values={nameFilter}
+                  options={nameFilterOptions}
+                  placeholder="Filter by name"
+                  searchPlaceholder="Search product name..."
+                  allLabel="All names"
+                  onChange={setNameFilter}
+                  className="w-full"
                 />
-
-                <div className="mt-3 grid gap-3 sm:grid-cols-3 lg:grid-cols-3">
-                  {form.images.map((url, index) => (
-                    <div
-                      key={url}
-                      className="group relative h-44 overflow-hidden rounded-2xl border border-slate-300 bg-white"
-                    >
-                      {isVideoUrl(url) ? (
-                        <video
-                          src={url}
-                          className="h-full w-full object-cover"
-                          autoPlay
-                          muted
-                          loop
-                          playsInline
-                        />
-                      ) : (
-                        <Image
-                          src={url}
-                          alt={`product-${index + 1}`}
-                          width={220}
-                          height={160}
-                          className="h-full w-full object-contain"
-                        />
-                      )}
-
-                      <div className="absolute inset-0 flex items-center justify-center gap-2 bg-black/25 opacity-100 lg:opacity-0 transition lg:group-hover:opacity-100">
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setPreviewUrl(url);
-                            setIsPreviewOpen(true);
-                          }}
-                          className="rounded-lg border border-slate-900 bg-white/90 px-3 py-1.5 text-xs font-semibold text-slate-900"
-                        >
-                          View
-                        </button>
-                        <label
-                          htmlFor={`product-change-${index}`}
-                          className="cursor-pointer rounded-lg border border-slate-900 bg-white/90 px-3 py-1.5 text-xs font-semibold text-slate-900"
-                        >
-                          Change
-                        </label>
-                        {form.images.length + pendingProductFiles.length > 1 && (
-                          <button
-                            type="button"
-                            onClick={() => removeProductMedia(url)}
-                            className="rounded-lg border border-slate-900 bg-white/90 px-3 py-1.5 text-xs font-semibold text-slate-900"
-                          >
-                            Remove
-                          </button>
-                        )}
-                      </div>
-
-                      <input
-                        id={`product-change-${index}`}
-                        type="file"
-                        accept="image/*,video/*"
-                        className="hidden"
-                        onChange={(event) => {
-                          const file = event.target.files?.[0];
-                          if (file) {
-                            replaceProductMedia(index, file);
-                          }
-                        }}
-                      />
-                    </div>
-                  ))}
-
-                  {pendingProductPreviews.map((preview, index) => (
-                    <div
-                      key={preview.url}
-                      className="group relative h-44 overflow-hidden rounded-2xl border border-amber-200 bg-white"
-                    >
-                      {isVideoUrl(preview.url) ||
-                      preview.file.type.startsWith("video/") ? (
-                        <video
-                          src={preview.url}
-                          className="h-full w-full object-cover"
-                          autoPlay
-                          muted
-                          loop
-                          playsInline
-                        />
-                      ) : (
-                        <Image
-                          src={preview.url}
-                          alt="pending product media"
-                          width={220}
-                          height={160}
-                          className="h-full w-full object-contain"
-                        />
-                      )}
-                      <div className="absolute inset-0 flex items-center justify-center gap-2 bg-black/25 opacity-100 lg:opacity-0 transition lg:group-hover:opacity-100">
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setPreviewUrl(preview.url);
-                            setIsPreviewOpen(true);
-                          }}
-                          className="rounded-lg border border-slate-900 bg-white/90 px-3 py-1.5 text-xs font-semibold text-slate-900"
-                        >
-                          View
-                        </button>
-                        {form.images.length + pendingProductFiles.length > 1 && (
-                          <button
-                            type="button"
-                            onClick={() =>
-                              setPendingProductFiles((prev) =>
-                                prev.filter((_, i) => i !== index),
-                              )
-                            }
-                            className="rounded-lg border border-slate-900 bg-white/90 px-3 py-1.5 text-xs font-semibold text-slate-900"
-                          >
-                            Remove
-                          </button>
-                        )}
-                        {!preview.file.type.startsWith("video/") && (
-                          <button
-                            type="button"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setAiEnhanceSource(preview.url);
-                              setIsAIEnhanceModalOpen(true);
-                            }}
-                            className="flex items-center gap-1.5 rounded-lg border border-indigo-600 bg-indigo-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-indigo-700"
-                          >
-                            <Sparkles size={12} />
-                            AI
-                          </button>
-                        )}
-                      </div>
-                      <div className="absolute top-2 left-2 rounded-md bg-amber-500 px-2 py-0.5 text-[10px] font-bold text-white uppercase">
-                        Pending
-                      </div>
-                    </div>
-                  ))}
-
-                  {form.images.length + pendingProductFiles.length <
-                    MAX_PRODUCT_MEDIA && (
-                    <button
-                      type="button"
-                      onClick={() =>
-                        document.getElementById("product-add-input")?.click()
-                      }
-                      className="flex h-44 flex-col items-center justify-center rounded-2xl border border-slate-300 bg-white text-slate-700 transition hover:border-slate-400"
-                    >
-                      <Plus size={26} />
-                      <span className="mt-2 text-sm font-medium">Choose Media</span>
-                    </button>
-                  )}
-                </div>
+                <FilterDropdown
+                  values={categoryFilter}
+                  options={categoryFilterOptions}
+                  placeholder="Filter by category"
+                  searchPlaceholder="Search category..."
+                  allLabel="All categories"
+                  onChange={setCategoryFilter}
+                  className="w-full"
+                />
               </div>
 
-              <input
-                required
-                type="number"
-                min="0"
-                step="0.01"
-                value={form.price}
-                onChange={(event) =>
-                  setForm((prev) => ({ ...prev, price: event.target.value }))
-                }
-                placeholder="price"
-                className="rounded-xl border border-slate-300 px-4 py-2"
-              />
-
-              <select
-                required
-                value={form.currency}
-                onChange={(event) =>
-                  setForm((prev) => ({ ...prev, currency: event.target.value }))
-                }
-                className="rounded-xl border border-slate-300 px-4 py-2"
+              <button
+                type="button"
+                onClick={openAddProductModal}
+                className="inline-flex h-10 w-full cursor-pointer items-center justify-center gap-1 rounded-xl border border-emerald-500 bg-emerald-50 px-4 py-2 text-sm font-semibold text-emerald-700 transition hover:bg-emerald-100 sm:w-auto sm:min-w-32"
               >
-                {currencyOptions.map((option) => (
-                  <option key={option.value} value={option.value}>
-                    {option.label}
-                  </option>
-                ))}
-              </select>
-              <input
-                required
-                value={form.discountPercentage}
-                onChange={(event) =>
-                  setForm((prev) => ({
-                    ...prev,
-                    discountPercentage: event.target.value,
-                  }))
-                }
-                placeholder="discountPercentage"
-                className="rounded-xl border border-slate-300 px-4 py-2"
-              />
-              <input
-                required
-                value={form.inStock}
-                onChange={(event) =>
-                  setForm((prev) => ({ ...prev, inStock: event.target.value }))
-                }
-                placeholder="inStock"
-                className="rounded-xl border border-slate-300 px-4 py-2"
-              />
+                <Plus size={16} />
+                Add Product
+              </button>
             </div>
-
-            <button
-              type="submit"
-              disabled={uploadingImages}
-              className="flex items-center justify-center gap-2 rounded-xl bg-slate-900 py-3 font-semibold text-white disabled:opacity-50"
-            >
-              {uploadingImages && <Spinner size={16} className="text-white" />}
-              {uploadingImages ? "Saving..." : editingId ? "Update Product" : "Create Product"}
-            </button>
-          </form>
-
-          <div className="mt-6 overflow-x-auto rounded-2xl border border-slate-200 bg-white">
-            <table className="w-full min-w-150 text-left text-sm">
-              <thead className="bg-slate-50 text-slate-600">
-                <tr>
-                  <th className="px-4 py-3">Image</th>
-                  <th className="px-4 py-3">Name</th>
-                  <th className="px-4 py-3">Price</th>
-                  <th className="px-4 py-3">Category</th>
-                  <th className="px-4 py-3">Stock</th>
-                  <th className="px-4 py-3">Action</th>
-                </tr>
-              </thead>
-              <tbody>
-                {products.map((product) => (
-                  <tr key={product._id} className="border-t border-slate-200">
-                    <td className="px-4 py-3">
-                      {product.images[0] ? (
-                        <div
-                          className="cursor-pointer group relative"
-                          onClick={() => {
-                            setPreviewUrl(product.images[0]);
-                            setIsPreviewOpen(true);
-                          }}
-                        >
-                          {isVideoUrl(product.images[0]) ? (
-                            <video
-                              src={product.images[0]}
-                              className="h-12 w-12 rounded-lg object-cover"
-                              muted
-                            />
-                          ) : (
-                            <Image
-                              src={product.images[0]}
-                              alt={product.name}
-                              width={48}
-                              height={48}
-                              className="h-12 w-12 rounded-lg object-cover"
-                            />
-                          )}
-                          <div className="absolute inset-0 flex items-center justify-center bg-black/20 opacity-0 group-hover:opacity-100 rounded-lg transition">
-                            <Eye size={16} className="text-white" />
-                          </div>
-                        </div>
-                      ) : null}
-                    </td>
-                    <td className="px-4 py-3">{product.name}</td>
-                    <td className="px-4 py-3">{product.price}</td>
-                    <td className="px-4 py-3">{product.category}</td>
-                    <td className="px-4 py-3">{product.inStock}</td>
-                    <td className="px-4 py-3">
-                      <div className="flex gap-2">
-                        <button
-                          type="button"
-                          onClick={() => editProduct(product)}
-                          className="text-teal-700"
-                        >
-                          Edit
-                        </button>
-                        <button
-                          type="button"
-                          disabled={deletingId === product._id}
-                          onClick={() => handleDelete(product._id)}
-                          className="flex items-center gap-1 text-red-600 disabled:opacity-50"
-                        >
-                          {deletingId === product._id && <Spinner size={14} className="text-red-600" />}
-                          {deletingId === product._id ? "Deleting..." : "Delete"}
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
           </div>
+
+          <ProductTable
+            products={filteredProducts}
+            deletingId={deletingId}
+            onEdit={handleEditById}
+            onDelete={handleDelete}
+            onOpenPreview={(url) => {
+              setPreviewUrl(url);
+              setIsPreviewOpen(true);
+            }}
+          />
         </div>
       )}
 
-      {isCategoryModalOpen ? (
-        <div
-          className="fixed inset-0 z-60 flex items-center justify-center bg-black/40 p-4"
-          onClick={() => {
-            if (creatingCategory) return;
-            setIsCategoryModalOpen(false);
-          }}
-        >
-          <div
-            className="w-full max-w-md rounded-2xl bg-white p-5 shadow-2xl"
-            onClick={(event) => event.stopPropagation()}
-          >
-            <h3 className="text-lg font-bold text-slate-900">Create Category</h3>
-            <p className="mt-1 text-sm text-slate-600">
-              Add a new category for this store.
-            </p>
-            <input
-              autoFocus
-              value={newCategoryName}
-              onChange={(event) => setNewCategoryName(event.target.value)}
-              placeholder="Category name"
-              className="mt-4 w-full rounded-xl border border-slate-300 px-4 py-2"
-            />
-            <div className="mt-4 flex items-center justify-end gap-2">
-              <button
-                type="button"
-                onClick={() => setIsCategoryModalOpen(false)}
-                className="rounded-lg border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700"
-                disabled={creatingCategory}
-              >
-                Cancel
-              </button>
-              <button
-                type="button"
-                onClick={handleCreateCategory}
-                disabled={creatingCategory}
-                className="inline-flex items-center gap-2 rounded-lg bg-slate-900 px-4 py-2 text-sm font-semibold text-white disabled:opacity-60"
-              >
-                {creatingCategory ? <Spinner size={14} className="text-white" /> : <Plus size={14} />}
-                {creatingCategory ? "Creating..." : "Create"}
-              </button>
-            </div>
-          </div>
-        </div>
-      ) : null}
+      <ProductFormModal
+        isOpen={isFormModalOpen}
+        isEditing={Boolean(editingId)}
+        uploadingImages={uploadingImages}
+        form={form}
+        setForm={setForm}
+        pendingProductFiles={pendingProductFiles}
+        pendingProductPreviews={pendingProductPreviews}
+        maxProductMedia={MAX_PRODUCT_MEDIA}
+        categories={categories}
+        categoriesLoading={categoriesLoading}
+        isCategoryModalOpen={isCategoryModalOpen}
+        newCategoryName={newCategoryName}
+        creatingCategory={creatingCategory}
+        onClose={() => {
+          setIsFormModalOpen(false);
+          setEditingId(null);
+          setForm(initialForm);
+          setPendingProductFiles([]);
+        }}
+        onSubmit={handleSubmit}
+        onAddPendingFiles={(files) => {
+          const selected = Array.from(files || []);
+          setPendingProductFiles((prev) => [...prev, ...selected]);
+        }}
+        onRemovePendingFile={(index) =>
+          setPendingProductFiles((prev) => prev.filter((_, i) => i !== index))
+        }
+        onReplaceMedia={replaceProductMedia}
+        onRemoveMedia={removeProductMedia}
+        onOpenPreview={(url) => {
+          setPreviewUrl(url);
+          setIsPreviewOpen(true);
+        }}
+        onOpenAI={(url) => {
+          setAiEnhanceSource(url);
+          setIsAIEnhanceModalOpen(true);
+        }}
+        onOpenCategoryModal={(initialName) => {
+          setNewCategoryName(initialName);
+          setIsCategoryModalOpen(true);
+        }}
+        onCloseCategoryModal={() => setIsCategoryModalOpen(false)}
+        setNewCategoryName={setNewCategoryName}
+        onCreateCategory={handleCreateCategory}
+      />
 
       <AIEnhanceModal
         isOpen={isAIEnhanceModalOpen}
@@ -898,7 +670,6 @@ export default function ProductsPage() {
                   className="max-h-[85vh] rounded-lg object-contain"
                 />
               ))}
-                
           </div>
         </div>
       )}

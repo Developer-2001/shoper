@@ -56,7 +56,10 @@ export default function ConfigureStorePage() {
           youtube: store.socialLinks?.youtube || "",
           themeLayout: store.theme?.layout || "theme1",
           footerLinks: (store.footerLinks || [])
-            .map((item: { label: string; href: string }) => `${item.label}|${item.href}`)
+            .map(
+              (item: { label: string; href: string }) =>
+                `${item.label}|${item.href}`,
+            )
             .join(","),
           stripeEnabled: store.paymentSettings?.stripe?.enabled || false,
           stripeAccountId: store.paymentSettings?.stripe?.accountId || "",
@@ -169,7 +172,10 @@ export default function ConfigureStorePage() {
               id="themeLayout"
               value={form.themeLayout}
               onChange={(event) =>
-                setForm((prev) => ({ ...prev, themeLayout: event.target.value }))
+                setForm((prev) => ({
+                  ...prev,
+                  themeLayout: event.target.value,
+                }))
               }
               className="rounded-xl border border-slate-300 px-4 py-2"
             >
@@ -183,7 +189,10 @@ export default function ConfigureStorePage() {
             <input
               value={form.companyName}
               onChange={(event) =>
-                setForm((prev) => ({ ...prev, companyName: event.target.value }))
+                setForm((prev) => ({
+                  ...prev,
+                  companyName: event.target.value,
+                }))
               }
               placeholder="companyName"
               className="rounded-xl border border-slate-300 px-4 py-2"
@@ -201,7 +210,10 @@ export default function ConfigureStorePage() {
             <input
               value={form.contactEmail}
               onChange={(event) =>
-                setForm((prev) => ({ ...prev, contactEmail: event.target.value }))
+                setForm((prev) => ({
+                  ...prev,
+                  contactEmail: event.target.value,
+                }))
               }
               placeholder="contactEmail"
               className="rounded-xl border border-slate-300 px-4 py-2"
@@ -210,7 +222,10 @@ export default function ConfigureStorePage() {
             <input
               value={form.contactPhone}
               onChange={(event) =>
-                setForm((prev) => ({ ...prev, contactPhone: event.target.value }))
+                setForm((prev) => ({
+                  ...prev,
+                  contactPhone: event.target.value,
+                }))
               }
               placeholder="contactPhone"
               className="rounded-xl border border-slate-300 px-4 py-2"
@@ -266,7 +281,10 @@ export default function ConfigureStorePage() {
             <textarea
               value={form.footerLinks}
               onChange={(event) =>
-                setForm((prev) => ({ ...prev, footerLinks: event.target.value }))
+                setForm((prev) => ({
+                  ...prev,
+                  footerLinks: event.target.value,
+                }))
               }
               placeholder="footerLinks (label|href, label|href)"
               className="min-h-24 rounded-xl border border-slate-300 px-4 py-2 md:col-span-2"
@@ -274,25 +292,33 @@ export default function ConfigureStorePage() {
           </div>
 
           <div className="mt-8 border-t border-slate-100 pt-8">
-            <h3 className="mb-4 text-lg font-bold text-slate-900">Payment Provider (Canada)</h3>
-            
+            <h3 className="mb-4 text-lg font-bold text-slate-900">
+              Payment Provider (Canada)
+            </h3>
+
             <div className="max-w-md">
               {/* Stripe Section */}
               <div className="rounded-2xl border border-slate-200 p-5 bg-slate-50/50">
                 <div className="flex items-center justify-between mb-4">
-                   <div className="flex items-center gap-3">
-                      <h4 className="font-bold text-slate-800 text-lg">Stripe Connect</h4>
-                      {form.stripeEnabled && form.stripeAccountId ? (
-                        <span className="bg-green-100 text-green-700 text-xs px-2 py-1 rounded-full font-bold">Connected</span>
-                      ) : (
-                        <span className="bg-slate-200 text-slate-600 text-xs px-2 py-1 rounded-full font-bold">Not Connected</span>
-                      )}
-                   </div>
+                  <div className="flex items-center gap-3">
+                    <h4 className="font-bold text-slate-800 text-lg">
+                      Stripe Connect
+                    </h4>
+                    {form.stripeEnabled && form.stripeAccountId ? (
+                      <span className="bg-green-100 text-green-700 text-xs px-2 py-1 rounded-full font-bold">
+                        Connected
+                      </span>
+                    ) : (
+                      <span className="bg-slate-200 text-slate-600 text-xs px-2 py-1 rounded-full font-bold">
+                        Not Connected
+                      </span>
+                    )}
+                  </div>
                 </div>
-                
+
                 <p className="text-sm text-slate-600 mb-6">
-                  {form.stripeEnabled 
-                    ? "Your store is connected to Stripe. Customers can now pay you directly." 
+                  {form.stripeEnabled
+                    ? "Your store is connected to Stripe. Customers can now pay you directly."
                     : "Connect your Stripe account to receive direct payments from customers. No technical setup required."}
                 </p>
 
@@ -304,20 +330,30 @@ export default function ConfigureStorePage() {
                     <button
                       type="button"
                       onClick={async () => {
-                        if (!confirm("Are you sure you want to disconnect Stripe? Customers won't be able to buy from your store.")) return;
+                        if (
+                          !confirm(
+                            "Are you sure you want to disconnect Stripe? Customers won't be able to buy from your store.",
+                          )
+                        )
+                          return;
                         setSaving(true);
                         try {
-                           const res = await fetch("/api/admin/store", {
-                             method: "PUT",
-                             headers: { "Content-Type": "application/json" },
-                             body: JSON.stringify({
-                               ...form,
-                               paymentSettings: { stripe: { enabled: false, accountId: "" } }
-                             })
-                           });
-                           if (res.ok) window.location.reload();
-                        } catch (err) { alert("Failed to disconnect"); }
-                        finally { setSaving(false); }
+                          const res = await fetch("/api/admin/store", {
+                            method: "PUT",
+                            headers: { "Content-Type": "application/json" },
+                            body: JSON.stringify({
+                              ...form,
+                              paymentSettings: {
+                                stripe: { enabled: false, accountId: "" },
+                              },
+                            }),
+                          });
+                          if (res.ok) window.location.reload();
+                        } catch {
+                          alert("Failed to disconnect");
+                        } finally {
+                          setSaving(false);
+                        }
                       }}
                       className="text-sm text-red-600 hover:text-red-700 font-semibold underline"
                     >
@@ -335,7 +371,7 @@ export default function ConfigureStorePage() {
                         const data = await res.json();
                         if (data.url) window.location.href = data.url;
                         else alert(data.error || "Failed to start onboarding.");
-                      } catch (err) {
+                      } catch {
                         alert("A network error occurred.");
                       } finally {
                         setSaving(false);
