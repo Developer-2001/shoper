@@ -105,9 +105,9 @@ export function Theme3CollectionProductsPage({
           logoText={store.logoText || store.businessName}
         />
 
-      <main className="mx-auto w-full max-w-470 px-2 py-5 md:px-4  rounded-t-2xl bg-[#fcf5f4]">
+      <main className="mx-auto w-full max-w-470 rounded-t-2xl bg-[#fcf5f4] px-3 py-4 sm:px-4 sm:py-5">
         <section className="relative overflow-hidden rounded-2xl border border-rose-200 bg-[#fcf5f4]">
-          <div className="relative aspect-1898/420 w-full">
+          <div className="relative aspect-video w-full sm:aspect-16/7 xl:aspect-1898/420">
             {bannerMedia ? (
               isVideoUrl(bannerMedia) ? (
                 <video
@@ -134,10 +134,10 @@ export function Theme3CollectionProductsPage({
             )}
             <div className="absolute inset-0 bg-linear-to-r from-black/60 via-black/20 to-transparent" />
             <div className="absolute left-4 top-1/2 -translate-y-1/2 text-white md:left-8">
-              <h1 className="text-5xl font-semibold leading-tight">
+              <h1 className="text-2xl font-semibold leading-tight sm:text-3xl md:text-5xl">
                 {categoryLabel}
               </h1>
-              <p className="mt-2 text-sm text-white/90 md:text-xl">
+              <p className="mt-2 max-w-2xl text-xs text-white/90 sm:text-sm md:text-xl">
                 Discover the complete collection where timeless elegance meets
                 modern sophistication.
               </p>
@@ -146,7 +146,7 @@ export function Theme3CollectionProductsPage({
         </section>
 
         <section className="mt-8">
-          <div className="flex flex-wrap items-center justify-between gap-3">
+          <div className="flex flex-row gap-3 sm:flex-row sm:items-center sm:justify-between">
             <Theme3CollectionFilters
               isOpen={isFilterOpen}
               fromPrice={draftFromPrice}
@@ -166,8 +166,8 @@ export function Theme3CollectionProductsPage({
               onApply={applyFilters}
             />
 
-            <div className="flex items-center gap-3 text-sm text-rose-900">
-              <span>Total products: {sortedProducts.length}</span>
+            <div className="flex w-full flex-wrap items-center gap-3 text-sm text-rose-900 sm:w-auto sm:justify-end">
+              <span>Products: {sortedProducts.length}</span>
               <label className="inline-flex items-center gap-2">
                 Sort by:
                 <select
@@ -184,7 +184,7 @@ export function Theme3CollectionProductsPage({
             </div>
           </div>
 
-          <div className="mt-6 grid gap-5 md:grid-cols-2 xl:grid-cols-4">
+          <div className="mt-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
             {sortedProducts.map((product) => (
               <Theme3ProductCard
                 key={product._id}

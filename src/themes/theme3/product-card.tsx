@@ -66,7 +66,7 @@ export function Theme3ProductCard({
           {isVideoUrl(activeMedia) ? (
             <video
               src={activeMedia}
-              className="h-72 w-full object-cover"
+              className="h-60 w-full object-cover sm:h-72"
               autoPlay
               muted
               loop
@@ -78,7 +78,7 @@ export function Theme3ProductCard({
               alt={product.name}
               width={1000}
               height={900}
-              className="h-72 w-full object-contain transition duration-500 hover:scale-[1.02]"
+              className="h-60 w-full object-contain transition duration-500 hover:scale-[1.02] sm:h-72"
               sizes="(max-width: 768px) 100vw, (max-width: 1280px) 33vw, 25vw"
             />
           )}
@@ -105,7 +105,7 @@ export function Theme3ProductCard({
       <div className="px-2 pb-2 pt-2 bg-white">
         <Link
           href={productHref}
-          className="line-clamp-2 text-lg font-semibold leading-tight text-rose-950"
+          className="line-clamp-2 text-base font-semibold leading-tight text-rose-950 sm:text-lg"
         >
           {product.name}
         </Link>

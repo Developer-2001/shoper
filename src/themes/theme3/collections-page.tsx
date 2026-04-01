@@ -57,9 +57,9 @@ export function Theme3CollectionsPage({
         logoText={store.logoText || store.businessName}
       />
 
-      <main className="mx-auto w-full max-w-470 p-2 md:px-4 rounded-t-2xl bg-[#fcf5f4]">
+      <main className="mx-auto w-full max-w-470 rounded-t-2xl bg-[#fcf5f4] px-3 py-3 sm:px-4 sm:py-4">
         <section className="relative overflow-hidden rounded-2xl border border-rose-200 bg-[#3f0e07]">
-          <div className="relative aspect-1898/420 w-full">
+          <div className="relative aspect-video w-full sm:aspect-16/7 xl:aspect-1898/420">
             {bannerMedia ? (
               isVideoUrl(bannerMedia) ? (
                 <video
@@ -86,25 +86,25 @@ export function Theme3CollectionsPage({
             )}
             <div className="absolute inset-0 bg-linear-to-r from-black/60 via-black/20 to-transparent" />
             <div className="absolute left-4 top-1/2 -translate-y-1/2 text-white md:left-8">
-              <h1 className="text-5xl font-semibold leading-tight">
+              <h1 className="text-2xl font-semibold leading-tight sm:text-3xl md:text-5xl">
                 All Collections
               </h1>
-              <p className="mt-2 text-sm text-white/90 md:text-xl">
+              <p className="mt-2 text-xs text-white/90 sm:text-sm md:text-xl">
                 Curated styles designed for everyday glow.
               </p>
             </div>
           </div>
         </section>
 
-        <section className="mt-12 w-full py-4 grid grid-cols-2 lg:grid-cols-4 gap-4 ">
+        <section className="mt-8 grid w-full grid-cols-2 gap-4 py-2 sm:mt-10 lg:grid-cols-4">
           {collections.map((collection) => (
             <Link
               key={collection.slug}
               href={`/${slug}/collections/${collection.slug}`}
               className="group"
             >
-              <div className="overflow-hidden py-2 bg-[#fae9e6] rounded-2xl">
-                <div className="relative h-80 w-full overflow-hidden">
+              <div className="overflow-hidden rounded-2xl bg-[#fae9e6] p-2">
+                <div className="relative h-52 w-full overflow-hidden rounded-xl sm:h-64 md:h-72">
                   {collection.cover ? (
                     isVideoUrl(collection.cover) ? (
                       <video
@@ -131,7 +131,7 @@ export function Theme3CollectionsPage({
                   )}
                 </div>
               </div>
-              <div className="mt-2 mx-4 flex items-center justify-between text-sm text-[#3f2019]">
+              <div className="mx-1 mt-2 flex items-center justify-between text-sm text-[#3f2019] sm:mx-2">
                 <span>{collection.label}</span>
                 <span className="ml-2 rounded-full bg-[#cc5639] px-2 py-0.5 text-xs font-semibold text-white">
                   {collection.count}

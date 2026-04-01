@@ -107,13 +107,13 @@ export function Theme3CartItems({ slug }: { slug: string }) {
   if (!items.length) {
     return (
       <div className="rounded-2xl border border-dashed border-[#d3b6b1] bg-[#f7e9e6] p-8 text-center text-[#3f2019]">
-        <p className="text-[24px] font-semibold">Your cart is empty</p>
-        <p className="mt-2 text-[16px] text-[#6d4a42]">
+        <p className="text-2xl font-semibold">Your cart is empty</p>
+        <p className="mt-2 text-sm text-[#6d4a42] sm:text-base">
           Browse collections and add your favorite pieces.
         </p>
         <Link
           href={`/${slug}/collections`}
-          className="mt-5 inline-flex rounded-xl bg-[#cc5639] px-6 py-3 text-[16px] font-semibold text-white transition hover:bg-[#b94d31]"
+          className="mt-5 inline-flex rounded-xl bg-[#cc5639] px-6 py-3 text-base font-semibold text-white transition hover:bg-[#b94d31]"
         >
           Continue shopping
         </Link>
@@ -124,27 +124,27 @@ export function Theme3CartItems({ slug }: { slug: string }) {
   return (
     <div className="space-y-7 pb-6">
       <div className="flex flex-wrap items-center justify-between gap-4 px-1">
-        <h2 className="text-lg font-semibold text-[#2f1f1a]">
+        <h2 className="text-base font-semibold text-[#2f1f1a] sm:text-lg">
           Cart Item - ({items.length})
         </h2>
         <Link
           href={`/${slug}/collections`}
-          className="rounded-xl bg-[#cc5639] px-4 py-2 text-md font-semibold  tracking-wide text-white transition hover:bg-[#b94d31]"
+          className="rounded-xl bg-[#cc5639] px-4 py-2 text-sm font-semibold tracking-wide text-white transition hover:bg-[#b94d31] sm:text-base"
         >
           Continue shopping
         </Link>
       </div>
 
-      <div className="grid gap-8 xl:grid-cols-[1fr_560px]">
-        <div className="rounded-2xl bg-[#fae9e6] p-5 md:p-8">
+      <div className="grid gap-8 2xl:grid-cols-[minmax(0,1fr)_520px]">
+        <div className="rounded-2xl bg-[#fae9e6] p-4 sm:p-5 md:p-8">
           <div className="divide-y divide-[#c7b4b0]">
             {items.map((item, index) => {
               return (
                 <div
                   key={`${item.productId}-${index}`}
-                  className={`grid gap-5 py-6 md:grid-cols-[180px_1fr_220px] ${index === 0 ? "pt-2" : ""}`}
+                  className={`grid gap-5 py-6 lg:grid-cols-[160px_minmax(0,1fr)_180px] ${index === 0 ? "pt-2" : ""}`}
                 >
-                  <div className="relative h-44 overflow-hidden rounded-xl bg-[#fae9e6]">
+                  <div className="relative h-40 overflow-hidden rounded-xl bg-[#fae9e6] sm:h-44">
                     {isVideoUrl(item.image) ? (
                       <video
                         src={item.image}
@@ -167,24 +167,24 @@ export function Theme3CartItems({ slug }: { slug: string }) {
                     <p className="text-sm font-semibold uppercase tracking-[0.06em] text-[#8f5d53]">
                       Item {index + 1}
                     </p>
-                    <p className="text-lg font-medium leading-tight text-[#2f1f1a]">
+                    <p className="text-base font-medium leading-tight text-[#2f1f1a] sm:text-lg">
                       {item.name}
                     </p>
                     <div className="mt-1 flex flex-wrap items-center gap-4">
-                      <span className="text-xl font-medium text-[#2f1f1a]">
+                      <span className="text-lg font-medium text-[#2f1f1a] sm:text-xl">
                         {formatMoney(item.price, item.currency)}
                       </span>
-                      <span className="text-xl text-[#735953]">
+                      <span className="text-lg text-[#735953] sm:text-xl">
                         Qty: {item.quantity}
                       </span>
                     </div>
-                    <p className="text-lg text-[#4f403a]">
+                    <p className="text-base text-[#4f403a] sm:text-lg">
                       Item total:{" "}
                       {formatMoney(item.price * item.quantity, item.currency)}
                     </p>
                   </div>
 
-                  <div className="space-y-3 md:justify-self-end">
+                  <div className="space-y-3 lg:justify-self-end">
                     <div className="flex h-14 items-center justify-between rounded-xl border border-[#8f7a74] bg-[#f8ece9] px-3">
                       <button
                         className="inline-flex h-9 w-9 items-center justify-center rounded-md text-[#cc5639] transition hover:bg-[#ecd7d2]"
@@ -219,7 +219,7 @@ export function Theme3CartItems({ slug }: { slug: string }) {
                       </button>
                     </div>
                     <button
-                      className="flex h-14 w-full items-center justify-center gap-2 rounded-xl bg-[#cc5639] px-4 text-[16px] font-semibold tracking-wide text-white transition hover:bg-[#b94d31]"
+                      className="flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-[#cc5639] px-4 text-sm font-semibold tracking-wide text-white transition hover:bg-[#b94d31] sm:h-14 sm:text-base"
                       onClick={() =>
                         dispatch(
                           removeFromCart({ productId: item.productId, slug }),
@@ -236,16 +236,16 @@ export function Theme3CartItems({ slug }: { slug: string }) {
           </div>
         </div>
         {/* Note Section */}
-        <div className="h-fit space-y-4 self-start xl:sticky xl:top-6">
+        <div className="h-fit space-y-4 self-start 2xl:sticky 2xl:top-6">
           <div className="rounded-xl bg-[#f2e2df] p-4">
             <button
               type="button"
               onClick={() => setIsNoteOpen((prev) => !prev)}
               className="flex w-full items-center justify-between text-left"
             >
-              <span className="text-lg font-semibold text-[#2f1f1a]">
-                Add cart note
-              </span>
+                <span className="text-lg font-semibold text-[#2f1f1a]">
+                  Add cart note
+                </span>
               {isNoteOpen ? <X size={24} /> : <PlusIcon size={24} />}
             </button>
 
@@ -305,7 +305,7 @@ export function Theme3CartItems({ slug }: { slug: string }) {
                 <button
                   type="button"
                   onClick={applyDiscountCode}
-                  className="mt-3 h-12 w-full rounded-xl bg-[#cc5639] text-md font-semibold tracking-wide text-white transition hover:border hover:bg-[#f5e2de] hover:text-[#2f1f1a]"
+                  className="mt-3 h-12 w-full rounded-xl bg-[#cc5639] text-base font-semibold tracking-wide text-white transition hover:border hover:bg-[#f5e2de] hover:text-[#2f1f1a]"
                 >
                   Apply
                 </button>
@@ -333,15 +333,15 @@ export function Theme3CartItems({ slug }: { slug: string }) {
             </div>
             {appliedDiscountCode ? (
               <div className="mt-2 flex items-center justify-between">
-                <span className="text-md font-medium text-[#5f4d47]">
+                <span className="text-base font-medium text-[#5f4d47]">
                   Discount ({appliedDiscountPercent}%)
                 </span>
-                <span className="text-md font-semibold text-emerald-700">
+                <span className="text-base font-semibold text-emerald-700">
                   -{discountAmountText}
                 </span>
               </div>
             ) : null}
-            <p className="mt-4 text-md text-[#5f4d47]">
+            <p className="mt-4 text-base text-[#5f4d47]">
               Taxes, discounts and shipping calculated at checkout.
             </p>
             <Link

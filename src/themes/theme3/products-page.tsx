@@ -47,11 +47,11 @@ export function Theme3ProductsPage({ slug, store, products }: ThemeProductsProps
       <div className="min-h-screen bg-[#fff2f5] text-rose-950">
         <Theme3Navbar slug={slug} logoText={store.logoText || store.businessName} />
 
-      <main className="mx-auto w-full max-w-7xl px-6 py-10">
-        <h1 className="text-4xl font-semibold">Jewellery Collection</h1>
-        <p className="mt-2 text-rose-900/80">Filter and discover curated pieces for every style.</p>
+      <main className="mx-auto w-full max-w-470 px-3 py-8 sm:px-4 sm:py-10">
+        <h1 className="text-2xl font-semibold sm:text-3xl md:text-4xl">Jewellery Collection</h1>
+        <p className="mt-2 text-sm text-rose-900/80 sm:text-base">Filter and discover curated pieces for every style.</p>
 
-        <div className="mt-6 grid gap-3 rounded-2xl border border-rose-200 bg-[#fff7f8] p-4 md:grid-cols-4">
+        <div className="mt-6 grid gap-3 rounded-2xl border border-rose-200 bg-[#fff7f8] p-4 sm:grid-cols-2 xl:grid-cols-4">
           <input
             value={search}
             onChange={(event) => setSearch(event.target.value)}
@@ -78,7 +78,7 @@ export function Theme3ProductsPage({ slug, store, products }: ThemeProductsProps
           </label>
         </div>
 
-        <div className="mt-7 grid gap-5 md:grid-cols-2 xl:grid-cols-4">
+        <div className="mt-7 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
           {filteredProducts.map((product) => (
             <Theme3ProductCard key={product._id} slug={slug} product={product} />
           ))}

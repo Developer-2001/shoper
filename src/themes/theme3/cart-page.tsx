@@ -22,9 +22,9 @@ export function Theme3CartPage({ slug, store }: ThemeCartProps) {
         logoText={store.logoText || store.businessName}
       />
 
-      <main className="mx-auto w-full max-w-470 rounded-t-2xl bg-[#eef0f2] px-2 py-3 md:px-4 md:py-4">
+      <main className="mx-auto w-full max-w-470 rounded-t-2xl bg-[#eef0f2] px-3 py-3 sm:px-4 sm:py-4">
         <section className="relative overflow-hidden rounded-2xl border border-rose-200 bg-[#3f0e07]">
-          <div className="relative aspect-1898/520 w-full">
+          <div className="relative aspect-[16/9] w-full sm:aspect-[16/7] xl:aspect-1898/520">
             {isVideoUrl(THEME3_BANNER_MEDIA) ? (
               <video
                 src={THEME3_BANNER_MEDIA}
@@ -46,10 +46,10 @@ export function Theme3CartPage({ slug, store }: ThemeCartProps) {
             )}
             <div className="absolute inset-0 bg-linear-to-r from-black/65 via-black/30 to-transparent" />
             <div className="absolute inset-0 flex flex-col items-center justify-center px-4 text-center text-white">
-              <h1 className="text-[52px] font-semibold leading-tight md:text-[64px]">
+              <h1 className="text-3xl font-semibold leading-tight sm:text-5xl md:text-6xl">
                 Cart
               </h1>
-              <p className="mt-2 max-w-3xl text-[18px] text-white/95 md:text-[20px]">
+              <p className="mt-2 max-w-3xl text-sm text-white/95 sm:text-base md:text-xl">
                 Nourish your skin daily with gentle care for a natural, radiant
                 glow.
               </p>
@@ -57,7 +57,7 @@ export function Theme3CartPage({ slug, store }: ThemeCartProps) {
           </div>
         </section>
 
-        <div className="mt-8">
+        <div className="mt-6 sm:mt-8">
           <Theme3CartItems slug={slug} />
         </div>
       </main>

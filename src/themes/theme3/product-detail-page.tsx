@@ -12,7 +12,7 @@ export function Theme3ProductDetailPage({ slug, store, product }: ThemeProductDe
       <div className="min-h-screen bg-[#fae9e6] text-rose-950">
         <Theme3Navbar slug={slug} logoText={store.logoText || store.businessName} />
 
-        <main className="mx-auto w-full rounded-t-2xl bg-[#fcf5f4]  px-2 py-4">
+        <main className="mx-auto w-full max-w-470 rounded-t-2xl bg-[#fcf5f4] px-3 py-4 sm:px-4">
           <Theme3ProductDetail slug={slug} store={store} product={product} />
         </main>
 

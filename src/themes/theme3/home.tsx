@@ -121,11 +121,11 @@ export function Theme3Home({ slug, store, products, categories = [] }: ThemeHome
           <Theme3Announcement />
         </div>
 
-      <section className="mx-auto mt-4 w-full max-w-475 px-4">
+      <section className="mx-auto mt-4 w-full max-w-470 px-3 sm:px-4">
         {/* Slider */}
         <div className="relative overflow-hidden rounded-2xl border border-rose-200 bg-black/10">
           <div
-            className="relative aspect-1898/742 w-full overflow-hidden cursor-pointer touch-pan-y"
+            className="relative aspect-[16/11] w-full cursor-pointer overflow-hidden touch-pan-y sm:aspect-[16/9] xl:aspect-1898/742"
             onPointerDown={(event) => startSwipe(event.clientX)}
             onPointerUp={(event) => endSwipe(event.clientX)}
             onPointerCancel={cancelSwipe}
@@ -149,8 +149,8 @@ export function Theme3Home({ slug, store, products, categories = [] }: ThemeHome
                       sizes="100vw"
                     />
                     <div className="absolute inset-0 bg-linear-to-r from-black/55 via-black/20 to-transparent" />
-                    <div className="absolute left-8 bottom-4 max-w-xl text-white md:left-12 md:bottom-14">
-                      <div className="mb-4 flex gap-2">
+                    <div className="absolute bottom-4 left-4 right-4 max-w-xl text-white sm:left-8 sm:right-auto md:bottom-10 md:left-12">
+                      <div className="mb-3 flex flex-wrap gap-2">
                         <span className="rounded-md bg-white/90 px-3 py-1 text-xs font-semibold text-[#cc5639]">
                           Necklace
                         </span>
@@ -158,15 +158,15 @@ export function Theme3Home({ slug, store, products, categories = [] }: ThemeHome
                           Ring
                         </span>
                       </div>
-                      <h1 className="text-4xl font-semibold leading-tight md:text-6xl">
+                      <h1 className="text-2xl font-semibold leading-tight sm:text-3xl md:text-5xl">
                         {item.title}
                       </h1>
-                      <p className="mt-4 text-sm text-white/90 md:text-base">
+                      <p className="mt-3 text-xs text-white/90 sm:text-sm md:text-base">
                         {item.description}
                       </p>
                       <Link
                         href={`/${slug}/collections`}
-                        className="mt-6 inline-block rounded-xl bg-[#cc5639] px-6 py-3 text-sm font-bold text-white transition hover:bg-[#b84c32]"
+                        className="mt-4 inline-block rounded-xl bg-[#cc5639] px-4 py-2.5 text-xs font-bold text-white transition hover:bg-[#b84c32] sm:mt-6 sm:px-6 sm:py-3 sm:text-sm"
                       >
                         Shop Now
                       </Link>
@@ -181,7 +181,7 @@ export function Theme3Home({ slug, store, products, categories = [] }: ThemeHome
             )}
 
             {sliderItems.length > 1 ? (
-              <div className="absolute bottom-7 left-8 z-10 flex items-center gap-2 md:left-12">
+              <div className="absolute bottom-4 left-4 z-10 flex items-center gap-2 sm:bottom-7 sm:left-8 md:left-12">
                 {sliderItems.map((item, index) => (
                   <button
                     key={`${item.imageUrl}-indicator`}
@@ -203,7 +203,7 @@ export function Theme3Home({ slug, store, products, categories = [] }: ThemeHome
             ) : null}
 
             {sliderItems.length > 1 ? (
-              <div className="absolute bottom-6 right-6 z-10 flex gap-2">
+              <div className="absolute bottom-3 right-3 z-10 hidden gap-2 sm:bottom-6 sm:right-6 sm:flex">
                 <button
                   type="button"
                   onClick={goPrev}
@@ -223,7 +223,7 @@ export function Theme3Home({ slug, store, products, categories = [] }: ThemeHome
           </div>
         </div>
 
-        <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-8">
+        <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-8">
           {collectionTiles.map((collection, index) => {
             const collectionSlug = toCollectionSlug(collection.label);
             const href = availableCollectionSlugs.has(collectionSlug)
@@ -234,7 +234,7 @@ export function Theme3Home({ slug, store, products, categories = [] }: ThemeHome
               <Link
                 key={`${collection.label}-${index}`}
                 href={href}
-                className="group relative aspect-258/90 overflow-hidden rounded-xl border border-rose-200 bg-white/70 text-left"
+                className="group relative aspect-[4/3] overflow-hidden rounded-xl border border-rose-200 bg-white/70 text-left sm:aspect-[16/8] xl:aspect-258/90"
               >
                 {collection.imageUrl ? (
                   <Image
@@ -257,17 +257,17 @@ export function Theme3Home({ slug, store, products, categories = [] }: ThemeHome
         </div>
       </section>
 
-      <section className="mx-auto mt-4 py-8  w-full px-6 bg-[#fcf5f4]">
+      <section className="mx-auto mt-4 w-full bg-[#fcf5f4] px-3 py-8 sm:px-6">
         <div className="text-center">
           <span className="rounded-full bg-[#cc5639] px-4 py-1 text-xs font-bold uppercase tracking-wider text-white">
             Just Dropped
           </span>
-          <h2 className="mt-4 text-4xl font-semibold text-rose-950">
+          <h2 className="mt-4 text-2xl font-semibold text-rose-950 sm:text-3xl md:text-4xl">
             Sparkling New Pieces
           </h2>
         </div>
 
-        <div className="mt-8 grid gap-5 md:grid-cols-2 xl:grid-cols-4">
+        <div className="mt-8 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
           {featuredProducts.map((product) => (
             <Theme3ProductCard
               key={product._id}

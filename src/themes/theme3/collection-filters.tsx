@@ -51,7 +51,7 @@ export function Theme3CollectionFilters({
       >
         <div className="absolute inset-0 bg-black/35" onClick={onClose} />
         <aside
-          className={`absolute left-3 top-24 w-[min(calc(100%-1.5rem),430px)] rounded-2xl border border-[#d87f66] bg-[#fff8f6] p-5 shadow-2xl transition-transform duration-300 ease-out ${
+          className={`absolute left-2 top-20 w-[calc(100%-1rem)] rounded-2xl border border-[#d87f66] bg-[#fff8f6] p-5 shadow-2xl transition-transform duration-300 ease-out sm:left-3 sm:top-24 sm:w-[min(calc(100%-1.5rem),430px)] ${
             isOpen ? "translate-x-0" : "-translate-x-full"
           }`}
         >
@@ -69,15 +69,15 @@ export function Theme3CollectionFilters({
 
           <div className="mt-6">
             <p className="text-lg font-medium text-[#2c0e05]">Price Range</p>
-            <div className="mt-4 rounded-md  px-4 py-3">
-              <div className="flex items-center gap-2 text-sm font-medium">
+            <div className="mt-4 rounded-md px-2 py-3 sm:px-4">
+              <div className="grid grid-cols-2 items-center gap-2 text-sm font-medium sm:flex">
                 <span>Rs.</span>
                 <input
                   inputMode="decimal"
                   value={fromPrice}
                   onChange={(event) => onChangeFromPrice(event.target.value)}
                   placeholder="0"
-                  className="w-24 rounded border border-[#e2c1b2] bg-white px-2 py-1.5 text-[#2c0e05]"
+                  className="w-full rounded border border-[#e2c1b2] bg-white px-2 py-1.5 text-[#2c0e05] sm:w-24"
                 />
                 <span>From</span>
                 <span>Rs.</span>
@@ -86,7 +86,7 @@ export function Theme3CollectionFilters({
                   value={toPrice}
                   onChange={(event) => onChangeToPrice(event.target.value)}
                   placeholder="4000"
-                  className="w-28 rounded border border-[#e2c1b2] bg-white px-2 py-1.5 text-[#2c0e05]"
+                  className="w-full rounded border border-[#e2c1b2] bg-white px-2 py-1.5 text-[#2c0e05] sm:w-28"
                 />
                 <span>To</span>
               </div>

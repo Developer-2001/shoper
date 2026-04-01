@@ -5,8 +5,6 @@ import { useEffect, useState } from "react";
 
 const THEME3_ANNOUNCEMENT_DISMISS_KEY = "theme3_home_announcement_dismissed";
 
-
-
 export function Theme3Announcement() {
   const [visible, setVisible] = useState(true);
   const [entered, setEntered] = useState(false);
@@ -17,6 +15,8 @@ export function Theme3Announcement() {
       if (
         window.localStorage.getItem(THEME3_ANNOUNCEMENT_DISMISS_KEY) === "1"
       ) {
+        setVisible(false);
+        return;
       }
     } catch {
       // ignore storage errors
@@ -39,7 +39,7 @@ export function Theme3Announcement() {
 
   return (
     <div
-      className={`absolute left-1/2 top-full z-50 flex w-[min(100%-2rem,56rem)] -translate-x-1/2 items-center justify-center rounded-lg bg-[#cc5639] px-10 py-2 text-center text-sm font-semibold text-white shadow-lg transition-all duration-500 ease-out ${
+      className={`absolute left-1/2 top-full z-50 mt-2 flex w-[min(calc(100%-1rem),56rem)] -translate-x-1/2 items-center justify-center rounded-lg bg-[#cc5639] px-3 py-2 pr-10 text-center text-xs font-semibold text-white shadow-lg transition-all duration-500 ease-out sm:px-8 sm:text-sm ${
         entered ? "translate-y-0 opacity-100" : "-translate-y-4 opacity-0"
       }`}
     >
@@ -47,7 +47,7 @@ export function Theme3Announcement() {
       <button
         type="button"
         onClick={dismiss}
-        className="absolute right-4 inline-flex h-7 w-7 items-center cursor-pointer justify-center rounded-full bg-white/15 text-white transition hover:bg-white/25"
+        className="absolute right-2 inline-flex h-7 w-7 cursor-pointer items-center justify-center rounded-full bg-white/15 text-white transition hover:bg-white/25 sm:right-4"
         aria-label="Dismiss announcement"
       >
         <X size={14} />
