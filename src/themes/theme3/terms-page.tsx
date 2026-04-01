@@ -27,7 +27,7 @@ export function Theme3TermsPage({ slug, store }: Theme3TermsPageProps) {
 
       <main className="mx-auto w-full max-w-470 rounded-t-2xl bg-[#eef0f2] px-3 py-3 sm:px-4 sm:py-4">
         <section className="relative overflow-hidden rounded-2xl border border-rose-200">
-          <div className="relative aspect-[16/9] w-full sm:aspect-[16/7] xl:aspect-1898/520">
+          <div className="relative aspect-video w-full sm:aspect-16/7 xl:aspect-1898/520">
             {isVideoUrl(THEME3_BANNER_MEDIA) ? (
               <video
                 src={THEME3_BANNER_MEDIA}
