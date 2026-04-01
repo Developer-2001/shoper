@@ -29,19 +29,21 @@ export async function POST(request: Request) {
 
   if (event.type === "checkout.session.completed") {
     const session = event.data.object as any;
-    const { metadata } = session;
+    const metadata = session.metadata || {};
+    
+    // Use client_reference_id as primary, then fall back to metadata
+    const orderNumber = session.client_reference_id || metadata.orderNumber;
+    
+    console.log(`📦 Processing successful payment for order: ${orderNumber}`);
+    console.log(`🔹 Session ID: ${session.id}`);
 
-    console.log(`📦 Processing session: ${session.id}`, { metadata });
-
-    if (!metadata || !metadata.orderNumber) {
-      console.error("❌ Metadata or orderNumber missing in Stripe session");
-      return NextResponse.json({ error: "Metadata missing" }, { status: 400 });
+    if (!orderNumber) {
+      console.error("❌ No orderNumber found in session or metadata.");
+      return NextResponse.json({ error: "Missing orderNumber" }, { status: 400 });
     }
 
     try {
       await connectToDatabase();
-
-      const orderNumber = metadata.orderNumber;
 
       const order = await Order.findOneAndUpdate(
         { orderNumber },
@@ -54,8 +56,10 @@ export async function POST(request: Request) {
         { new: true }
       );
 
-      if (!order) {
-        console.error(`Order ${orderNumber} not found for Stripe session ${session.id}`);
+      if (order) {
+        console.log(`✅ Order ${orderNumber} updated to 'paid'.`);
+      } else {
+        console.error(`❌ Order ${orderNumber} not found in database.`);
         return NextResponse.json({ error: "Order not found" }, { status: 404 });
       }
 

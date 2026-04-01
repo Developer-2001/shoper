@@ -27,6 +27,12 @@ type PlatformStore = {
   status: "active" | "inactive";
   createdAt: string;
   updatedAt: string;
+  paymentSettings?: {
+    stripe?: {
+      enabled: boolean;
+      accountId: string;
+    };
+  };
   admins: StoreAdmin[];
 };
 
@@ -137,6 +143,13 @@ export default function PlatformAdminPage() {
     setUpdatingId(store.id);
 
     const nextStatus = store.status === "active" ? "inactive" : "active";
+
+    // Client-side check for Stripe
+    if (nextStatus === "active" && !store.paymentSettings?.stripe?.enabled) {
+      alert("Cannot activate store: Stripe is not connected or enabled.");
+      setUpdatingId("");
+      return;
+    }
 
     try {
       const response = await fetch("/api/admin/platform/stores", {
@@ -333,6 +346,14 @@ export default function PlatformAdminPage() {
                   <p className="font-semibold text-slate-900">Store Info</p>
                   <div className="mt-2 grid gap-2 text-sm text-slate-700 md:grid-cols-2">
                     <p><span className="font-semibold">Status:</span> {selectedStore.status}</p>
+                    <p>
+                       <span className="font-semibold">Payment Status:</span>{" "}
+                       {selectedStore.paymentSettings?.stripe?.enabled ? (
+                         <span className="text-emerald-600 font-bold">Stripe Enabled</span>
+                       ) : (
+                         <span className="text-amber-600 font-bold">Not Connected</span>
+                       )}
+                    </p>
                     <p><span className="font-semibold">Currency:</span> {selectedStore.currency}</p>
                     <p><span className="font-semibold">Business Email:</span> {selectedStore.businessEmail}</p>
                     <p><span className="font-semibold">Owner Name:</span> {selectedStore.ownerName}</p>
@@ -480,9 +501,10 @@ export default function PlatformAdminPage() {
                 <tr>
                   <th className="px-4 py-3">Store</th>
                   <th className="px-4 py-3">Slug</th>
-                  <th className="px-4 py-3">Status</th>
-                  <th className="px-4 py-3">Admins</th>
-                  <th className="px-4 py-3">Action</th>
+                  <th className="px-4 py-3 text-center">Status</th>
+                  <th className="px-4 py-3 text-center">Payments</th>
+                  <th className="px-4 py-3 text-center">Admins</th>
+                  <th className="px-4 py-3 text-right">Action</th>
                 </tr>
               </thead>
               <tbody>
@@ -490,7 +512,7 @@ export default function PlatformAdminPage() {
                   <tr key={store.id} className="border-t border-slate-200">
                     <td className="px-4 py-3">{store.businessName}</td>
                     <td className="px-4 py-3">/{store.slug}</td>
-                    <td className="px-4 py-3">
+                    <td className="px-4 py-3 text-center">
                       <span
                         className={`rounded-full px-2 py-1 text-xs font-semibold ${
                           store.status === "active"
@@ -501,8 +523,19 @@ export default function PlatformAdminPage() {
                         {store.status}
                       </span>
                     </td>
-                    <td className="px-4 py-3">{store.admins.length}</td>
-                    <td className="px-4 py-3">
+                    <td className="px-4 py-3 text-center">
+                       {store.paymentSettings?.stripe?.enabled ? (
+                         <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-100 px-2 py-1 text-[10px] font-black uppercase text-emerald-700">
+                           Stripe Connected
+                         </span>
+                       ) : (
+                         <span className="inline-flex items-center gap-1.5 rounded-full bg-slate-100 px-2 py-1 text-[10px] font-black uppercase text-slate-500">
+                           Not Connected
+                         </span>
+                       )}
+                    </td>
+                    <td className="px-4 py-3 text-center">{store.admins.length}</td>
+                    <td className="px-4 py-3 text-right">
                       <button
                         disabled={updatingId === store.id}
                         onClick={() => toggleStatus(store)}

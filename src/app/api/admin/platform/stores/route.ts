@@ -40,6 +40,7 @@ export async function GET() {
       status: store.status || "inactive",
       createdAt: store.createdAt,
       updatedAt: store.updatedAt,
+      paymentSettings: store.paymentSettings,
       admins: (adminMap.get(store._id.toString()) || []).map((admin) => ({
         id: admin._id,
         ownerName: admin.ownerName,
@@ -61,6 +62,19 @@ export async function PATCH(request: Request) {
 
   if (!parsed.success) {
     return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
+  }
+
+  const storeToUpdate = await Store.findById(parsed.data.storeId).lean();
+  if (!storeToUpdate) {
+    return NextResponse.json({ error: "Store not found" }, { status: 404 });
+  }
+
+  // Enforce Stripe connection for activation
+  if (parsed.data.status === "active" && !storeToUpdate.paymentSettings?.stripe?.enabled) {
+    return NextResponse.json(
+      { error: "Cannot activate store because Stripe is not connected or enabled." },
+      { status: 400 }
+    );
   }
 
   const store = await Store.findByIdAndUpdate(

@@ -13,7 +13,7 @@ import { isVideoUrl } from "@/utils/media";
 
 import type { StorefrontStore } from "@/themes/types";
 
-const SHIPPING_CHARGE_PER_ITEM = 50;
+const SHIPPING_CHARGE_PER_ITEM = 0;
 const TAX_PERCENTAGE = 3;
 const CHECKOUT_DISCOUNT_CODES: Record<
   string,
@@ -164,7 +164,7 @@ export function Theme3CheckoutForm({
 
   async function handleStripeCheckout() {
     if (!store.paymentSettings?.stripe?.enabled) {
-      setError("Stripe is not enabled for this store.");
+      setError("This store is currently not set up to receive online payments.");
       return;
     }
 
@@ -721,7 +721,7 @@ export function Theme3CheckoutForm({
           <button
             type="submit"
             onClick={handlePayNowClick}
-            disabled={loading}
+            disabled={loading || !store.paymentSettings?.stripe?.enabled}
             className="mt-4 flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-[#1663d6] text-lg font-semibold text-white transition hover:bg-[#1257bc] disabled:opacity-50"
           >
             {loading ? <Spinner size={16} className="text-white" /> : null}
@@ -729,7 +729,9 @@ export function Theme3CheckoutForm({
               ? store.paymentSettings?.stripe?.enabled
                 ? "Redirecting..."
                 : "Processing..."
-              : "Pay now"}
+              : store.paymentSettings?.stripe?.enabled
+                ? "Pay now"
+                : "Payment not ready"}
           </button>
 
           {error && !summaryOpen ? (
@@ -753,7 +755,7 @@ export function Theme3CheckoutForm({
         <button
           type="submit"
           onClick={handlePayNowClick}
-          disabled={loading}
+          disabled={loading || !store.paymentSettings?.stripe?.enabled}
           className="mt-4 flex h-12 cursor-pointer w-full items-center justify-center gap-2 rounded-xl bg-[#1663d6] text-lg font-semibold text-white transition hover:bg-[#1257bc] disabled:opacity-50"
         >
           {loading ? <Spinner size={16} className="text-white" /> : null}
@@ -761,7 +763,9 @@ export function Theme3CheckoutForm({
             ? store.paymentSettings?.stripe?.enabled
               ? "Redirecting..."
               : "Processing..."
-            : "Pay now"}
+            : store.paymentSettings?.stripe?.enabled
+              ? "Pay now"
+              : "Payment not ready"}
         </button>
       </aside>
     </form>

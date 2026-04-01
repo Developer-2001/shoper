@@ -155,7 +155,9 @@ export function Theme1CheckoutForm({ slug, store }: Theme1CheckoutFormProps) {
         {error ? <p className="mt-3 text-sm font-semibold text-red-600">{error}</p> : null}
 
         {!store.paymentSettings?.stripe?.enabled ? (
-          <p className="mt-4 text-sm text-red-500 italic">This store is currently not accepting payments.</p>
+          <div className="mt-4 rounded-xl bg-amber-50 p-3 border border-amber-200">
+            <p className="text-sm text-amber-700 font-semibold">Online payments are currently unavailable for this store.</p>
+          </div>
         ) : null}
 
         <button

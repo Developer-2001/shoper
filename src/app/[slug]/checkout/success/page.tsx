@@ -2,6 +2,8 @@ import Link from "next/link";
 import { CheckCircle2, ShoppingBag } from "lucide-react";
 import { ClearCartClient } from "./clear-cart-client";
 
+export const dynamic = "force-dynamic";
+
 export default async function CheckoutSuccessPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
 
