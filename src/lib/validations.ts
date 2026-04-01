@@ -111,11 +111,13 @@ const checkoutItemsSchema = z.array(
 
 const checkoutAddressSchema = z.object({
   country: z.string().min(2),
+  countryCode: z.string().optional().default(""),
   firstName: z.string().min(1),
   lastName: z.string().min(1),
   shippingAddress: z.string().min(6),
   city: z.string().min(2),
   state: z.string().min(2),
+  stateCode: z.string().optional().default(""),
   postalCode: z.string().min(3),
 });
 

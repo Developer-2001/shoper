@@ -4,17 +4,19 @@ import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import { ChevronDown, ChevronUp } from "lucide-react";
+import { City, Country, State } from "country-state-city";
 
 import { Spinner } from "@/components/admin/ui/loader";
+import { Skeleton } from "@/components/admin/ui/skeleton";
 import { useAppDispatch, useAppSelector } from "@/hooks/useRedux";
 import { clearSlugCart } from "@/store/slices/cartSlice";
 import { formatMoney } from "@/utils/currency";
 import { isVideoUrl } from "@/utils/media";
 
 import type { StorefrontStore } from "@/themes/types";
+import { SingleSelectDropdown, SingleSelectOption } from "@/lib/single-select-dropdown";
 
 const SHIPPING_CHARGE_PER_ITEM = 0;
-const TAX_PERCENTAGE = 3;
 const CHECKOUT_DISCOUNT_CODES: Record<
   string,
   { code: string; percent: number }
@@ -25,11 +27,13 @@ const CHECKOUT_DISCOUNT_CODES: Record<
 
 type AddressFormState = {
   country: string;
+  countryCode: string;
   firstName: string;
   lastName: string;
   shippingAddress: string;
   city: string;
   state: string;
+  stateCode: string;
   postalCode: string;
 };
 
@@ -43,13 +47,29 @@ function roundPrice(value: number) {
   return Math.round(value * 100) / 100;
 }
 
+function toSingleSelectOptions<T extends { name: string }>(
+  list: T[],
+  getValue: (item: T) => string,
+): SingleSelectOption[] {
+  return list.map((item) => {
+    const value = getValue(item);
+    return {
+      id: value,
+      label: item.name,
+      value,
+    };
+  });
+}
+
 const EMPTY_ADDRESS: AddressFormState = {
   country: "India",
+  countryCode: "IN",
   firstName: "",
   lastName: "",
   shippingAddress: "",
   city: "",
   state: "",
+  stateCode: "",
   postalCode: "",
 };
 
@@ -73,6 +93,9 @@ export function Theme3CheckoutForm({
   const [billing, setBilling] = useState<AddressFormState>(EMPTY_ADDRESS);
   const [useShippingAsBilling, setUseShippingAsBilling] = useState(true);
   const [summaryOpen, setSummaryOpen] = useState(false);
+  const [taxRatePercent, setTaxRatePercent] = useState(0);
+  const [taxRateLabel, setTaxRateLabel] = useState("No sales tax");
+  const [taxLoading, setTaxLoading] = useState(false);
   const [checkoutMeta, setCheckoutMeta] = useState<CheckoutMetaState>({
     cartNote: "",
     discountCode: "",
@@ -82,6 +105,77 @@ export function Theme3CheckoutForm({
   const checkoutMetaKey = `theme3CheckoutMeta:${slug}`;
   const currency = items[0]?.currency || "INR";
   const firstItem = items[0];
+
+  const countries = useMemo(
+    () =>
+      Country.getAllCountries().sort((a, b) =>
+        a.name.localeCompare(b.name),
+      ),
+    [],
+  );
+
+  const shippingStates = useMemo(
+    () =>
+      shipping.countryCode ? State.getStatesOfCountry(shipping.countryCode) : [],
+    [shipping.countryCode],
+  );
+
+  const shippingCities = useMemo(
+    () =>
+      shipping.countryCode && shipping.stateCode
+        ? City.getCitiesOfState(shipping.countryCode, shipping.stateCode)
+        : [],
+    [shipping.countryCode, shipping.stateCode],
+  );
+
+  const billingStates = useMemo(
+    () =>
+      billing.countryCode ? State.getStatesOfCountry(billing.countryCode) : [],
+    [billing.countryCode],
+  );
+
+  const billingCities = useMemo(
+    () =>
+      billing.countryCode && billing.stateCode
+        ? City.getCitiesOfState(billing.countryCode, billing.stateCode)
+        : [],
+    [billing.countryCode, billing.stateCode],
+  );
+
+  const countryOptions = useMemo(
+    () => toSingleSelectOptions(countries, (country) => country.isoCode),
+    [countries],
+  );
+
+  const shippingStateOptions = useMemo(
+    () => toSingleSelectOptions(shippingStates, (stateItem) => stateItem.isoCode),
+    [shippingStates],
+  );
+
+  const shippingCityOptions = useMemo(
+    () =>
+      shippingCities.map((cityItem) => ({
+        id: `${cityItem.name}-${cityItem.stateCode}-${cityItem.countryCode}`,
+        label: cityItem.name,
+        value: cityItem.name,
+      })),
+    [shippingCities],
+  );
+
+  const billingStateOptions = useMemo(
+    () => toSingleSelectOptions(billingStates, (stateItem) => stateItem.isoCode),
+    [billingStates],
+  );
+
+  const billingCityOptions = useMemo(
+    () =>
+      billingCities.map((cityItem) => ({
+        id: `${cityItem.name}-${cityItem.stateCode}-${cityItem.countryCode}`,
+        label: cityItem.name,
+        value: cityItem.name,
+      })),
+    [billingCities],
+  );
 
   const itemCount = useMemo(
     () => items.reduce((sum, item) => sum + item.quantity, 0),
@@ -115,8 +209,8 @@ export function Theme3CheckoutForm({
   const taxableAmount = Math.max(0, subtotal - discountAmount);
 
   const taxAmount = useMemo(
-    () => roundPrice((taxableAmount * TAX_PERCENTAGE) / 100),
-    [taxableAmount],
+    () => roundPrice((taxableAmount * taxRatePercent) / 100),
+    [taxableAmount, taxRatePercent],
   );
 
   const total = useMemo(
@@ -148,6 +242,51 @@ export function Theme3CheckoutForm({
     }
   }, [checkoutMetaKey]);
 
+  useEffect(() => {
+    const controller = new AbortController();
+
+    async function loadTaxRate() {
+      if (!shipping.countryCode) {
+        setTaxRatePercent(0);
+        setTaxRateLabel("No sales tax");
+        return;
+      }
+
+      setTaxLoading(true);
+      try {
+        const params = new URLSearchParams({
+          country: shipping.country,
+          countryCode: shipping.countryCode,
+          state: shipping.state,
+          stateCode: shipping.stateCode,
+        });
+
+        const response = await fetch(`/api/store/${slug}/tax-rate?${params.toString()}`, {
+          signal: controller.signal,
+        });
+
+        if (!response.ok) {
+          throw new Error("Tax lookup failed");
+        }
+
+        const data = await response.json();
+        setTaxRatePercent(Number(data?.tax?.ratePercent || 0));
+        setTaxRateLabel(String(data?.tax?.label || "Tax estimate unavailable"));
+      } catch (taxError) {
+        if ((taxError as Error).name === "AbortError") return;
+        console.error(taxError);
+        setTaxRatePercent(0);
+        setTaxRateLabel("Tax estimate unavailable");
+      } finally {
+        setTaxLoading(false);
+      }
+    }
+
+    loadTaxRate();
+
+    return () => controller.abort();
+  }, [slug, shipping.country, shipping.countryCode, shipping.state, shipping.stateCode]);
+
   function updateShipping(field: keyof AddressFormState, value: string) {
     setShipping((prev) => ({
       ...prev,
@@ -159,6 +298,58 @@ export function Theme3CheckoutForm({
     setBilling((prev) => ({
       ...prev,
       [field]: value,
+    }));
+  }
+
+  function setShippingCountry(countryCode: string) {
+    const selectedCountry = Country.getCountryByCode(countryCode);
+    setShipping((prev) => ({
+      ...prev,
+      country: selectedCountry?.name || "",
+      countryCode,
+      state: "",
+      stateCode: "",
+      city: "",
+    }));
+  }
+
+  function setShippingState(stateCode: string) {
+    const selectedState = State.getStateByCodeAndCountry(
+      stateCode,
+      shipping.countryCode,
+    );
+
+    setShipping((prev) => ({
+      ...prev,
+      state: selectedState?.name || "",
+      stateCode,
+      city: "",
+    }));
+  }
+
+  function setBillingCountry(countryCode: string) {
+    const selectedCountry = Country.getCountryByCode(countryCode);
+    setBilling((prev) => ({
+      ...prev,
+      country: selectedCountry?.name || "",
+      countryCode,
+      state: "",
+      stateCode: "",
+      city: "",
+    }));
+  }
+
+  function setBillingState(stateCode: string) {
+    const selectedState = State.getStateByCodeAndCountry(
+      stateCode,
+      billing.countryCode,
+    );
+
+    setBilling((prev) => ({
+      ...prev,
+      state: selectedState?.name || "",
+      stateCode,
+      city: "",
     }));
   }
 
@@ -342,8 +533,29 @@ export function Theme3CheckoutForm({
         ) : null}
 
         <div className="flex items-center justify-between">
-          <span>Estimated taxes ({TAX_PERCENTAGE}%)</span>
-          <span>{formatMoney(taxAmount, currency)}</span>
+          <div className="flex items-center gap-1">
+            <span>Estimated taxes (</span>
+            {taxLoading ? (
+              <Skeleton className="h-4 w-12 rounded" />
+            ) : (
+              <span>{taxRatePercent.toFixed(2)}%</span>
+            )}
+            <span>)</span>
+          </div>
+          {taxLoading ? (
+            <Skeleton className="h-5 w-20 rounded" />
+          ) : (
+            <span>{formatMoney(taxAmount, currency)}</span>
+          )}
+        </div>
+
+        <div className="flex items-center gap-1 text-xs text-slate-500">
+          <span>Tax basis:</span>
+          {taxLoading ? (
+            <Skeleton className="h-4 w-32 rounded" />
+          ) : (
+            <span>{taxRateLabel}</span>
+          )}
         </div>
 
         <div className="flex items-center justify-between border-t border-slate-200 pt-3">
@@ -393,270 +605,6 @@ export function Theme3CheckoutForm({
           </div>
         </div>
 
-        <div>
-          <h2 className="text-2xl font-semibold text-slate-900">
-            Shipping Address
-          </h2>
-          <div className="mt-3 grid gap-3 md:grid-cols-2">
-            <div className="sm:col-span-2">
-              <label
-                className="text-sm text-slate-600"
-                htmlFor="shipping-country"
-              >
-                Country
-              </label>
-              <input
-                id="shipping-country"
-                required
-                value={shipping.country}
-                onChange={(event) =>
-                  updateShipping("country", event.target.value)
-                }
-                className={inputClass}
-              />
-            </div>
-            <div>
-              <label
-                className="text-sm text-slate-600"
-                htmlFor="shipping-firstName"
-              >
-                First Name
-              </label>
-              <input
-                id="shipping-firstName"
-                required
-                value={shipping.firstName}
-                onChange={(event) =>
-                  updateShipping("firstName", event.target.value)
-                }
-                className={inputClass}
-              />
-            </div>
-            <div>
-              <label
-                className="text-sm text-slate-600"
-                htmlFor="shipping-lastName"
-              >
-                Last Name
-              </label>
-              <input
-                id="shipping-lastName"
-                required
-                value={shipping.lastName}
-                onChange={(event) =>
-                  updateShipping("lastName", event.target.value)
-                }
-                className={inputClass}
-              />
-            </div>
-            <div className="">
-              <label
-                className="text-sm text-slate-600"
-                htmlFor="shipping-address"
-              >
-                Shipping Address
-              </label>
-              <input
-                id="shipping-address"
-                required
-                value={shipping.shippingAddress}
-                onChange={(event) =>
-                  updateShipping("shippingAddress", event.target.value)
-                }
-                className={inputClass}
-              />
-            </div>
-            <div>
-              <label className="text-sm text-slate-600" htmlFor="shipping-city">
-                City
-              </label>
-              <input
-                id="shipping-city"
-                required
-                value={shipping.city}
-                onChange={(event) => updateShipping("city", event.target.value)}
-                className={inputClass}
-              />
-            </div>
-            <div>
-              <label
-                className="text-sm text-slate-600"
-                htmlFor="shipping-state"
-              >
-                State
-              </label>
-              <input
-                id="shipping-state"
-                required
-                value={shipping.state}
-                onChange={(event) =>
-                  updateShipping("state", event.target.value)
-                }
-                className={inputClass}
-              />
-            </div>
-            <div className="">
-              <label
-                className="text-sm text-slate-600"
-                htmlFor="shipping-postalCode"
-              >
-                Postal Code
-              </label>
-              <input
-                id="shipping-postalCode"
-                required
-                value={shipping.postalCode}
-                onChange={(event) =>
-                  updateShipping("postalCode", event.target.value)
-                }
-                className={inputClass}
-              />
-            </div>
-          </div>
-        </div>
-
-        <div>
-          <div className="flex flex-col items-start gap-3 sm:flex-row sm:items-center sm:justify-between">
-            <h2 className="text-2xl font-semibold text-slate-900">
-              Billing Address
-            </h2>
-            <label className="inline-flex items-center gap-2 text-sm text-slate-700">
-              <input
-                type="checkbox"
-                checked={useShippingAsBilling}
-                onChange={(event) =>
-                  setUseShippingAsBilling(event.target.checked)
-                }
-                className="h-4 w-4 accent-slate-700"
-              />
-              Use shipping address as billing address
-            </label>
-          </div>
-
-          {!useShippingAsBilling ? (
-            <div className="mt-3 grid gap-3 md:grid-cols-2">
-              <div className="sm:col-span-2">
-                <label
-                  className="text-sm text-slate-600"
-                  htmlFor="billing-country"
-                >
-                  Country
-                </label>
-                <input
-                  id="billing-country"
-                  required={!useShippingAsBilling}
-                  value={billing.country}
-                  onChange={(event) =>
-                    updateBilling("country", event.target.value)
-                  }
-                  className={inputClass}
-                />
-              </div>
-              <div>
-                <label
-                  className="text-sm text-slate-600"
-                  htmlFor="billing-firstName"
-                >
-                  First Name
-                </label>
-                <input
-                  id="billing-firstName"
-                  required={!useShippingAsBilling}
-                  value={billing.firstName}
-                  onChange={(event) =>
-                    updateBilling("firstName", event.target.value)
-                  }
-                  className={inputClass}
-                />
-              </div>
-              <div>
-                <label
-                  className="text-sm text-slate-600"
-                  htmlFor="billing-lastName"
-                >
-                  Last Name
-                </label>
-                <input
-                  id="billing-lastName"
-                  required={!useShippingAsBilling}
-                  value={billing.lastName}
-                  onChange={(event) =>
-                    updateBilling("lastName", event.target.value)
-                  }
-                  className={inputClass}
-                />
-              </div>
-              <div className="">
-                <label
-                  className="text-sm text-slate-600"
-                  htmlFor="billing-address"
-                >
-                  Shipping Address
-                </label>
-                <input
-                  id="billing-address"
-                  required={!useShippingAsBilling}
-                  value={billing.shippingAddress}
-                  onChange={(event) =>
-                    updateBilling("shippingAddress", event.target.value)
-                  }
-                  className={inputClass}
-                />
-              </div>
-              <div>
-                <label
-                  className="text-sm text-slate-600"
-                  htmlFor="billing-city"
-                >
-                  City
-                </label>
-                <input
-                  id="billing-city"
-                  required={!useShippingAsBilling}
-                  value={billing.city}
-                  onChange={(event) =>
-                    updateBilling("city", event.target.value)
-                  }
-                  className={inputClass}
-                />
-              </div>
-              <div>
-                <label
-                  className="text-sm text-slate-600"
-                  htmlFor="billing-state"
-                >
-                  State
-                </label>
-                <input
-                  id="billing-state"
-                  required={!useShippingAsBilling}
-                  value={billing.state}
-                  onChange={(event) =>
-                    updateBilling("state", event.target.value)
-                  }
-                  className={inputClass}
-                />
-              </div>
-              <div className="">
-                <label
-                  className="text-sm text-slate-600"
-                  htmlFor="billing-postalCode"
-                >
-                  Postal Code
-                </label>
-                <input
-                  id="billing-postalCode"
-                  required={!useShippingAsBilling}
-                  value={billing.postalCode}
-                  onChange={(event) =>
-                    updateBilling("postalCode", event.target.value)
-                  }
-                  className={inputClass}
-                />
-              </div>
-            </div>
-          ) : null}
-        </div>
         <section className="rounded-2xl border border-slate-200 bg-white p-4 xl:hidden">
           <button
             type="button"
@@ -740,6 +688,278 @@ export function Theme3CheckoutForm({
             </p>
           ) : null}
         </section>
+
+        <div>
+          <h2 className="text-2xl font-semibold text-slate-900">
+            Shipping Address
+          </h2>
+          <div className="mt-3 grid gap-3 md:grid-cols-2">
+            <div className="md:col-span-2">
+              <label className="text-sm text-slate-600" htmlFor="shipping-country">
+                Country
+              </label>
+              <SingleSelectDropdown
+                id="shipping-country"
+                value={shipping.countryCode}
+                options={countryOptions}
+                placeholder="Select country"
+                searchPlaceholder="Search country..."
+                onChange={setShippingCountry}
+              />
+            </div>
+            <div>
+              <label className="text-sm text-slate-600" htmlFor="shipping-firstName">
+                First Name
+              </label>
+              <input
+                id="shipping-firstName"
+                required
+                value={shipping.firstName}
+                onChange={(event) =>
+                  updateShipping("firstName", event.target.value)
+                }
+                className={inputClass}
+              />
+            </div>
+            <div>
+              <label className="text-sm text-slate-600" htmlFor="shipping-lastName">
+                Last Name
+              </label>
+              <input
+                id="shipping-lastName"
+                required
+                value={shipping.lastName}
+                onChange={(event) =>
+                  updateShipping("lastName", event.target.value)
+                }
+                className={inputClass}
+              />
+            </div>
+            <div className="md:col-span-2">
+              <label className="text-sm text-slate-600" htmlFor="shipping-address">
+                Shipping Address
+              </label>
+              <input
+                id="shipping-address"
+                required
+                value={shipping.shippingAddress}
+                onChange={(event) =>
+                  updateShipping("shippingAddress", event.target.value)
+                }
+                className={inputClass}
+              />
+            </div>
+            <div>
+              <label className="text-sm text-slate-600" htmlFor="shipping-state">
+                State / Province
+              </label>
+              {shippingStates.length ? (
+                <SingleSelectDropdown
+                  id="shipping-state"
+                  value={shipping.stateCode}
+                  options={shippingStateOptions}
+                  placeholder="Select state"
+                  searchPlaceholder="Search state..."
+                  onChange={setShippingState}
+                  disabled={!shipping.countryCode}
+                />
+              ) : (
+                <input
+                  id="shipping-state"
+                  required
+                  value={shipping.state}
+                  onChange={(event) =>
+                    updateShipping("state", event.target.value)
+                  }
+                  className={inputClass}
+                />
+              )}
+            </div>
+            <div>
+              <label className="text-sm text-slate-600" htmlFor="shipping-city">
+                City
+              </label>
+              {shippingCities.length ? (
+                <SingleSelectDropdown
+                  id="shipping-city"
+                  value={shipping.city}
+                  options={shippingCityOptions}
+                  placeholder="Select city"
+                  searchPlaceholder="Search city..."
+                  onChange={(value) => updateShipping("city", value)}
+                  disabled={!shipping.stateCode}
+                />
+              ) : (
+                <input
+                  id="shipping-city"
+                  required
+                  value={shipping.city}
+                  onChange={(event) => updateShipping("city", event.target.value)}
+                  className={inputClass}
+                />
+              )}
+            </div>
+            <div className="md:col-span-2">
+              <label className="text-sm text-slate-600" htmlFor="shipping-postalCode">
+                Postal Code
+              </label>
+              <input
+                id="shipping-postalCode"
+                required
+                value={shipping.postalCode}
+                onChange={(event) =>
+                  updateShipping("postalCode", event.target.value)
+                }
+                className={inputClass}
+              />
+            </div>
+          </div>
+        </div>
+
+        <div>
+          <div className="flex flex-col items-start gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <h2 className="text-2xl font-semibold text-slate-900">
+              Billing Address
+            </h2>
+            <label className="inline-flex items-center gap-2 text-sm text-slate-700">
+              <input
+                type="checkbox"
+                checked={useShippingAsBilling}
+                onChange={(event) =>
+                  setUseShippingAsBilling(event.target.checked)
+                }
+                className="h-4 w-4 accent-slate-700"
+              />
+              Use shipping address as billing address
+            </label>
+          </div>
+
+          {!useShippingAsBilling ? (
+            <div className="mt-3 grid gap-3 md:grid-cols-2">
+              <div className="md:col-span-2">
+                <label className="text-sm text-slate-600" htmlFor="billing-country">
+                  Country
+                </label>
+                <SingleSelectDropdown
+                  id="billing-country"
+                  value={billing.countryCode}
+                  options={countryOptions}
+                  placeholder="Select country"
+                  searchPlaceholder="Search country..."
+                  onChange={setBillingCountry}
+                />
+              </div>
+              <div>
+                <label className="text-sm text-slate-600" htmlFor="billing-firstName">
+                  First Name
+                </label>
+                <input
+                  id="billing-firstName"
+                  required={!useShippingAsBilling}
+                  value={billing.firstName}
+                  onChange={(event) =>
+                    updateBilling("firstName", event.target.value)
+                  }
+                  className={inputClass}
+                />
+              </div>
+              <div>
+                <label className="text-sm text-slate-600" htmlFor="billing-lastName">
+                  Last Name
+                </label>
+                <input
+                  id="billing-lastName"
+                  required={!useShippingAsBilling}
+                  value={billing.lastName}
+                  onChange={(event) =>
+                    updateBilling("lastName", event.target.value)
+                  }
+                  className={inputClass}
+                />
+              </div>
+              <div className="md:col-span-2">
+                <label className="text-sm text-slate-600" htmlFor="billing-address">
+                  Shipping Address
+                </label>
+                <input
+                  id="billing-address"
+                  required={!useShippingAsBilling}
+                  value={billing.shippingAddress}
+                  onChange={(event) =>
+                    updateBilling("shippingAddress", event.target.value)
+                  }
+                  className={inputClass}
+                />
+              </div>
+              <div>
+                <label className="text-sm text-slate-600" htmlFor="billing-state">
+                  State / Province
+                </label>
+                {billingStates.length ? (
+                  <SingleSelectDropdown
+                    id="billing-state"
+                    value={billing.stateCode}
+                    options={billingStateOptions}
+                    placeholder="Select state"
+                    searchPlaceholder="Search state..."
+                    onChange={setBillingState}
+                    disabled={!billing.countryCode}
+                  />
+                ) : (
+                  <input
+                    id="billing-state"
+                    required={!useShippingAsBilling}
+                    value={billing.state}
+                    onChange={(event) =>
+                      updateBilling("state", event.target.value)
+                    }
+                    className={inputClass}
+                  />
+                )}
+              </div>
+              <div>
+                <label className="text-sm text-slate-600" htmlFor="billing-city">
+                  City
+                </label>
+                {billingCities.length ? (
+                  <SingleSelectDropdown
+                    id="billing-city"
+                    value={billing.city}
+                    options={billingCityOptions}
+                    placeholder="Select city"
+                    searchPlaceholder="Search city..."
+                    onChange={(value) => updateBilling("city", value)}
+                    disabled={!billing.stateCode}
+                  />
+                ) : (
+                  <input
+                    id="billing-city"
+                    required={!useShippingAsBilling}
+                    value={billing.city}
+                    onChange={(event) =>
+                      updateBilling("city", event.target.value)
+                    }
+                    className={inputClass}
+                  />
+                )}
+              </div>
+              <div className="md:col-span-2">
+                <label className="text-sm text-slate-600" htmlFor="billing-postalCode">
+                  Postal Code
+                </label>
+                <input
+                  id="billing-postalCode"
+                  required={!useShippingAsBilling}
+                  value={billing.postalCode}
+                  onChange={(event) =>
+                    updateBilling("postalCode", event.target.value)
+                  }
+                  className={inputClass}
+                />
+              </div>
+            </div>
+          ) : null}
+        </div>
       </section>
 
       <aside className="hidden p-6 xl:block xl:pl-8 2xl:sticky 2xl:top-6">

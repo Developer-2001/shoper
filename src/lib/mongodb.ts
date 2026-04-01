@@ -10,6 +10,14 @@ function getMongoUri() {
   return uri;
 }
 
+function getDB() {
+  const dbName = process.env.NEXT_PUBLIC_DB_NAME;
+  if (!dbName) {
+    throw new Error("Db Name Not Found");
+  }
+  return dbName;
+}
+
 type MongooseCache = {
   conn: typeof mongoose | null;
   promise: Promise<typeof mongoose> | null;
@@ -31,7 +39,7 @@ export async function connectToDatabase() {
   }
 
   if (!cached.promise) {
-    cached.promise = mongoose.connect(getMongoUri(), { dbName: "test" });
+    cached.promise = mongoose.connect(getMongoUri(), { dbName: getDB() });
   }
 
   cached.conn = await cached.promise;

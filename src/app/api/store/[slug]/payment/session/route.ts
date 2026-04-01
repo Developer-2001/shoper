@@ -5,6 +5,7 @@ import { Store } from "@/models/Store";
 import { Product } from "@/models/Product";
 import { Order } from "@/models/Order";
 import { checkoutSchema } from "@/lib/validations";
+import { getEstimatedSalesTaxRate } from "@/lib/sales-tax";
 
 export async function POST(
   request: Request,
@@ -53,7 +54,13 @@ export async function POST(
     });
 
     const subtotal = items.reduce((sum, item) => sum + item.price_data.unitAmount * item.quantity, 0);
-    const taxPercentage = 3; // Default from model
+    const taxInfo = await getEstimatedSalesTaxRate({
+      country: parsed.data.shipping.country,
+      countryCode: parsed.data.shipping.countryCode,
+      state: parsed.data.shipping.state,
+      stateCode: parsed.data.shipping.stateCode,
+    });
+    const taxPercentage = taxInfo.ratePercent;
     const taxAmount = (subtotal * taxPercentage) / 100;
     const shippingCharge = 0;
     const total = subtotal + taxAmount + shippingCharge;

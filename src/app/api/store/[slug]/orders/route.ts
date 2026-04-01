@@ -5,6 +5,7 @@ import { checkoutSchema } from "@/lib/validations";
 import { Store } from "@/models/Store";
 import { Product } from "@/models/Product";
 import { Order } from "@/models/Order";
+import { getEstimatedSalesTaxRate } from "@/lib/sales-tax";
 
 function createOrderNumber() {
   const stamp = Date.now().toString().slice(-7);
@@ -26,11 +27,13 @@ const ORDER_DISCOUNT_CODES: Record<
 
 type AddressPayload = {
   country: string;
+  countryCode?: string;
   firstName: string;
   lastName: string;
   shippingAddress: string;
   city: string;
   state: string;
+  stateCode?: string;
   postalCode: string;
 };
 
@@ -111,9 +114,15 @@ export async function POST(
     const discountCode = matchedDiscount?.code ?? "";
     const discountPercentage = matchedDiscount?.percent ?? 0;
     const discountAmount = roundPrice((subtotal * discountPercentage) / 100);
-    const shippingCharge = roundPrice(itemCount * 50);
+    const shippingCharge = 0;
     const taxableAmount = Math.max(0, subtotal - discountAmount);
-    const taxPercentage = 3;
+    const taxInfo = await getEstimatedSalesTaxRate({
+      country: shipping.country,
+      countryCode: shipping.countryCode,
+      state: shipping.state,
+      stateCode: shipping.stateCode,
+    });
+    const taxPercentage = taxInfo.ratePercent;
     const taxAmount = roundPrice((taxableAmount * taxPercentage) / 100);
     const total = roundPrice(taxableAmount + shippingCharge + taxAmount);
     const currency = items[0]?.currency || "INR";
