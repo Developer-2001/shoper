@@ -1,5 +1,13 @@
 import Link from "next/link";
 import { Facebook, Instagram, MoveUp, Music2, Youtube } from "lucide-react";
+import {
+  AmexIcon,
+  Discover,
+  MastercardIcon,
+  Music2Icon,
+  PaypalIcon,
+  VisaIcon,
+} from "@/utils/svg";
 
 type Theme3FooterProps = {
   slug: string;
@@ -37,6 +45,11 @@ export function Theme3Footer({
     { label: "Bracelets & Anklets", href: `/${slug}/collections/bracelets` },
     { label: "Rings", href: `/${slug}/collections/rings` },
   ];
+  const quickLinks = [
+    { label: "Privacy Policy", href: `/${slug}/privacy` },
+    { label: "Terms and Conditions", href: `/${slug}/terms` },
+    { label: "Contact Us", href: `/${slug}/contact` },
+  ];
 
   function scrollToTop() {
     if (typeof window === "undefined") return;
@@ -46,7 +59,7 @@ export function Theme3Footer({
   return (
     <footer className="mt-20 px-3 pb-3 md:px-4">
       <div className="mx-auto w-full rounded-2xl bg-[#2b0b05] text-[#f6ece8]">
-        <div className="grid gap-10 px-4 pb-10 pt-12 md:grid-cols-2 md:px-8 lg:grid-cols-4 lg:px-6">
+        <div className="grid gap-4 px-4 pb-10 pt-12 md:grid-cols-2 md:px-8 lg:grid-cols-5 lg:px-6">
           <section>
             <h3 className="text-xl font-semibold leading-none tracking-tight">
               About
@@ -63,6 +76,24 @@ export function Theme3Footer({
             </h3>
             <ul className="mt-6 space-y-4 text-[17px] text-[#f3dfd8]">
               {shopLinks.map((item) => (
+                <li key={item.label}>
+                  <Link
+                    href={item.href}
+                    className="transition hover:text-white"
+                  >
+                    {item.label}
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </section>
+
+          <section>
+            <h3 className="text-xl font-semibold leading-none tracking-tight">
+              Quick Links
+            </h3>
+            <ul className="mt-6 space-y-4 text-[17px] text-[#f3dfd8]">
+              {quickLinks.map((item) => (
                 <li key={item.label}>
                   <Link
                     href={item.href}
@@ -107,11 +138,11 @@ export function Theme3Footer({
               <input
                 type="email"
                 placeholder="Email Address.."
-                className="h-14 w-full border-b border-[#7b4f46] bg-transparent px-4 text-[17px] text-white outline-none placeholder:text-[#cfb1aa]"
+                className="h-10 w-full border-b border-[#7b4f46] bg-transparent px-4 text-[17px] text-white outline-none placeholder:text-[#cfb1aa]"
               />
               <button
                 type="submit"
-                className="h-14 rounded-xl bg-[#f2e4de] px-8 text-[18px] font-semibold tracking-wide text-[#3a0900] transition hover:bg-white"
+                className="h-10 rounded-xl bg-[#f2e4de] cursor-pointer px-4 text-md font-semibold tracking-wide text-[#3a0900] transition hover:bg-white"
               >
                 Subscribe
               </button>
@@ -152,29 +183,28 @@ export function Theme3Footer({
               <Music2 size={28} />
             </Link>
           </div>
-          <div className="text-center text-7xl tracking-widest text-white font-[Georgia,serif]">
+          <div className="text-center text-xl tracking-widest text-white font-[Georgia,serif]">
             {companyName}
           </div>
-          <div className="flex flex-wrap items-center justify-start gap-3 md:justify-end">
-            {["VISA", "MC", "AMEX", "PAYPAL", "DINERS", "DISC"].map((item) => (
-              <span
-                key={item}
-                className="rounded-md bg-white px-3 py-1.5 text-xs font-bold text-[#3a0900]"
-              >
-                {item}
-              </span>
-            ))}
+          {/* Payment Methods */}
+          <div className="flex flex-wrap items-center justify-start gap-2 md:justify-end">
+            <VisaIcon />
+            <MastercardIcon />
+            <AmexIcon />
+            <PaypalIcon />
+            <Music2Icon />
+            <Discover />
           </div>
         </div>
 
         <div className="mx-auto h-10 w-[80%] rounded-t-[40px] bg-[#e8dad4]" />
       </div>
-      <div className="relative mx-auto -mt-0.5 flex w-full flex-col gap-4 rounded-b-2xl bg-[#e8dad4] px-3 pb-6 pt-4 text-[#3f2019] md:flex-row md:items-center md:justify-between md:px-6">
+      <div className="relative mx-auto -mt-0.5 flex w-full flex-col  rounded-b-2xl bg-[#e8dad4] px-3 pb-4 text-[#3f2019] md:flex-row md:items-center md:justify-between md:px-6">
         {/* to top */}
         <button
           type="button"
           onClick={scrollToTop}
-          className="group absolute bottom-10 right-3 flex h-14 w-14 cursor-pointer flex-col items-center justify-center rounded-full bg-white text-[#3a0900] transition-all duration-300 ease-out hover:h-44 hover:w-20"
+          className="group absolute bottom-10 right-3 flex h-14 w-14 cursor-pointer flex-col items-center justify-center rounded-full bg-white text-[#3a0900] transition-all duration-300 ease-out hover:h-48 hover:w-16"
           aria-label="Back to top"
         >
           <MoveUp className="h-5 w-5 shrink-0 transition-transform duration-300 " />
@@ -183,23 +213,23 @@ export function Theme3Footer({
           </span>
         </button>
 
-        <div className="mt-1 flex items-center gap-2 md:mt-0">
+        {/* <div className="mt-1 flex items-center gap-2 md:mt-0">
           <button
             type="button"
-            className="border border-[#7a5a52] bg-transparent px-3 py-1 text-xl"
+            className="border border-[#7a5a52] bg-transparent px-3 py-1 text-lg"
           >
             INR (₹)
           </button>
           <button
             type="button"
-            className="border border-[#7a5a52] bg-transparent px-3 py-1 text-xl"
+            className="border border-[#7a5a52] bg-transparent px-3 py-1 text-lg"
           >
             English
           </button>
-        </div>
+        </div> */}
 
-        <p className="text-center text-xl md:flex-1">
-          © {new Date().getFullYear()}, {slug} - Powered by Shoper
+        <p className="text-center text-sm md:flex-1">
+          © {new Date().getFullYear()}, {companyName} - Powered by Shoper
         </p>
       </div>
     </footer>

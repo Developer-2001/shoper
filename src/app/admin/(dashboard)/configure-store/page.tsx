@@ -1,6 +1,7 @@
 "use client";
 
-import { FormEvent, useEffect, useState } from "react";
+import { FormEvent, ReactNode, useEffect, useState } from "react";
+import { ChevronDown, ChevronUp } from "lucide-react";
 
 import { AdminTopbar } from "@/components/admin/admin-topbar";
 import { Skeleton } from "@/components/admin/ui/skeleton";
@@ -23,11 +24,73 @@ const defaultForm = {
   stripeAccountId: "",
 };
 
+function Field({
+  id,
+  label,
+  helper,
+  children,
+}: {
+  id: string;
+  label: string;
+  helper?: string;
+  children: ReactNode;
+}) {
+  return (
+    <div className="space-y-2">
+      <label htmlFor={id} className="text-sm font-semibold text-slate-700">
+        {label}
+      </label>
+      {children}
+      {helper ? <p className="text-xs text-slate-500">{helper}</p> : null}
+    </div>
+  );
+}
+
 export default function ConfigureStorePage() {
   const [form, setForm] = useState(defaultForm);
   const [saving, setSaving] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [isPaymentProviderOpen, setIsPaymentProviderOpen] = useState(true);
+
+  function buildPayload(overrides?: Partial<typeof defaultForm>) {
+    const merged = {
+      ...form,
+      ...overrides,
+    };
+
+    return {
+      companyName: merged.companyName,
+      logoText: merged.logoText,
+      about: merged.about,
+      address: merged.address,
+      contactEmail: merged.contactEmail,
+      contactPhone: merged.contactPhone,
+      socialLinks: {
+        instagram: merged.instagram,
+        facebook: merged.facebook,
+        x: merged.x,
+        youtube: merged.youtube,
+      },
+      theme: {
+        layout: merged.themeLayout,
+      },
+      footerLinks: merged.footerLinks
+        .split(",")
+        .map((item) => item.trim())
+        .filter(Boolean)
+        .map((item) => {
+          const [label, href] = item.split("|");
+          return { label: label || "Link", href: href || "/" };
+        }),
+      paymentSettings: {
+        stripe: {
+          enabled: merged.stripeEnabled,
+          accountId: merged.stripeAccountId,
+        },
+      },
+    };
+  }
 
   useEffect(() => {
     async function load() {
@@ -79,37 +142,7 @@ export default function ConfigureStorePage() {
     event.preventDefault();
     setSaving(true);
 
-    const payload = {
-      companyName: form.companyName,
-      logoText: form.logoText,
-      about: form.about,
-      address: form.address,
-      contactEmail: form.contactEmail,
-      contactPhone: form.contactPhone,
-      socialLinks: {
-        instagram: form.instagram,
-        facebook: form.facebook,
-        x: form.x,
-        youtube: form.youtube,
-      },
-      theme: {
-        layout: form.themeLayout,
-      },
-      footerLinks: form.footerLinks
-        .split(",")
-        .map((item) => item.trim())
-        .filter(Boolean)
-        .map((item) => {
-          const [label, href] = item.split("|");
-          return { label: label || "Link", href: href || "/" };
-        }),
-      paymentSettings: {
-        stripe: {
-          enabled: form.stripeEnabled,
-          accountId: form.stripeAccountId,
-        },
-      },
-    };
+    const payload = buildPayload();
 
     try {
       const response = await fetch("/api/admin/store", {
@@ -131,6 +164,11 @@ export default function ConfigureStorePage() {
       setSaving(false);
     }
   }
+
+  const inputClass =
+    "w-full rounded-xl border border-slate-300 px-4 py-2 text-sm text-slate-900 outline-none transition focus:border-slate-400 focus:ring-2 focus:ring-slate-200";
+  const textareaClass =
+    "w-full min-h-24 rounded-xl border border-slate-300 px-4 py-2 text-sm text-slate-900 outline-none transition focus:border-slate-400 focus:ring-2 focus:ring-slate-200";
 
   return (
     <div>
@@ -161,231 +199,288 @@ export default function ConfigureStorePage() {
           onSubmit={handleSubmit}
           className="rounded-2xl border border-slate-200 bg-white p-5"
         >
-          <div className="mb-4 grid gap-3 md:max-w-xs">
-            <label
-              className="text-sm font-semibold text-slate-700"
-              htmlFor="themeLayout"
-            >
-              Theme layout
-            </label>
-            <select
-              id="themeLayout"
-              value={form.themeLayout}
-              onChange={(event) =>
-                setForm((prev) => ({
-                  ...prev,
-                  themeLayout: event.target.value,
-                }))
-              }
-              className="rounded-xl border border-slate-300 px-4 py-2"
-            >
-              <option value="theme1">Theme 1 (Default)</option>
-              <option value="theme2">Theme 2</option>
-              <option value="theme3">Theme 3 (Jewellery)</option>
-            </select>
-          </div>
-
-          <div className="grid gap-3 md:grid-cols-2">
-            <input
-              value={form.companyName}
-              onChange={(event) =>
-                setForm((prev) => ({
-                  ...prev,
-                  companyName: event.target.value,
-                }))
-              }
-              placeholder="companyName"
-              className="rounded-xl border border-slate-300 px-4 py-2"
-              required
-            />
-            <input
-              value={form.logoText}
-              onChange={(event) =>
-                setForm((prev) => ({ ...prev, logoText: event.target.value }))
-              }
-              placeholder="logoText"
-              className="rounded-xl border border-slate-300 px-4 py-2"
-              required
-            />
-            <input
-              value={form.contactEmail}
-              onChange={(event) =>
-                setForm((prev) => ({
-                  ...prev,
-                  contactEmail: event.target.value,
-                }))
-              }
-              placeholder="contactEmail"
-              className="rounded-xl border border-slate-300 px-4 py-2"
-              required
-            />
-            <input
-              value={form.contactPhone}
-              onChange={(event) =>
-                setForm((prev) => ({
-                  ...prev,
-                  contactPhone: event.target.value,
-                }))
-              }
-              placeholder="contactPhone"
-              className="rounded-xl border border-slate-300 px-4 py-2"
-            />
-            <input
-              value={form.about}
-              onChange={(event) =>
-                setForm((prev) => ({ ...prev, about: event.target.value }))
-              }
-              placeholder="about"
-              className="rounded-xl border border-slate-300 px-4 py-2 md:col-span-2"
-            />
-            <input
-              value={form.address}
-              onChange={(event) =>
-                setForm((prev) => ({ ...prev, address: event.target.value }))
-              }
-              placeholder="address"
-              className="rounded-xl border border-slate-300 px-4 py-2 md:col-span-2"
-            />
-            <input
-              value={form.instagram}
-              onChange={(event) =>
-                setForm((prev) => ({ ...prev, instagram: event.target.value }))
-              }
-              placeholder="instagram"
-              className="rounded-xl border border-slate-300 px-4 py-2"
-            />
-            <input
-              value={form.facebook}
-              onChange={(event) =>
-                setForm((prev) => ({ ...prev, facebook: event.target.value }))
-              }
-              placeholder="facebook"
-              className="rounded-xl border border-slate-300 px-4 py-2"
-            />
-            <input
-              value={form.x}
-              onChange={(event) =>
-                setForm((prev) => ({ ...prev, x: event.target.value }))
-              }
-              placeholder="x"
-              className="rounded-xl border border-slate-300 px-4 py-2"
-            />
-            <input
-              value={form.youtube}
-              onChange={(event) =>
-                setForm((prev) => ({ ...prev, youtube: event.target.value }))
-              }
-              placeholder="youtube"
-              className="rounded-xl border border-slate-300 px-4 py-2"
-            />
-            <textarea
-              value={form.footerLinks}
-              onChange={(event) =>
-                setForm((prev) => ({
-                  ...prev,
-                  footerLinks: event.target.value,
-                }))
-              }
-              placeholder="footerLinks (label|href, label|href)"
-              className="min-h-24 rounded-xl border border-slate-300 px-4 py-2 md:col-span-2"
-            />
-          </div>
-
-          <div className="mt-8 border-t border-slate-100 pt-8">
-            <h3 className="mb-4 text-lg font-bold text-slate-900">
-              Payment Provider (Canada)
+          <section className="space-y-3">
+            <h3 className="text-base font-bold text-slate-900">
+              Store Details
             </h3>
+            <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 md:grid-cols-2">
+              <Field id="companyName" label="Company Name">
+                <input
+                  id="companyName"
+                  value={form.companyName}
+                  onChange={(event) =>
+                    setForm((prev) => ({
+                      ...prev,
+                      companyName: event.target.value,
+                    }))
+                  }
+                  className={inputClass}
+                  required
+                />
+              </Field>
+              <Field id="logoText" label="Logo Text">
+                <input
+                  id="logoText"
+                  value={form.logoText}
+                  onChange={(event) =>
+                    setForm((prev) => ({
+                      ...prev,
+                      logoText: event.target.value,
+                    }))
+                  }
+                  className={inputClass}
+                  required
+                />
+              </Field>
+              <Field id="contactEmail" label="Contact Email">
+                <input
+                  id="contactEmail"
+                  type="email"
+                  value={form.contactEmail}
+                  onChange={(event) =>
+                    setForm((prev) => ({
+                      ...prev,
+                      contactEmail: event.target.value,
+                    }))
+                  }
+                  className={inputClass}
+                  required
+                />
+              </Field>
+              <Field id="contactPhone" label="Contact Phone">
+                <input
+                  id="contactPhone"
+                  value={form.contactPhone}
+                  onChange={(event) =>
+                    setForm((prev) => ({
+                      ...prev,
+                      contactPhone: event.target.value,
+                    }))
+                  }
+                  className={inputClass}
+                />
+              </Field>
+              <Field id="about" label="About Store">
+                <textarea
+                  id="about"
+                  value={form.about}
+                  onChange={(event) =>
+                    setForm((prev) => ({ ...prev, about: event.target.value }))
+                  }
+                  className={textareaClass}
+                />
+              </Field>
+              <Field id="address" label="Store Address">
+                <textarea
+                  id="address"
+                  value={form.address}
+                  onChange={(event) =>
+                    setForm((prev) => ({
+                      ...prev,
+                      address: event.target.value,
+                    }))
+                  }
+                  className={textareaClass}
+                />
+              </Field>
+            </div>
+          </section>
 
-            <div className="max-w-md">
-              {/* Stripe Section */}
-              <div className="rounded-2xl border border-slate-200 p-5 bg-slate-50/50">
-                <div className="flex items-center justify-between mb-4">
-                  <div className="flex items-center gap-3">
-                    <h4 className="font-bold text-slate-800 text-lg">
-                      Stripe Connect
-                    </h4>
-                    {form.stripeEnabled && form.stripeAccountId ? (
-                      <span className="bg-green-100 text-green-700 text-xs px-2 py-1 rounded-full font-bold">
-                        Connected
-                      </span>
-                    ) : (
-                      <span className="bg-slate-200 text-slate-600 text-xs px-2 py-1 rounded-full font-bold">
-                        Not Connected
-                      </span>
-                    )}
-                  </div>
-                </div>
+          <section className="mt-6 space-y-3 border-t border-slate-100 pt-4">
+            <h3 className="text-base font-bold text-slate-900">Social Links</h3>
+            <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 md:grid-cols-2">
+              <Field id="instagram" label="Instagram URL">
+                <input
+                  id="instagram"
+                  value={form.instagram}
+                  onChange={(event) =>
+                    setForm((prev) => ({
+                      ...prev,
+                      instagram: event.target.value,
+                    }))
+                  }
+                  className={inputClass}
+                  placeholder="https://instagram.com/your-handle"
+                />
+              </Field>
+              <Field id="facebook" label="Facebook URL">
+                <input
+                  id="facebook"
+                  value={form.facebook}
+                  onChange={(event) =>
+                    setForm((prev) => ({
+                      ...prev,
+                      facebook: event.target.value,
+                    }))
+                  }
+                  className={inputClass}
+                  placeholder="https://facebook.com/your-page"
+                />
+              </Field>
+              <Field id="x" label="X (Twitter) URL">
+                <input
+                  id="x"
+                  value={form.x}
+                  onChange={(event) =>
+                    setForm((prev) => ({ ...prev, x: event.target.value }))
+                  }
+                  className={inputClass}
+                  placeholder="https://x.com/your-handle"
+                />
+              </Field>
+              <Field id="youtube" label="YouTube URL">
+                <input
+                  id="youtube"
+                  value={form.youtube}
+                  onChange={(event) =>
+                    setForm((prev) => ({
+                      ...prev,
+                      youtube: event.target.value,
+                    }))
+                  }
+                  className={inputClass}
+                  placeholder="https://youtube.com/@your-channel"
+                />
+              </Field>
+            </div>
+          </section>
 
-                <p className="text-sm text-slate-600 mb-6">
-                  {form.stripeEnabled
-                    ? "Your store is connected to Stripe. Customers can now pay you directly."
-                    : "Connect your Stripe account to receive direct payments from customers. No technical setup required."}
-                </p>
+          <section className="mt-6">
+            <Field
+              id="footerLinks"
+              label="Footer Links"
+              helper="Use format: label|href, label|href"
+            >
+              <textarea
+                id="footerLinks"
+                value={form.footerLinks}
+                onChange={(event) =>
+                  setForm((prev) => ({
+                    ...prev,
+                    footerLinks: event.target.value,
+                  }))
+                }
+                className={textareaClass}
+                placeholder="Home|/, Contact|/contact"
+              />
+            </Field>
+          </section>
 
-                {form.stripeEnabled && form.stripeAccountId ? (
-                  <div className="space-y-4">
-                    <div className="text-sm text-slate-500 font-mono bg-white p-3 rounded-xl border border-slate-200">
-                      ID: {form.stripeAccountId}
+          <section className="mt-8 border-t border-slate-100 pt-6">
+            <button
+              type="button"
+              onClick={() => setIsPaymentProviderOpen((previous) => !previous)}
+              className="flex w-full items-center justify-between rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-left"
+              aria-expanded={isPaymentProviderOpen}
+            >
+              <span className="text-base font-bold text-slate-900">
+                Payment Provider (Canada)
+              </span>
+              {isPaymentProviderOpen ? (
+                <ChevronUp size={18} className="text-slate-700" />
+              ) : (
+                <ChevronDown size={18} className="text-slate-700" />
+              )}
+            </button>
+
+            {isPaymentProviderOpen ? (
+              <div className="mt-4 max-w-md">
+                <div className="rounded-2xl border border-slate-200 bg-slate-50/50 p-5">
+                  <div className="mb-4 flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <h4 className="text-lg font-bold text-slate-800">
+                        Stripe Connect
+                      </h4>
+                      {form.stripeEnabled && form.stripeAccountId ? (
+                        <span className="rounded-full bg-green-100 px-2 py-1 text-xs font-bold text-green-700">
+                          Connected
+                        </span>
+                      ) : (
+                        <span className="rounded-full bg-slate-200 px-2 py-1 text-xs font-bold text-slate-600">
+                          Not Connected
+                        </span>
+                      )}
                     </div>
+                  </div>
+
+                  <p className="mb-6 text-sm text-slate-600">
+                    {form.stripeEnabled
+                      ? "Your store is connected to Stripe. Customers can now pay you directly."
+                      : "Connect your Stripe account to receive direct payments from customers. No technical setup required."}
+                  </p>
+
+                  {form.stripeEnabled && form.stripeAccountId ? (
+                    <div className="space-y-4">
+                      <div className="rounded-xl border border-slate-200 bg-white p-3 font-mono text-sm text-slate-500">
+                        ID: {form.stripeAccountId}
+                      </div>
+                      <button
+                        type="button"
+                        onClick={async () => {
+                          if (
+                            !confirm(
+                              "Are you sure you want to disconnect Stripe? Customers won't be able to buy from your store.",
+                            )
+                          )
+                            return;
+                          setSaving(true);
+                          try {
+                            const res = await fetch("/api/admin/store", {
+                              method: "PUT",
+                              headers: { "Content-Type": "application/json" },
+                              body: JSON.stringify(
+                                buildPayload({
+                                  stripeEnabled: false,
+                                  stripeAccountId: "",
+                                }),
+                              ),
+                            });
+                            if (res.ok) {
+                              setForm((previous) => ({
+                                ...previous,
+                                stripeEnabled: false,
+                                stripeAccountId: "",
+                              }));
+                            }
+                          } catch {
+                            alert("Failed to disconnect");
+                          } finally {
+                            setSaving(false);
+                          }
+                        }}
+                        className="text-sm font-semibold text-red-600 underline hover:text-red-700"
+                      >
+                        Disconnect account
+                      </button>
+                    </div>
+                  ) : (
                     <button
                       type="button"
+                      disabled={saving}
                       onClick={async () => {
-                        if (
-                          !confirm(
-                            "Are you sure you want to disconnect Stripe? Customers won't be able to buy from your store.",
-                          )
-                        )
-                          return;
                         setSaving(true);
                         try {
-                          const res = await fetch("/api/admin/store", {
-                            method: "PUT",
-                            headers: { "Content-Type": "application/json" },
-                            body: JSON.stringify({
-                              ...form,
-                              paymentSettings: {
-                                stripe: { enabled: false, accountId: "" },
-                              },
-                            }),
-                          });
-                          if (res.ok) window.location.reload();
+                          const res = await fetch("/api/admin/stripe/onboard");
+                          const data = await res.json();
+                          if (data.url) window.location.href = data.url;
+                          else
+                            alert(data.error || "Failed to start onboarding.");
                         } catch {
-                          alert("Failed to disconnect");
+                          alert("A network error occurred.");
                         } finally {
                           setSaving(false);
                         }
                       }}
-                      className="text-sm text-red-600 hover:text-red-700 font-semibold underline"
+                      className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#635BFF] py-3 font-semibold text-white shadow-sm transition-colors hover:bg-[#5851E0] disabled:opacity-50"
                     >
-                      Disconnect account
+                      {saving ? <Spinner size={16} /> : null}
+                      Connect with Stripe
                     </button>
-                  </div>
-                ) : (
-                  <button
-                    type="button"
-                    disabled={saving}
-                    onClick={async () => {
-                      setSaving(true);
-                      try {
-                        const res = await fetch("/api/admin/stripe/onboard");
-                        const data = await res.json();
-                        if (data.url) window.location.href = data.url;
-                        else alert(data.error || "Failed to start onboarding.");
-                      } catch {
-                        alert("A network error occurred.");
-                      } finally {
-                        setSaving(false);
-                      }
-                    }}
-                    className="w-full flex items-center justify-center gap-2 rounded-xl bg-[#635BFF] py-3 font-semibold text-white hover:bg-[#5851E0] disabled:opacity-50 transition-colors shadow-sm"
-                  >
-                    {saving ? <Spinner size={16} /> : null}
-                    Connect with Stripe
-                  </button>
-                )}
+                  )}
+                </div>
               </div>
-            </div>
-          </div>
+            ) : null}
+          </section>
 
           <button
             type="submit"

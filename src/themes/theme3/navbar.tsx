@@ -30,7 +30,7 @@ export function Theme3Navbar({ slug, logoText }: Theme3NavbarProps) {
           <Link href={`/${slug}`} className="transition ">
             Blog
           </Link>
-          <Link href={`/${slug}`} className="transition ">
+          <Link href={`/${slug}/contact`} className="transition ">
             Contact
           </Link>
         </nav>
