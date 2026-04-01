@@ -21,6 +21,22 @@ export const loginSchema = z.object({
   password: z.string().min(6),
 });
 
+export const updateAdminProfileSchema = z.object({
+  ownerName: z.string().min(2),
+  businessName: z.string().min(2),
+});
+
+export const changeAdminPasswordSchema = z
+  .object({
+    currentPassword: z.string().min(6),
+    newPassword: z.string().min(6),
+    confirmPassword: z.string().min(6),
+  })
+  .refine((data) => data.newPassword === data.confirmPassword, {
+    message: "Confirm password does not match",
+    path: ["confirmPassword"],
+  });
+
 export const productSchema = z.object({
   name: z.string().min(2),
   description: z.string().optional().default(""),
