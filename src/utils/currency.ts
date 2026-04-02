@@ -1,9 +1,13 @@
 export function formatMoney(value: number, currency = "INR") {
+  const safeValue = Number.isFinite(value) ? value : 0;
+  const hasFraction = Math.abs(safeValue - Math.trunc(safeValue)) > 0.000001;
+
   return new Intl.NumberFormat("en-IN", {
     style: "currency",
-    currency,//
-    maximumFractionDigits: 0,
-  }).format(value);
+    currency,
+    minimumFractionDigits: hasFraction ? 2 : 0,
+    maximumFractionDigits: 2,
+  }).format(safeValue);
 }
 
 export function salePrice(price: number, discountPercentage: number) {
