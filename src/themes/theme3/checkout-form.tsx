@@ -14,7 +14,10 @@ import { formatMoney } from "@/utils/currency";
 import { isVideoUrl } from "@/utils/media";
 
 import type { StorefrontStore } from "@/themes/types";
-import { SingleSelectDropdown, SingleSelectOption } from "@/lib/single-select-dropdown";
+import {
+  SingleSelectDropdown,
+  SingleSelectOption,
+} from "@/lib/single-select-dropdown";
 
 const SHIPPING_CHARGE_PER_ITEM = 0;
 const CHECKOUT_DISCOUNT_CODES: Record<
@@ -61,9 +64,51 @@ function toSingleSelectOptions<T extends { name: string }>(
   });
 }
 
+function extractRegionCodeFromLocale(locale: string) {
+  const value = locale.trim();
+  if (!value) return "";
+
+  try {
+    if (typeof Intl !== "undefined" && "Locale" in Intl) {
+      const intlLocale = new Intl.Locale(value);
+      const region = intlLocale.region || "";
+      if (region && Country.getCountryByCode(region)) {
+        return region.toUpperCase();
+      }
+    }
+  } catch {
+    // Fallback handled below for browsers without Intl.Locale support.
+  }
+
+  const match = value.match(/[-_]([A-Za-z]{2})(?:$|[-_])/);
+  const regionCode = match?.[1]?.toUpperCase() || "";
+  if (regionCode && Country.getCountryByCode(regionCode)) {
+    return regionCode;
+  }
+
+  return "";
+}
+
+function detectBrowserCountryCode() {
+  if (typeof window === "undefined") return "";
+
+  const localeCandidates = [
+    ...(navigator.languages || []),
+    navigator.language || "",
+    Intl.DateTimeFormat().resolvedOptions().locale || "",
+  ].filter(Boolean);
+
+  for (const locale of localeCandidates) {
+    const regionCode = extractRegionCodeFromLocale(locale);
+    if (regionCode) return regionCode;
+  }
+
+  return "";
+}
+
 const EMPTY_ADDRESS: AddressFormState = {
-  country: "India",
-  countryCode: "IN",
+  country: "",
+  countryCode: "",
   firstName: "",
   lastName: "",
   shippingAddress: "",
@@ -108,15 +153,15 @@ export function Theme3CheckoutForm({
 
   const countries = useMemo(
     () =>
-      Country.getAllCountries().sort((a, b) =>
-        a.name.localeCompare(b.name),
-      ),
+      Country.getAllCountries().sort((a, b) => a.name.localeCompare(b.name)),
     [],
   );
 
   const shippingStates = useMemo(
     () =>
-      shipping.countryCode ? State.getStatesOfCountry(shipping.countryCode) : [],
+      shipping.countryCode
+        ? State.getStatesOfCountry(shipping.countryCode)
+        : [],
     [shipping.countryCode],
   );
 
@@ -148,7 +193,8 @@ export function Theme3CheckoutForm({
   );
 
   const shippingStateOptions = useMemo(
-    () => toSingleSelectOptions(shippingStates, (stateItem) => stateItem.isoCode),
+    () =>
+      toSingleSelectOptions(shippingStates, (stateItem) => stateItem.isoCode),
     [shippingStates],
   );
 
@@ -163,7 +209,8 @@ export function Theme3CheckoutForm({
   );
 
   const billingStateOptions = useMemo(
-    () => toSingleSelectOptions(billingStates, (stateItem) => stateItem.isoCode),
+    () =>
+      toSingleSelectOptions(billingStates, (stateItem) => stateItem.isoCode),
     [billingStates],
   );
 
@@ -243,6 +290,68 @@ export function Theme3CheckoutForm({
   }, [checkoutMetaKey]);
 
   useEffect(() => {
+    const detectedCountryCode = detectBrowserCountryCode();
+    if (!detectedCountryCode) return;
+
+    const detectedCountry = Country.getCountryByCode(detectedCountryCode);
+    if (!detectedCountry) return;
+
+    setShipping((prev) => {
+      const isAddressUntouched =
+        !prev.firstName &&
+        !prev.lastName &&
+        !prev.shippingAddress &&
+        !prev.city &&
+        !prev.state &&
+        !prev.postalCode;
+
+      if (!isAddressUntouched) return prev;
+      if (
+        prev.countryCode === detectedCountryCode &&
+        prev.country === detectedCountry.name
+      ) {
+        return prev;
+      }
+
+      return {
+        ...prev,
+        country: detectedCountry.name,
+        countryCode: detectedCountryCode,
+        state: "",
+        stateCode: "",
+        city: "",
+      };
+    });
+
+    setBilling((prev) => {
+      const isAddressUntouched =
+        !prev.firstName &&
+        !prev.lastName &&
+        !prev.shippingAddress &&
+        !prev.city &&
+        !prev.state &&
+        !prev.postalCode;
+
+      if (!isAddressUntouched) return prev;
+      if (
+        prev.countryCode === detectedCountryCode &&
+        prev.country === detectedCountry.name
+      ) {
+        return prev;
+      }
+
+      return {
+        ...prev,
+        country: detectedCountry.name,
+        countryCode: detectedCountryCode,
+        state: "",
+        stateCode: "",
+        city: "",
+      };
+    });
+  }, []);
+
+  useEffect(() => {
     const controller = new AbortController();
 
     async function loadTaxRate() {
@@ -261,9 +370,12 @@ export function Theme3CheckoutForm({
           stateCode: shipping.stateCode,
         });
 
-        const response = await fetch(`/api/store/${slug}/tax-rate?${params.toString()}`, {
-          signal: controller.signal,
-        });
+        const response = await fetch(
+          `/api/store/${slug}/tax-rate?${params.toString()}`,
+          {
+            signal: controller.signal,
+          },
+        );
 
         if (!response.ok) {
           throw new Error("Tax lookup failed");
@@ -285,7 +397,13 @@ export function Theme3CheckoutForm({
     loadTaxRate();
 
     return () => controller.abort();
-  }, [slug, shipping.country, shipping.countryCode, shipping.state, shipping.stateCode]);
+  }, [
+    slug,
+    shipping.country,
+    shipping.countryCode,
+    shipping.state,
+    shipping.stateCode,
+  ]);
 
   function updateShipping(field: keyof AddressFormState, value: string) {
     setShipping((prev) => ({
@@ -355,7 +473,9 @@ export function Theme3CheckoutForm({
 
   async function handleStripeCheckout() {
     if (!store.paymentSettings?.stripe?.enabled) {
-      setError("This store is currently not set up to receive online payments.");
+      setError(
+        "This store is currently not set up to receive online payments.",
+      );
       return;
     }
 
@@ -582,9 +702,9 @@ export function Theme3CheckoutForm({
   return (
     <form
       onSubmit={handleSubmit}
-      className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_430px] xl:gap-0 xl:rounded-2xl xl:border xl:border-slate-200 xl:bg-white"
+      className="grid gap-6  xl:grid-cols-[minmax(0,1fr)_630px] xl:gap-5 xl:rounded-2xl xl:border xl:border-slate-200 xl:bg-white"
     >
-      <section className="space-y-4 rounded-2xl border border-slate-200 bg-white p-4 sm:p-5 md:p-7 xl:rounded-none xl:border-r xl:border-slate-200 xl:border-l-0 xl:border-y-0 xl:pr-8">
+      <section className="space-y-4 xl:max-w-4xl rounded-2xl border border-slate-200 bg-white p-4 sm:p-5 md:p-7 xl:rounded-none xl:border-r xl:border-slate-200 xl:border-l-0 xl:border-y-0 xl:pr-8">
         <div>
           <h2 className="text-2xl font-semibold text-slate-900">
             Contact Information
@@ -643,7 +763,7 @@ export function Theme3CheckoutForm({
                     </div>
                   ) : null}
                   <div>
-                    <p className="text-lg font-semibold leading-none text-slate-900">
+                    <p className="text-md font-semibold leading-none text-slate-900">
                       Total
                     </p>
                     <p className="mt-1 text-sm text-slate-500">
@@ -655,10 +775,10 @@ export function Theme3CheckoutForm({
                   <span className="rounded-full bg-slate-100 px-2 py-0.5 text-xs font-semibold text-slate-500">
                     {currency.toUpperCase()}
                   </span>
-                  <span className="text-lg font-bold leading-none text-slate-900">
+                  <span className="text-md font-bold leading-none text-slate-900">
                     {formatMoney(total, currency)}
                   </span>
-                  <ChevronDown size={20} className="text-slate-700" />
+                  <ChevronDown size={16} className="text-slate-700" />
                 </div>
               </>
             )}
@@ -670,7 +790,7 @@ export function Theme3CheckoutForm({
             type="submit"
             onClick={handlePayNowClick}
             disabled={loading || !store.paymentSettings?.stripe?.enabled}
-            className="mt-4 flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-[#1663d6] text-lg font-semibold text-white transition hover:bg-[#1257bc] disabled:opacity-50"
+            className="mt-4 flex h-10 w-full items-center justify-center gap-2 rounded-xl bg-[#1663d6] text-md font-semibold text-white transition hover:bg-[#1257bc] disabled:opacity-50"
           >
             {loading ? <Spinner size={16} className="text-white" /> : null}
             {loading
@@ -695,7 +815,10 @@ export function Theme3CheckoutForm({
           </h2>
           <div className="mt-3 grid gap-3 md:grid-cols-2">
             <div className="md:col-span-2">
-              <label className="text-sm text-slate-600" htmlFor="shipping-country">
+              <label
+                className="text-sm text-slate-600"
+                htmlFor="shipping-country"
+              >
                 Country
               </label>
               <SingleSelectDropdown
@@ -708,7 +831,10 @@ export function Theme3CheckoutForm({
               />
             </div>
             <div>
-              <label className="text-sm text-slate-600" htmlFor="shipping-firstName">
+              <label
+                className="text-sm text-slate-600"
+                htmlFor="shipping-firstName"
+              >
                 First Name
               </label>
               <input
@@ -722,7 +848,10 @@ export function Theme3CheckoutForm({
               />
             </div>
             <div>
-              <label className="text-sm text-slate-600" htmlFor="shipping-lastName">
+              <label
+                className="text-sm text-slate-600"
+                htmlFor="shipping-lastName"
+              >
                 Last Name
               </label>
               <input
@@ -736,7 +865,10 @@ export function Theme3CheckoutForm({
               />
             </div>
             <div className="md:col-span-2">
-              <label className="text-sm text-slate-600" htmlFor="shipping-address">
+              <label
+                className="text-sm text-slate-600"
+                htmlFor="shipping-address"
+              >
                 Shipping Address
               </label>
               <input
@@ -750,7 +882,10 @@ export function Theme3CheckoutForm({
               />
             </div>
             <div>
-              <label className="text-sm text-slate-600" htmlFor="shipping-state">
+              <label
+                className="text-sm text-slate-600"
+                htmlFor="shipping-state"
+              >
                 State / Province
               </label>
               {shippingStates.length ? (
@@ -794,13 +929,18 @@ export function Theme3CheckoutForm({
                   id="shipping-city"
                   required
                   value={shipping.city}
-                  onChange={(event) => updateShipping("city", event.target.value)}
+                  onChange={(event) =>
+                    updateShipping("city", event.target.value)
+                  }
                   className={inputClass}
                 />
               )}
             </div>
             <div className="md:col-span-2">
-              <label className="text-sm text-slate-600" htmlFor="shipping-postalCode">
+              <label
+                className="text-sm text-slate-600"
+                htmlFor="shipping-postalCode"
+              >
                 Postal Code
               </label>
               <input
@@ -837,7 +977,10 @@ export function Theme3CheckoutForm({
           {!useShippingAsBilling ? (
             <div className="mt-3 grid gap-3 md:grid-cols-2">
               <div className="md:col-span-2">
-                <label className="text-sm text-slate-600" htmlFor="billing-country">
+                <label
+                  className="text-sm text-slate-600"
+                  htmlFor="billing-country"
+                >
                   Country
                 </label>
                 <SingleSelectDropdown
@@ -850,7 +993,10 @@ export function Theme3CheckoutForm({
                 />
               </div>
               <div>
-                <label className="text-sm text-slate-600" htmlFor="billing-firstName">
+                <label
+                  className="text-sm text-slate-600"
+                  htmlFor="billing-firstName"
+                >
                   First Name
                 </label>
                 <input
@@ -864,7 +1010,10 @@ export function Theme3CheckoutForm({
                 />
               </div>
               <div>
-                <label className="text-sm text-slate-600" htmlFor="billing-lastName">
+                <label
+                  className="text-sm text-slate-600"
+                  htmlFor="billing-lastName"
+                >
                   Last Name
                 </label>
                 <input
@@ -878,7 +1027,10 @@ export function Theme3CheckoutForm({
                 />
               </div>
               <div className="md:col-span-2">
-                <label className="text-sm text-slate-600" htmlFor="billing-address">
+                <label
+                  className="text-sm text-slate-600"
+                  htmlFor="billing-address"
+                >
                   Shipping Address
                 </label>
                 <input
@@ -892,7 +1044,10 @@ export function Theme3CheckoutForm({
                 />
               </div>
               <div>
-                <label className="text-sm text-slate-600" htmlFor="billing-state">
+                <label
+                  className="text-sm text-slate-600"
+                  htmlFor="billing-state"
+                >
                   State / Province
                 </label>
                 {billingStates.length ? (
@@ -918,7 +1073,10 @@ export function Theme3CheckoutForm({
                 )}
               </div>
               <div>
-                <label className="text-sm text-slate-600" htmlFor="billing-city">
+                <label
+                  className="text-sm text-slate-600"
+                  htmlFor="billing-city"
+                >
                   City
                 </label>
                 {billingCities.length ? (
@@ -944,7 +1102,10 @@ export function Theme3CheckoutForm({
                 )}
               </div>
               <div className="md:col-span-2">
-                <label className="text-sm text-slate-600" htmlFor="billing-postalCode">
+                <label
+                  className="text-sm text-slate-600"
+                  htmlFor="billing-postalCode"
+                >
                   Postal Code
                 </label>
                 <input
@@ -962,7 +1123,7 @@ export function Theme3CheckoutForm({
         </div>
       </section>
 
-      <aside className="hidden p-6 xl:block xl:pl-8 2xl:sticky 2xl:top-6">
+      <aside className="hidden  self-start p-6 xl:block xl:pl-6 2xl:sticky 2xl:top-6">
         <h3 className="text-2xl font-semibold text-slate-900">Order summary</h3>
         {summaryDetails}
 
@@ -976,7 +1137,7 @@ export function Theme3CheckoutForm({
           type="submit"
           onClick={handlePayNowClick}
           disabled={loading || !store.paymentSettings?.stripe?.enabled}
-          className="mt-4 flex h-12 cursor-pointer w-full items-center justify-center gap-2 rounded-xl bg-[#1663d6] text-lg font-semibold text-white transition hover:bg-[#1257bc] disabled:opacity-50"
+          className="mt-4 flex h-12 cursor-pointer w-full items-center justify-center gap-2 rounded-xl bg-[#1663d6] text-md font-semibold text-white transition hover:bg-[#1257bc] disabled:opacity-50"
         >
           {loading ? <Spinner size={16} className="text-white" /> : null}
           {loading

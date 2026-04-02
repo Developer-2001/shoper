@@ -139,6 +139,8 @@ export function Theme3CartItems({ slug }: { slug: string }) {
         <div className="rounded-2xl bg-[#fae9e6] p-4 sm:p-5 md:p-8">
           <div className="divide-y divide-[#c7b4b0]">
             {items.map((item, index) => {
+              const disableDecrement = item.quantity <= 1;
+
               return (
                 <div
                   key={`${item.productId}-${index}`}
@@ -187,7 +189,10 @@ export function Theme3CartItems({ slug }: { slug: string }) {
                   <div className="space-y-3 lg:justify-self-end">
                     <div className="flex h-14 items-center justify-between rounded-xl border border-[#8f7a74] bg-[#f8ece9] px-3">
                       <button
-                        className="inline-flex h-9 w-9 items-center justify-center rounded-md text-[#cc5639] transition hover:bg-[#ecd7d2]"
+                        type="button"
+                        disabled={disableDecrement}
+                        aria-label={`Decrease quantity of ${item.name}`}
+                        className="inline-flex h-9 w-9 items-center justify-center rounded-md text-[#cc5639] transition hover:bg-[#ecd7d2] cursor-pointer disabled:cursor-not-allowed disabled:text-[#c7a39a] disabled:hover:bg-transparent"
                         onClick={() =>
                           dispatch(
                             updateCartQty({
@@ -204,7 +209,9 @@ export function Theme3CartItems({ slug }: { slug: string }) {
                         {item.quantity}
                       </span>
                       <button
-                        className="inline-flex h-9 w-9 items-center justify-center rounded-md text-[#cc5639] transition hover:bg-[#ecd7d2]"
+                        type="button"
+                        aria-label={`Increase quantity of ${item.name}`}
+                        className="inline-flex h-9 w-9 cursor-pointer items-center justify-center rounded-md text-[#cc5639] transition hover:bg-[#ecd7d2]"
                         onClick={() =>
                           dispatch(
                             updateCartQty({
@@ -219,7 +226,7 @@ export function Theme3CartItems({ slug }: { slug: string }) {
                       </button>
                     </div>
                     <button
-                      className="flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-[#cc5639] px-4 text-sm font-semibold tracking-wide text-white transition hover:bg-[#b94d31] sm:h-14 sm:text-base"
+                      className="flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-[#cc5639] px-4 text-sm font-semibold cursor-pointer tracking-wide text-white transition hover:bg-[#b94d31] sm:h-14 sm:text-base"
                       onClick={() =>
                         dispatch(
                           removeFromCart({ productId: item.productId, slug }),
@@ -241,7 +248,7 @@ export function Theme3CartItems({ slug }: { slug: string }) {
             <button
               type="button"
               onClick={() => setIsNoteOpen((prev) => !prev)}
-              className="flex w-full items-center justify-between text-left"
+              className="flex w-full cursor-pointer items-center justify-between text-left"
             >
                 <span className="text-lg font-semibold text-[#2f1f1a]">
                   Add cart note
@@ -265,7 +272,7 @@ export function Theme3CartItems({ slug }: { slug: string }) {
             <button
               type="button"
               onClick={() => setIsDiscountOpen((prev) => !prev)}
-              className="flex w-full items-center justify-between text-left"
+              className="flex w-full cursor-pointer items-center justify-between text-left"
             >
               <span className="text-lg font-semibold text-[#2f1f1a]">
                 Discount

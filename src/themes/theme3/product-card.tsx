@@ -35,7 +35,7 @@ export function Theme3ProductCard({
   const activeMedia =
     mediaList[activeIndex] || product.images[0] || "/file.svg";
   const firstMedia = product.images[0] || "/file.svg";
-  const discountText = `-${Math.max(product.discountPercentage, 0)}% OFF`;
+  // const discountText = `-${Math.max(product.discountPercentage, 0)}% OFF`;
   const productHref =
     href ||
     `/${slug}/collections/${toCollectionSlug(product.category || "uncategorized")}/${product._id}`;
@@ -58,10 +58,11 @@ export function Theme3ProductCard({
   return (
     <article className="overflow-hidden rounded-[22px] bg-[#fae9e6] shadow-[0_18px_42px_-36px_rgba(163,72,95,0.55)]">
       <div className="relative overflow-hidden rounded-t-[18px] bg-[#fae9e6] pb-8">
-        <span className="absolute left-3 top-3 z-20 rounded-md bg-white px-2 py-1 text-[11px] font-bold tracking-wide text-[#3d241e] [writing-mode:vertical-rl] rotate-180">
-          SALE {Math.max(product.discountPercentage, 0)}% OFF
-        </span>
-
+        {product.discountPercentage > 0 && (
+          <span className="absolute left-3 top-3 z-20 rounded-md bg-white px-2 py-1 text-[11px] font-bold tracking-wide text-[#3d241e] ">
+            SALE {Math.max(product.discountPercentage, 0)}% OFF
+          </span>
+        )}
         <Link href={productHref} className="block">
           {isVideoUrl(activeMedia) ? (
             <video
@@ -83,8 +84,8 @@ export function Theme3ProductCard({
             />
           )}
         </Link>
-
-        <div className="pointer-events-none absolute -bottom-0.5 left-0 right-0 rounded-sm z-20 overflow-hidden  bg-[#cc5639] py-2 text-white">
+        {/* Strip of discount text */}
+        {/* <div className="pointer-events-none absolute -bottom-0.5 left-0 right-0 rounded-sm z-20 overflow-hidden  bg-[#cc5639] py-2 text-white">
           <div className="theme3-discount-strip flex w-max items-center whitespace-nowrap font-semibold">
             {Array.from({ length: 2 }).map((_, copyIndex) => (
               <div
@@ -99,7 +100,7 @@ export function Theme3ProductCard({
               </div>
             ))}
           </div>
-        </div>
+        </div> */}
       </div>
 
       <div className="px-2 pb-2 pt-2 bg-white">
