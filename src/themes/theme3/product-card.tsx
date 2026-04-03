@@ -11,7 +11,6 @@ import { useTheme3CartToast } from "@/themes/theme3/cart-toast";
 import { formatMoney, salePrice } from "@/utils/currency";
 import { isVideoUrl } from "@/utils/media";
 import type { StorefrontProduct } from "@/themes/types";
-import { toCollectionSlug } from "@/themes/theme3/collection-utils";
 
 type Theme3ProductCardProps = {
   slug: string;
@@ -37,8 +36,7 @@ export function Theme3ProductCard({
   const firstMedia = product.images[0] || "/file.svg";
   // const discountText = `-${Math.max(product.discountPercentage, 0)}% OFF`;
   const productHref =
-    href ||
-    `/${slug}/collections/${toCollectionSlug(product.category || "uncategorized")}/${product._id}`;
+    href || `/${slug}/product/${product._id}`;
 
   function addItem() {
     dispatch(

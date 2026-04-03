@@ -112,7 +112,7 @@ export function Theme3CartItems({ slug }: { slug: string }) {
           Browse collections and add your favorite pieces.
         </p>
         <Link
-          href={`/${slug}/collections`}
+          href={`/${slug}/products`}
           className="mt-5 inline-flex rounded-xl bg-[#cc5639] px-6 py-3 text-base font-semibold text-white transition hover:bg-[#b94d31]"
         >
           Continue shopping
@@ -128,7 +128,7 @@ export function Theme3CartItems({ slug }: { slug: string }) {
           Cart Item - ({items.length})
         </h2>
         <Link
-          href={`/${slug}/collections`}
+          href={`/${slug}/products`}
           className="rounded-xl bg-[#cc5639] px-4 py-2 text-sm font-semibold tracking-wide text-white transition hover:bg-[#b94d31] sm:text-base"
         >
           Continue shopping

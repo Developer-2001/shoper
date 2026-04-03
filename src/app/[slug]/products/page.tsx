@@ -1,8 +1,7 @@
-import { notFound, redirect } from "next/navigation";
+import { notFound } from "next/navigation";
 
 import { getStorefrontHomeData } from "@/lib/storefront-data";
 import { StorefrontProductsTheme } from "@/components/storefront/theme-layout";
-import { resolveThemeLayout } from "@/themes/theme-config";
 
 export default async function ProductsPage({
   params,
@@ -14,10 +13,6 @@ export default async function ProductsPage({
 
   if (!storefrontData) {
     notFound();
-  }
-
-  if (resolveThemeLayout(storefrontData.store.theme?.layout) === "theme3") {
-    redirect(`/${routeParams.slug}/collections`);
   }
 
   return (

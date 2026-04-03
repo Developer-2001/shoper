@@ -68,15 +68,6 @@ export function Theme3Home({
         THEME3_COLLECTION_IMAGE_URLS[index] || THEME3_COLLECTION_IMAGE_URLS[0],
     }));
   }, [collectionLabels]);
-  const availableCollectionSlugs = useMemo(
-    () =>
-      new Set(
-        products.map((product) =>
-          toCollectionSlug(product.category || "uncategorized"),
-        ),
-      ),
-    [products],
-  );
 
   const featuredProducts = products.slice(0, 4);
 
@@ -171,7 +162,7 @@ export function Theme3Home({
                           {item.description}
                         </p>
                         <Link
-                          href={`/${slug}/collections`}
+                          href={`/${slug}/products`}
                           className="mt-4 inline-block rounded-xl bg-[#cc5639] px-4 py-2.5 text-xs font-bold text-white transition hover:bg-[#b84c32] sm:mt-6 sm:px-6 sm:py-3 sm:text-sm"
                         >
                           Shop Now
@@ -232,9 +223,9 @@ export function Theme3Home({
           <div className="mt-4 grid grid-cols-3 gap-3 sm:grid-cols-4 lg:grid-cols-4 xl:grid-cols-8">
             {collectionTiles.map((collection, index) => {
               const collectionSlug = toCollectionSlug(collection.label);
-              const href = availableCollectionSlugs.has(collectionSlug)
-                ? `/${slug}/collections/${collectionSlug}`
-                : `/${slug}/collections`;
+              const href = `/${slug}/products?categories=${encodeURIComponent(
+                collectionSlug,
+              )}`;
 
               return (
                 <Link

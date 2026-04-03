@@ -36,15 +36,18 @@ export function Theme3Footer({
     ? footerLinks
     : [
         { label: "Home", href: `/${slug}` },
-        { label: "Collections", href: `/${slug}/collections` },
+        { label: "Products", href: `/${slug}/products` },
         { label: "Cart", href: `/${slug}/cart` },
       ];
 
   const shopLinks = [
-    { label: "Necklaces", href: `/${slug}/collections/necklaces` },
-    { label: "Earrings", href: `/${slug}/collections/earrings` },
-    { label: "Bracelets & Anklets", href: `/${slug}/collections/bracelets` },
-    { label: "Rings", href: `/${slug}/collections/rings` },
+    { label: "Necklaces", href: `/${slug}/products?categories=necklaces` },
+    { label: "Earrings", href: `/${slug}/products?categories=earrings` },
+    {
+      label: "Bracelets & Anklets",
+      href: `/${slug}/products?categories=bracelets-and-anklets`,
+    },
+    { label: "Rings", href: `/${slug}/products?categories=rings` },
   ];
 
   const quickLinks = [
