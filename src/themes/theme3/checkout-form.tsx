@@ -106,6 +106,71 @@ function detectBrowserCountryCode() {
   return "";
 }
 
+async function detectCountryCodeFromRequest() {
+  try {
+    const response = await fetch("/api/geo/country", { cache: "no-store" });
+    if (!response.ok) return "";
+
+    const data = await response.json();
+    const countryCode = String(data?.countryCode || "").trim().toUpperCase();
+    if (countryCode && Country.getCountryByCode(countryCode)) {
+      return countryCode;
+    }
+  } catch {
+    // Ignore and fall back to other detection methods.
+  }
+
+  return "";
+}
+
+function getCurrentPosition(options?: PositionOptions) {
+  return new Promise<GeolocationPosition>((resolve, reject) => {
+    if (!("geolocation" in navigator)) {
+      reject(new Error("Geolocation not available"));
+      return;
+    }
+
+    navigator.geolocation.getCurrentPosition(resolve, reject, options);
+  });
+}
+
+async function detectCountryCodeFromBrowserLocation() {
+  if (typeof window === "undefined") return "";
+
+  try {
+    const position = await getCurrentPosition({
+      enableHighAccuracy: false,
+      timeout: 6000,
+      maximumAge: 60_000,
+    });
+    const latitude = position.coords.latitude;
+    const longitude = position.coords.longitude;
+
+    const reverseUrl = new URL(
+      "https://api.bigdatacloud.net/data/reverse-geocode-client",
+    );
+    reverseUrl.searchParams.set("latitude", String(latitude));
+    reverseUrl.searchParams.set("longitude", String(longitude));
+    reverseUrl.searchParams.set("localityLanguage", "en");
+
+    const response = await fetch(reverseUrl.toString(), { cache: "no-store" });
+    if (!response.ok) return "";
+
+    const data = await response.json();
+    const countryCode = String(
+      data?.countryCode || data?.countryCode2 || "",
+    ).trim().toUpperCase();
+
+    if (countryCode && Country.getCountryByCode(countryCode)) {
+      return countryCode;
+    }
+  } catch {
+    // Permission denied / timeout / network issue.
+  }
+
+  return "";
+}
+
 const EMPTY_ADDRESS: AddressFormState = {
   country: "",
   countryCode: "",
@@ -290,65 +355,65 @@ export function Theme3CheckoutForm({
   }, [checkoutMetaKey]);
 
   useEffect(() => {
-    const detectedCountryCode = detectBrowserCountryCode();
-    if (!detectedCountryCode) return;
+    let cancelled = false;
 
-    const detectedCountry = Country.getCountryByCode(detectedCountryCode);
-    if (!detectedCountry) return;
+    function canAutoFillCountry(address: AddressFormState) {
+      return (
+        !address.countryCode &&
+        !address.country &&
+        !address.firstName &&
+        !address.lastName &&
+        !address.shippingAddress &&
+        !address.city &&
+        !address.state &&
+        !address.postalCode
+      );
+    }
 
-    setShipping((prev) => {
-      const isAddressUntouched =
-        !prev.firstName &&
-        !prev.lastName &&
-        !prev.shippingAddress &&
-        !prev.city &&
-        !prev.state &&
-        !prev.postalCode;
+    async function detectAndApplyCountry() {
+      const fromRequest = await detectCountryCodeFromRequest();
+      const fromLocation = fromRequest
+        ? ""
+        : await detectCountryCodeFromBrowserLocation();
+      const fromLocale =
+        fromRequest || fromLocation ? "" : detectBrowserCountryCode();
 
-      if (!isAddressUntouched) return prev;
-      if (
-        prev.countryCode === detectedCountryCode &&
-        prev.country === detectedCountry.name
-      ) {
-        return prev;
-      }
+      const detectedCountryCode = fromRequest || fromLocation || fromLocale;
+      if (!detectedCountryCode || cancelled) return;
 
-      return {
-        ...prev,
-        country: detectedCountry.name,
-        countryCode: detectedCountryCode,
-        state: "",
-        stateCode: "",
-        city: "",
-      };
-    });
+      const detectedCountry = Country.getCountryByCode(detectedCountryCode);
+      if (!detectedCountry) return;
 
-    setBilling((prev) => {
-      const isAddressUntouched =
-        !prev.firstName &&
-        !prev.lastName &&
-        !prev.shippingAddress &&
-        !prev.city &&
-        !prev.state &&
-        !prev.postalCode;
+      setShipping((prev) => {
+        if (!canAutoFillCountry(prev)) return prev;
+        return {
+          ...prev,
+          country: detectedCountry.name,
+          countryCode: detectedCountryCode,
+          state: "",
+          stateCode: "",
+          city: "",
+        };
+      });
 
-      if (!isAddressUntouched) return prev;
-      if (
-        prev.countryCode === detectedCountryCode &&
-        prev.country === detectedCountry.name
-      ) {
-        return prev;
-      }
+      setBilling((prev) => {
+        if (!canAutoFillCountry(prev)) return prev;
+        return {
+          ...prev,
+          country: detectedCountry.name,
+          countryCode: detectedCountryCode,
+          state: "",
+          stateCode: "",
+          city: "",
+        };
+      });
+    }
 
-      return {
-        ...prev,
-        country: detectedCountry.name,
-        countryCode: detectedCountryCode,
-        state: "",
-        stateCode: "",
-        city: "",
-      };
-    });
+    void detectAndApplyCountry();
+
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   useEffect(() => {
@@ -358,6 +423,18 @@ export function Theme3CheckoutForm({
       if (!shipping.countryCode) {
         setTaxRatePercent(0);
         setTaxRateLabel("No sales tax");
+        setTaxLoading(false);
+        return;
+      }
+
+      const hasStateSelection = shippingStates.length
+        ? Boolean(shipping.stateCode)
+        : Boolean(shipping.state.trim());
+
+      if (!hasStateSelection) {
+        setTaxRatePercent(0);
+        setTaxRateLabel("Select state to estimate tax");
+        setTaxLoading(false);
         return;
       }
 
@@ -403,6 +480,7 @@ export function Theme3CheckoutForm({
     shipping.countryCode,
     shipping.state,
     shipping.stateCode,
+    shippingStates.length,
   ]);
 
   function updateShipping(field: keyof AddressFormState, value: string) {
@@ -670,7 +748,6 @@ export function Theme3CheckoutForm({
         </div>
 
         <div className="flex items-center gap-1 text-xs text-slate-500">
-          <span>Tax basis:</span>
           {taxLoading ? (
             <Skeleton className="h-4 w-32 rounded" />
           ) : (
