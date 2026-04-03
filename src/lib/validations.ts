@@ -41,7 +41,7 @@ export const productSchema = z.object({
   name: z.string().min(2),
   description: z.string().optional().default(""),
   images: z.array(z.string().url()).min(1),
-  price: z.coerce.number().positive(),
+  price: z.coerce.number().min(0.5, "Price must be at least 0.50"),
   currency: z.string().min(1),
   category: z.string().min(2),
   discountPercentage: z.coerce.number().min(0).max(90).default(0),

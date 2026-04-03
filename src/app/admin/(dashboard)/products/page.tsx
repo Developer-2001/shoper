@@ -414,6 +414,12 @@ export default function ProductsPage() {
   async function handleSubmit(event: FormEvent) {
     event.preventDefault();
 
+    const parsedPrice = Number(form.price);
+    if (Number.isNaN(parsedPrice) || parsedPrice < 0.5) {
+      alert("Price must be at least 0.50.");
+      return;
+    }
+
     if (!form.category.trim()) {
       alert("Please select a category.");
       return;

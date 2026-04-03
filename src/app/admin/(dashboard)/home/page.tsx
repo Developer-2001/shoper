@@ -75,7 +75,7 @@ export default function AdminHomePage() {
           <p className="font-semibold">{error}</p>
         </div>
       ) : !data ? (
-        <div className="grid gap-4 md:grid-cols-3">
+        <div className="grid gap-4 grid-cols-2 md:grid-cols-3">
           <Skeleton className="h-32 rounded-2xl" />
           <Skeleton className="h-32 rounded-2xl" />
           <Skeleton className="h-32 rounded-2xl" />
@@ -83,7 +83,7 @@ export default function AdminHomePage() {
         </div>
       ) : (
         <>
-          <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 md:grid-cols-4">
+          <div className="grid gap-4 grid-cols-2 sm:grid-cols-2 md:grid-cols-4">
             <div className="relative rounded-2xl border border-slate-200 bg-white p-5">
               <p className="text-sm text-slate-500">Store</p>
               <p className="text-xl font-bold text-slate-900">
@@ -113,7 +113,7 @@ export default function AdminHomePage() {
             </div>
 
             <div className="rounded-2xl border border-slate-200 bg-white p-5">
-              <p className="font-semibold text-slate-900">Storefront preview</p>
+              <p className="font-semibold text-slate-900">Go to Storefront</p>
               <Link
                 href={`/${data.store.slug}`}
                 target="_blank"

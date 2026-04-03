@@ -81,6 +81,10 @@ export function ProductFormModal({
   onCreateCategory,
 }: ProductFormModalProps) {
   const [isMediaExpanded, setIsMediaExpanded] = useState(false);
+  const priceValue = Number(form.price);
+  const isPriceBelowMinimum =
+    form.price.trim() !== "" &&
+    (!Number.isFinite(priceValue) || priceValue < 0.5);
 
   if (!isOpen) return null;
 
@@ -355,12 +359,12 @@ export function ProductFormModal({
                 <div className="mt-3 grid gap-4 grid-cols-1 sm:grid-cols-2 md:grid-cols-2">
                   <div className="space-y-1.5">
                     <label className="text-sm font-medium text-slate-700">
-                      Price
+                      Price (should be at least 0.50)
                     </label>
                     <input
                       required
                       type="number"
-                      min="0"
+                      min="0.5"
                       step="0.01"
                       value={form.price}
                       onChange={(event) =>
@@ -370,7 +374,11 @@ export function ProductFormModal({
                         }))
                       }
                       placeholder="0.00"
-                      className="h-11 w-full rounded-xl border border-slate-300 bg-white px-4 text-sm text-slate-900 outline-hidden transition focus:border-slate-500"
+                      className={`h-11 w-full rounded-xl border bg-white px-4 text-sm outline-hidden transition ${
+                        isPriceBelowMinimum
+                          ? "border-red-500 text-red-700 focus:border-red-500"
+                          : "border-slate-300 text-slate-900 focus:border-slate-500"
+                      }`}
                     />
                   </div>
 
