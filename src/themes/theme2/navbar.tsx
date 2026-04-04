@@ -28,7 +28,7 @@ export function Theme2Navbar({ slug, logoText }: Theme2NavbarProps) {
           <Link href={`/${slug}`} className="transition hover:text-amber-950">
             Home
           </Link>
-          <Link href={`/${slug}/products`} className="transition hover:text-amber-950">
+          <Link href={`/${slug}/product`} className="transition hover:text-amber-950">
             Products
           </Link>
         </nav>
@@ -50,3 +50,4 @@ export function Theme2Navbar({ slug, logoText }: Theme2NavbarProps) {
     </header>
   );
 }
+

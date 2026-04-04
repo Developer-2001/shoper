@@ -62,6 +62,11 @@ export function Theme1Footer({
     },
   ];
 
+  const normalizedFooterLinks = footerLinks.map((item) => ({
+    ...item,
+    href: item.href.replace(/\/products(\?|$)/, "/product$1"),
+  }));
+
   return (
     <footer className="border-t border-slate-800 bg-black text-slate-300">
       <div className="mx-auto w-full max-w-7xl px-6 pb-8 pt-10 md:px-10">
@@ -81,7 +86,7 @@ export function Theme1Footer({
           <section>
             <h4 className="font-semibold text-white">Quick links</h4>
             <div className="mt-3 flex flex-col gap-2 text-sm">
-              {footerLinks.map((item) => (
+              {normalizedFooterLinks.map((item) => (
                 <Link key={item.href} href={item.href} className="hover:text-white">
                   {item.label}
                 </Link>

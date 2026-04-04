@@ -39,7 +39,7 @@ export function Theme3Navbar({ slug, logoText }: Theme3NavbarProps) {
             Home
           </Link>
           <Link
-            href={`/${slug}/products`}
+            href={`/${slug}/product`}
             className="transition hover:text-[#7b2f1e]"
           >
             Products
@@ -132,7 +132,7 @@ export function Theme3Navbar({ slug, logoText }: Theme3NavbarProps) {
               Home
             </Link>
             <Link
-              href={`/${slug}/products`}
+              href={`/${slug}/product`}
               className="rounded-lg px-3 py-2 transition hover:bg-white/50"
               onClick={() => setMobileMenuOpen(false)}
             >
@@ -158,3 +158,4 @@ export function Theme3Navbar({ slug, logoText }: Theme3NavbarProps) {
     </header>
   );
 }
+

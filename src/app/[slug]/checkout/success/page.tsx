@@ -33,7 +33,7 @@ export default async function CheckoutSuccessPage({ params }: { params: Promise<
 
         <div className="mt-10 space-y-3">
           <Link
-            href={`/${slug}/products`}
+            href={`/${slug}/product`}
             className="flex w-full items-center justify-center gap-2 rounded-2xl bg-slate-900 py-4 font-bold text-white shadow-lg transition-all hover:bg-slate-800 hover:shadow-xl active:scale-95"
           >
             <ShoppingBag className="h-5 w-5" />
@@ -55,3 +55,4 @@ export default async function CheckoutSuccessPage({ params }: { params: Promise<
     </div>
   );
 }
+

@@ -30,7 +30,7 @@ export function Theme2Home({ slug, store, products }: ThemeHomeProps) {
 
           <div className="mt-7 flex flex-wrap gap-3">
             <Link
-              href={`/${slug}/products`}
+              href={`/${slug}/product`}
               className="rounded-full bg-amber-500 px-7 py-3 text-sm font-bold uppercase tracking-wide text-amber-950 transition hover:bg-amber-400"
             >
               Shop All Products
@@ -89,7 +89,7 @@ export function Theme2Home({ slug, store, products }: ThemeHomeProps) {
             <p className="text-xs font-bold uppercase tracking-[0.22em] text-amber-700">Company Branding</p>
             <h2 className="mt-2 text-3xl font-black uppercase text-amber-950">Featured Products</h2>
           </div>
-          <Link href={`/${slug}/products`} className="text-sm font-bold uppercase tracking-wide text-amber-800 underline">
+          <Link href={`/${slug}/product`} className="text-sm font-bold uppercase tracking-wide text-amber-800 underline">
             View all
           </Link>
         </div>
@@ -113,3 +113,4 @@ export function Theme2Home({ slug, store, products }: ThemeHomeProps) {
     </div>
   );
 }
+

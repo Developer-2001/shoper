@@ -19,6 +19,19 @@ export function Theme2Footer({
   contactPhone,
   footerLinks,
 }: Theme2FooterProps) {
+  const normalizedFooterLinks = footerLinks.map((item) => ({
+    ...item,
+    href: item.href.replace(/\/products(\?|$)/, "/product$1"),
+  }));
+
+  const quickLinks = normalizedFooterLinks.length
+    ? normalizedFooterLinks
+    : [
+        { label: "Home", href: `/${slug}` },
+        { label: "Products", href: `/${slug}/product` },
+        { label: "Cart", href: `/${slug}/cart` },
+      ];
+
   return (
     <footer className="mt-16 border-t border-amber-100 bg-amber-50 py-10 text-amber-900">
       <div className="mx-auto grid w-full max-w-7xl gap-8 px-6 md:grid-cols-3">
@@ -37,14 +50,7 @@ export function Theme2Footer({
         <section>
           <h4 className="font-bold">Quick links</h4>
           <div className="mt-3 flex flex-wrap gap-2">
-            {(footerLinks.length
-              ? footerLinks
-              : [
-                  { label: "Home", href: `/${slug}` },
-                  { label: "Products", href: `/${slug}/products` },
-                  { label: "Cart", href: `/${slug}/cart` },
-                ]
-            ).map((item) => (
+            {quickLinks.map((item) => (
               <Link
                 key={`${item.label}-${item.href}`}
                 href={item.href}
@@ -59,3 +65,4 @@ export function Theme2Footer({
     </footer>
   );
 }
+

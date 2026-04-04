@@ -162,7 +162,7 @@ export function Theme3Home({
                           {item.description}
                         </p>
                         <Link
-                          href={`/${slug}/products`}
+                          href={`/${slug}/product`}
                           className="mt-4 inline-block rounded-xl bg-[#cc5639] px-4 py-2.5 text-xs font-bold text-white transition hover:bg-[#b84c32] sm:mt-6 sm:px-6 sm:py-3 sm:text-sm"
                         >
                           Shop Now
@@ -223,7 +223,7 @@ export function Theme3Home({
           <div className="mt-4 grid grid-cols-3 gap-3 sm:grid-cols-4 lg:grid-cols-4 xl:grid-cols-8">
             {collectionTiles.map((collection, index) => {
               const collectionSlug = toCollectionSlug(collection.label);
-              const href = `/${slug}/products?categories=${encodeURIComponent(
+              const href = `/${slug}/product?categories=${encodeURIComponent(
                 collectionSlug,
               )}`;
 
@@ -289,3 +289,4 @@ export function Theme3Home({
     </Theme3CartToastProvider>
   );
 }
+

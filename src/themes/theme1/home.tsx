@@ -63,7 +63,7 @@ export function Theme1Home({ slug, store, products }: ThemeHomeProps) {
       <section className="mx-auto w-full max-w-7xl px-6 py-10">
         <div className="flex items-end justify-between gap-4">
           <h2 className="text-3xl font-bold text-slate-900">Products</h2>
-          <Link href={`/${slug}/products`} className="text-sm font-semibold text-slate-700 underline-offset-2 hover:underline">
+          <Link href={`/${slug}/product`} className="text-sm font-semibold text-slate-700 underline-offset-2 hover:underline">
             View all products
           </Link>
         </div>
@@ -87,3 +87,4 @@ export function Theme1Home({ slug, store, products }: ThemeHomeProps) {
     </div>
   );
 }
+

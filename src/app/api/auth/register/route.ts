@@ -43,7 +43,7 @@ export async function POST(request: Request) {
     address: "",
     footerLinks: [
       { label: "Home", href: `/${slug}` },
-      { label: "Products", href: `/${slug}/products` },
+      { label: "Products", href: `/${slug}/product` },
       { label: "Cart", href: `/${slug}/cart` },
     ],
     theme: {
@@ -87,3 +87,4 @@ export async function POST(request: Request) {
   setAdminCookie(response, token);
   return response;
 }
+

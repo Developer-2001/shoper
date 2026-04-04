@@ -18,7 +18,7 @@ export function Theme2CartItems({ slug }: { slug: string }) {
   if (!items.length) {
     return (
       <div className="rounded-3xl border border-dashed border-amber-300 bg-amber-50 p-7 text-center text-amber-900">
-        Your cart is empty. <Link href={`/${slug}/products`} className="underline">Explore products</Link>
+        Your cart is empty. <Link href={`/${slug}/product`} className="underline">Explore products</Link>
       </div>
     );
   }
@@ -103,3 +103,4 @@ export function Theme2CartItems({ slug }: { slug: string }) {
     </div>
   );
 }
+

@@ -32,22 +32,27 @@ export function Theme3Footer({
   footerLinks,
   socialLinks,
 }: Theme3FooterProps) {
-  const companyLinks = footerLinks.length
-    ? footerLinks
+  const normalizedFooterLinks = footerLinks.map((item) => ({
+    ...item,
+    href: item.href.replace(/\/products(\?|$)/, "/product$1"),
+  }));
+
+  const companyLinks = normalizedFooterLinks.length
+    ? normalizedFooterLinks
     : [
         { label: "Home", href: `/${slug}` },
-        { label: "Products", href: `/${slug}/products` },
+        { label: "Products", href: `/${slug}/product` },
         { label: "Cart", href: `/${slug}/cart` },
       ];
 
   const shopLinks = [
-    { label: "Necklaces", href: `/${slug}/products?categories=necklaces` },
-    { label: "Earrings", href: `/${slug}/products?categories=earrings` },
+    { label: "Necklaces", href: `/${slug}/product?categories=necklaces` },
+    { label: "Earrings", href: `/${slug}/product?categories=earrings` },
     {
       label: "Bracelets & Anklets",
-      href: `/${slug}/products?categories=bracelets-and-anklets`,
+      href: `/${slug}/product?categories=bracelets-and-anklets`,
     },
-    { label: "Rings", href: `/${slug}/products?categories=rings` },
+    { label: "Rings", href: `/${slug}/product?categories=rings` },
   ];
 
   const quickLinks = [
@@ -207,3 +212,4 @@ export function Theme3Footer({
     </footer>
   );
 }
+

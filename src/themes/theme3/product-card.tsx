@@ -35,8 +35,7 @@ export function Theme3ProductCard({
     mediaList[activeIndex] || product.images[0] || "/file.svg";
   const firstMedia = product.images[0] || "/file.svg";
   // const discountText = `-${Math.max(product.discountPercentage, 0)}% OFF`;
-  const productHref =
-    href || `/${slug}/product/${product._id}`;
+  const productHref = href || `/${slug}/product/${product._id}`;
 
   function addItem() {
     dispatch(
@@ -55,7 +54,7 @@ export function Theme3ProductCard({
 
   return (
     <article className="overflow-hidden rounded-[22px] bg-[#fae9e6] shadow-[0_18px_42px_-36px_rgba(163,72,95,0.55)]">
-      <div className="relative overflow-hidden rounded-t-[18px] bg-[#fae9e6] pb-8">
+      <div className="relative overflow-hidden rounded-t-[18px] bg-[#fae9e6]">
         {product.discountPercentage > 0 && (
           <span className="absolute left-3 top-3 z-20 rounded-md bg-white px-2 py-1 text-[11px] font-bold tracking-wide text-[#3d241e] ">
             SALE {Math.max(product.discountPercentage, 0)}% OFF

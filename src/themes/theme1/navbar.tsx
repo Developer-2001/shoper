@@ -28,7 +28,7 @@ export function Theme1Navbar({ logoText, slug }: Theme1NavbarProps) {
           <Link href={`/${slug}`} className="transition hover:text-slate-900">
             Home
           </Link>
-          <Link href={`/${slug}/products`} className="transition hover:text-slate-900">
+          <Link href={`/${slug}/product`} className="transition hover:text-slate-900">
             Products
           </Link>
         </div>
@@ -51,3 +51,4 @@ export function Theme1Navbar({ logoText, slug }: Theme1NavbarProps) {
     </header>
   );
 }
+
