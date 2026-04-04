@@ -1,14 +1,13 @@
 import Link from "next/link";
-import { icons } from "lucide-react";
-
-type FooterLink = { label: string; href: string };
-
-type SocialLinks = {
-  instagram?: string;
-  facebook?: string;
-  x?: string;
-  youtube?: string;
-};
+import { Facebook, Instagram, MoveUp, Music2, Youtube } from "lucide-react";
+import {
+  AmexIcon,
+  Discover,
+  MastercardIcon,
+  Music2Icon,
+  PaypalIcon,
+  VisaIcon,
+} from "@/utils/svg";
 
 type Theme1FooterProps = {
   slug: string;
@@ -17,118 +16,204 @@ type Theme1FooterProps = {
   address: string;
   contactEmail: string;
   contactPhone: string;
-  socialLinks: SocialLinks;
-  footerLinks: FooterLink[];
+  footerLinks: { label: string; href: string }[];
+  socialLinks?: {
+    instagram?: string;
+    facebook?: string;
+    x?: string;
+    youtube?: string;
+  };
 };
 
 export function Theme1Footer({
   slug,
   companyName,
   about,
-  address,
-  contactEmail,
-  contactPhone,
-  socialLinks,
   footerLinks,
+  socialLinks,
 }: Theme1FooterProps) {
-  const legalLinks = [
-    "Terms of Service",
-    "Legal",
-    "Privacy Policy",
-    "Sitemap",
-    "Your Privacy Choices",
-  ];
-
-  const socialLink = [
-    {
-      label: "Instagram",
-      icons: <icons.Instagram className="size-6" />,
-      link: socialLinks.instagram,
-    },
-    {
-      label: "X",
-      icons: <icons.X className="size-6" />,
-      link: socialLinks.x,
-    },
-    {
-      label: "Facebook",
-      icons: <icons.Facebook className="size-6" />,
-      link: socialLinks.facebook,
-    },
-    {
-      label: "YouTube",
-      icons: <icons.Youtube className="size-6" />,
-      link: socialLinks.youtube,
-    },
-  ];
-
   const normalizedFooterLinks = footerLinks.map((item) => ({
     ...item,
     href: item.href.replace(/\/products(\?|$)/, "/product$1"),
   }));
 
+  const companyLinks = normalizedFooterLinks.length
+    ? normalizedFooterLinks
+    : [
+        { label: "Home", href: `/${slug}` },
+        { label: "Products", href: `/${slug}/product` },
+        { label: "Cart", href: `/${slug}/cart` },
+      ];
+
+  const shopLinks = [
+    { label: "Necklaces", href: `/${slug}/product?categories=necklaces` },
+    { label: "Earrings", href: `/${slug}/product?categories=earrings` },
+    {
+      label: "Bracelets & Anklets",
+      href: `/${slug}/product?categories=bracelets-and-anklets`,
+    },
+    { label: "Rings", href: `/${slug}/product?categories=rings` },
+  ];
+
+  const quickLinks = [
+    { label: "Privacy Policy", href: `/${slug}/privacy` },
+    { label: "Terms and Conditions", href: `/${slug}/terms` },
+    { label: "Contact Us", href: `/${slug}/contact` },
+  ];
+
+  function scrollToTop() {
+    if (typeof window === "undefined") return;
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }
+
   return (
-    <footer className="border-t border-slate-800 bg-black text-slate-300">
-      <div className="mx-auto w-full max-w-7xl px-6 pb-8 pt-10 md:px-10">
-        <div className="grid gap-10 md:grid-cols-3">
+    <footer className="mt-12 px-2 pb-2 sm:mt-16 sm:px-3 md:px-4">
+      <div className="mx-auto w-full rounded-2xl bg-slate-900 text-slate-200">
+        <div className="grid gap-8 px-4 pb-8 pt-10 md:grid-cols-2 md:px-8 lg:grid-cols-5 lg:gap-6 lg:px-6">
           <section>
-            <h3 className="text-xl font-bold text-white">{companyName}</h3>
-            <p className="mt-3 text-sm text-slate-400">{about || "Your trusted ecommerce store."}</p>
+            <h3 className="text-xl font-semibold leading-none tracking-tight">About</h3>
+            <p className="mt-4 text-sm leading-7 text-slate-300 sm:text-base">
+              {about ||
+                `At ${companyName}, we believe jewellery is more than an accessory.`}
+            </p>
           </section>
 
           <section>
-            <h4 className="font-semibold text-white">Contact</h4>
-            <p className="mt-2 text-sm">{address}</p>
-            <p className="mt-1 text-sm">{contactEmail}</p>
-            <p className="mt-1 text-sm">{contactPhone}</p>
-          </section>
-
-          <section>
-            <h4 className="font-semibold text-white">Quick links</h4>
-            <div className="mt-3 flex flex-col gap-2 text-sm">
-              {normalizedFooterLinks.map((item) => (
-                <Link key={item.href} href={item.href} className="hover:text-white">
-                  {item.label}
-                </Link>
+            <h3 className="text-xl font-semibold leading-none tracking-tight">Shop</h3>
+            <ul className="mt-4 space-y-3 text-sm text-slate-300 sm:text-base">
+              {shopLinks.map((item) => (
+                <li key={item.label}>
+                  <Link href={item.href} className="transition hover:text-white">
+                    {item.label}
+                  </Link>
+                </li>
               ))}
-            </div>
+            </ul>
+          </section>
+
+          <section>
+            <h3 className="text-xl font-semibold leading-none tracking-tight">Quick Links</h3>
+            <ul className="mt-4 space-y-3 text-sm text-slate-300 sm:text-base">
+              {quickLinks.map((item) => (
+                <li key={item.label}>
+                  <Link href={item.href} className="transition hover:text-white">
+                    {item.label}
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </section>
+
+          <section>
+            <h3 className="text-xl font-semibold leading-none tracking-tight">Company</h3>
+            <ul className="mt-4 space-y-3 text-sm text-slate-300 sm:text-base">
+              {companyLinks.slice(0, 4).map((item) => (
+                <li key={`${item.label}-${item.href}`}>
+                  <Link href={item.href} className="transition hover:text-white">
+                    {item.label}
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </section>
+
+          <section>
+            <h3 className="text-xl font-semibold leading-none tracking-tight">Newsletter</h3>
+            <p className="mt-4 text-sm leading-7 text-slate-300 sm:text-base">
+              Be the first to know about our biggest and best sales.
+            </p>
+            <form
+              className="mt-6 flex flex-col gap-3 sm:flex-row"
+              onSubmit={(event) => event.preventDefault()}
+            >
+              <input
+                type="email"
+                placeholder="Email Address.."
+                className="h-10 w-full border-b border-slate-600 bg-transparent px-2 text-sm text-white outline-none placeholder:text-slate-400 sm:px-4 sm:text-base"
+              />
+              <button
+                type="submit"
+                className="h-10 rounded-xl bg-slate-100 px-4 text-sm font-semibold tracking-wide text-slate-900 transition hover:bg-white"
+              >
+                Subscribe
+              </button>
+            </form>
           </section>
         </div>
+
+        <div className="mx-4 border-t border-slate-700 md:mx-8 lg:mx-10" />
+
+        <div className="grid items-center gap-6 px-4 pb-10 pt-8 sm:grid-cols-3 md:grid-cols-3 md:px-8 lg:px-10">
+          <div className="flex items-center justify-center gap-4 md:justify-start">
+            <Link
+              href={socialLinks?.facebook || `/${slug}`}
+              aria-label="Facebook"
+              className="rounded-full p-1.5 text-slate-300 transition hover:text-white"
+            >
+              <Facebook size={24} />
+            </Link>
+            <Link
+              href={socialLinks?.instagram || `/${slug}`}
+              aria-label="Instagram"
+              className="rounded-full p-1.5 text-slate-300 transition hover:text-white"
+            >
+              <Instagram size={24} />
+            </Link>
+            <Link
+              href={socialLinks?.youtube || `/${slug}`}
+              aria-label="Youtube"
+              className="rounded-full p-1.5 text-slate-300 transition hover:text-white"
+            >
+              <Youtube size={24} />
+            </Link>
+            <Link
+              href={socialLinks?.x || `/${slug}`}
+              aria-label="TikTok"
+              className="rounded-full p-1.5 text-slate-300 transition hover:text-white"
+            >
+              <Music2 size={24} />
+            </Link>
+          </div>
+
+          <div className="text-center font-[Georgia,serif] text-lg tracking-widest text-white sm:text-xl">
+            {companyName}
+          </div>
+
+          <div className="flex flex-wrap items-center justify-center gap-2 md:justify-end">
+            <VisaIcon />
+            <MastercardIcon />
+            <AmexIcon />
+            <PaypalIcon />
+            <Music2Icon />
+            <Discover />
+          </div>
+        </div>
+
+        <div className="mx-auto h-8 w-[85%] rounded-t-4xl bg-slate-100 sm:h-10 sm:w-[80%] sm:rounded-t-[40px]" />
       </div>
 
-      <div className="mt-8 border-t border-slate-800 pt-3">
-        <div className="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
-          <div className="flex flex-wrap items-center gap-x-8 gap-y-3 text-lg text-slate-400 sm:text-base">
-            <button
-              type="button"
-              className="inline-flex items-center gap-2 text-slate-200 transition hover:text-white"
-            >
-              <span>India | English</span>
-              <span aria-hidden="true">v</span>
-            </button>
-            <div className="flex flex-wrap items-center gap-4">
-              {legalLinks.map((item) => (
-                <Link key={item} href="#" className="transition hover:text-white">
-                  {item}
-                </Link>
-              ))}
-            </div>
-          </div>
+      <div className="relative mx-auto -mt-0.5 flex w-full flex-col rounded-b-2xl bg-slate-100 px-3 pb-4 pt-2 text-slate-700 md:flex-row md:items-center md:justify-between md:px-6">
+        <button
+          type="button"
+          onClick={scrollToTop}
+          className="group relative ml-auto mt-2 flex h-11 w-11 flex-col items-center justify-center rounded-full bg-white text-slate-900 transition-all duration-300 ease-out hover:bg-slate-50 md:absolute md:bottom-8 md:right-3 md:h-14 md:w-14 md:hover:h-48 md:hover:w-16"
+          aria-label="Back to top"
+        >
+          <MoveUp className="h-5 w-5 shrink-0 transition-transform duration-300" />
+          <span className="pointer-events-none mt-2 hidden max-h-0 overflow-hidden text-xs tracking-[0.34em] [writing-mode:vertical-rl] [text-orientation:mixed] opacity-0 transition-all duration-200 md:block md:group-hover:max-h-20 md:group-hover:opacity-100">
+            GO TO TOP
+          </span>
+        </button>
 
-          <div className="flex flex-wrap items-center gap-3">
-            {socialLink.map((item) => (
-              <Link
-                key={item.label}
-                href={item.link || `/${slug}`}
-                aria-label={item.label}
-                className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-slate-600 text-xs font-semibold uppercase text-slate-200 transition ring-1 hover:border-white hover:text-white"
-              >
-                {item.icons}
-              </Link>
-            ))}
-          </div>
-        </div>
+        <p className="mt-2 text-center text-xs sm:text-sm md:mt-0 md:flex-1">
+          (c) {new Date().getFullYear()}, {companyName} - Powered by Shoper
+        </p>
       </div>
     </footer>
   );
 }
+
+
+
+
+

@@ -23,6 +23,7 @@ export default async function ProductDetailsPage({
       slug={routeParams.slug}
       store={storefrontData.store}
       product={storefrontData.product}
+      products={storefrontData.products}
     />
   );
 }

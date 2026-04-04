@@ -68,16 +68,22 @@ export async function getStorefrontProductData(slug: string, productId: string) 
   const store = await Store.findOne({ slug }).lean();
   if (!store || store.status === "inactive") return null;
 
-  const product = await Product.findOne({
-    _id: productId,
-    storeId: store._id,
-    isPublished: true,
-  }).lean();
+  const [product, products] = await Promise.all([
+    Product.findOne({
+      _id: productId,
+      storeId: store._id,
+      isPublished: true,
+    }).lean(),
+    Product.find({ storeId: store._id, isPublished: true })
+      .sort({ createdAt: -1 })
+      .lean(),
+  ]);
 
   if (!product) return null;
 
   return {
     store: toPlain(store),
     product: toPlain(product),
+    products: toPlain(products),
   };
 }

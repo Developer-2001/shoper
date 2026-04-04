@@ -55,6 +55,7 @@ export type ThemeProductDetailProps = {
   slug: string;
   store: StorefrontStore;
   product: StorefrontProduct;
+  products?: StorefrontProduct[];
 };
 
 export type ThemeCartProps = {
