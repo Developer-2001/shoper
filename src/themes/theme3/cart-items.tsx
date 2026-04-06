@@ -153,6 +153,8 @@ export function Theme3CartItems({ slug }: { slug: string }) {
                         className="h-full w-full object-cover"
                         muted
                         controls
+                        playsInline
+                        preload="metadata"
                       />
                     ) : (
                       <Image

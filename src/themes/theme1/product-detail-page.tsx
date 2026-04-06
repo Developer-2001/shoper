@@ -116,6 +116,7 @@ export function Theme1ProductDetailPage({
                                 autoPlay
                                 loop
                                 playsInline
+                                preload="metadata"
                               />
                             ) : (
                               <Image

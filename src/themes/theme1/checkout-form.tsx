@@ -730,6 +730,7 @@ export function Theme1CheckoutForm({
                   className="h-full w-full object-cover"
                   muted
                   playsInline
+                  preload="metadata"
                 />
               ) : (
                 <Image
@@ -875,6 +876,7 @@ export function Theme1CheckoutForm({
                           className="h-full w-full object-cover"
                           muted
                           playsInline
+                          preload="metadata"
                         />
                       ) : (
                         <Image
