@@ -20,6 +20,10 @@ export type StorefrontStore = {
   };
   paymentSettings?: {
     stripe: { enabled: boolean };
+    helcim: {
+      enabled: boolean;
+      accountId: string;
+    };
   };
 };
 

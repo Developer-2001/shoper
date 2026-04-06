@@ -22,6 +22,9 @@ const defaultForm = {
   footerLinks: "",
   stripeEnabled: false,
   stripeAccountId: "",
+  helcimEnabled: false,
+  helcimToken: "",
+  helcimAccountId: "",
 };
 
 function Field({
@@ -88,10 +91,14 @@ export default function ConfigureStorePage() {
           enabled: merged.stripeEnabled,
           accountId: merged.stripeAccountId,
         },
+        helcim: {
+          enabled: merged.helcimEnabled,
+          token: merged.helcimToken,
+          accountId: merged.helcimAccountId,
+        },
       },
     };
   }
-
   useEffect(() => {
     async function load() {
       setLoading(true);
@@ -126,6 +133,9 @@ export default function ConfigureStorePage() {
             .join(","),
           stripeEnabled: store.paymentSettings?.stripe?.enabled || false,
           stripeAccountId: store.paymentSettings?.stripe?.accountId || "",
+          helcimEnabled: store.paymentSettings?.helcim?.enabled || false,
+          helcimToken: store.paymentSettings?.helcim?.token || "",
+          helcimAccountId: store.paymentSettings?.helcim?.accountId || "",
         });
       } catch (loadError) {
         console.error(loadError);
@@ -384,7 +394,8 @@ export default function ConfigureStorePage() {
             </button>
 
             {isPaymentProviderOpen ? (
-              <div className="mt-4 max-w-md">
+              <>
+                <div className="mt-4 max-w-md">
                 <div className="rounded-2xl border border-slate-200 bg-slate-50/50 p-5">
                   <div className="mb-4 flex items-center justify-between">
                     <div className="flex items-center gap-3">
@@ -479,7 +490,75 @@ export default function ConfigureStorePage() {
                   )}
                 </div>
               </div>
-            ) : null}
+
+              <div className="mt-6 max-w-md">
+                <div className="rounded-2xl border border-slate-200 bg-slate-50/50 p-5">
+                  <div className="mb-4 flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <h4 className="text-lg font-bold text-slate-800">
+                        Helcim Payments
+                      </h4>
+                      {form.helcimEnabled ? (
+                        <span className="rounded-full bg-green-100 px-2 py-1 text-xs font-bold text-green-700">
+                          Enabled
+                        </span>
+                      ) : (
+                        <span className="rounded-full bg-slate-200 px-2 py-1 text-xs font-bold text-slate-600">
+                          Disabled
+                        </span>
+                      )}
+                    </div>
+                    <label className="relative inline-flex cursor-pointer items-center">
+                      <input
+                        type="checkbox"
+                        className="peer sr-only"
+                        checked={form.helcimEnabled}
+                        onChange={(event) =>
+                          setForm((prev) => ({
+                            ...prev,
+                            helcimEnabled: event.target.checked,
+                          }))
+                        }
+                      />
+                      <div className="peer h-6 w-11 rounded-full bg-slate-200 after:absolute after:top-[2px] after:left-[2px] after:h-5 after:w-5 after:rounded-full after:border after:border-slate-300 after:bg-white after:transition-all after:content-[''] peer-checked:bg-slate-900 peer-checked:after:translate-x-full peer-checked:after:border-white peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-slate-300"></div>
+                    </label>
+                  </div>
+
+                  <div className="space-y-4">
+                    <Field id="helcimAccountId" label="Helcim Account ID">
+                      <input
+                        id="helcimAccountId"
+                        value={form.helcimAccountId}
+                        onChange={(event) =>
+                          setForm((prev) => ({
+                            ...prev,
+                            helcimAccountId: event.target.value,
+                          }))
+                        }
+                        className={inputClass}
+                        placeholder="e.g. 123456"
+                      />
+                    </Field>
+                    <Field id="helcimToken" label="API Token">
+                      <input
+                        id="helcimToken"
+                        type="password"
+                        value={form.helcimToken}
+                        onChange={(event) =>
+                          setForm((prev) => ({
+                            ...prev,
+                            helcimToken: event.target.value,
+                          }))
+                        }
+                        className={inputClass}
+                        placeholder="helcim_api_..."
+                      />
+                    </Field>
+                  </div>
+                </div>
+              </div>
+            </>
+          ) : null}
           </section>
 
           <button

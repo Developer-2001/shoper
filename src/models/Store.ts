@@ -36,6 +36,11 @@ export type StoreDocument = {
       enabled: boolean;
       accountId: string;
     };
+    helcim: {
+      enabled: boolean;
+      token: string;
+      accountId: string;
+    };
   };
   footerLinks: { label: string; href: string }[];
 };
@@ -75,6 +80,11 @@ const StoreSchema = new Schema<StoreDocument>(
     paymentSettings: {
       stripe: {
         enabled: { type: Boolean, default: false },
+        accountId: { type: String, default: "" },
+      },
+      helcim: {
+        enabled: { type: Boolean, default: false },
+        token: { type: String, default: "" },
         accountId: { type: String, default: "" },
       },
     },

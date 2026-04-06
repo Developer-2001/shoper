@@ -12,6 +12,7 @@ import { useAppDispatch, useAppSelector } from "@/hooks/useRedux";
 import { clearSlugCart } from "@/store/slices/cartSlice";
 import { formatMoney } from "@/utils/currency";
 import { isVideoUrl } from "@/utils/media";
+import { HelcimForm } from "@/components/checkout/helcim-form";
 
 import type { StorefrontStore } from "@/themes/types";
 import {
@@ -211,6 +212,13 @@ export function Theme1CheckoutForm({
     discountCode: "",
     discountPercentage: 0,
   });
+
+  const availableProviders = [
+    ...(store.paymentSettings?.stripe?.enabled ? ["stripe"] : []),
+    ...(store.paymentSettings?.helcim?.enabled ? ["helcim"] : []),
+  ];
+
+  const [provider, setProvider] = useState(availableProviders[0] || "none");
 
   const checkoutMetaKey = `Theme1CheckoutMeta:${slug}`;
   const currency = items[0]?.currency || "INR";
@@ -600,6 +608,46 @@ export function Theme1CheckoutForm({
     } catch (err) {
       console.error(err);
       setError("A network error occurred while starting your payment.");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function handleHelcimCheckout(cardToken: string) {
+    setLoading(true);
+    setError("");
+
+    try {
+      const response = await fetch(`/api/store/${slug}/payment/helcim/process`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          cardToken,
+          email,
+          shipping,
+          useShippingAsBilling,
+          billing: useShippingAsBilling ? shipping : billing,
+          cartNote: checkoutMeta.cartNote,
+          discountCode,
+          items: items.map((item) => ({
+            productId: item.productId,
+            quantity: item.quantity,
+          })),
+        }),
+      });
+
+      if (!response.ok) {
+        const data = await response.json().catch(() => ({}));
+        setError(data.error || "Helcim payment failed.");
+        return;
+      }
+
+      dispatch(clearSlugCart({ slug }));
+      localStorage.removeItem(checkoutMetaKey);
+      router.push(`/${slug}/checkout/success`);
+    } catch (err) {
+      console.error(err);
+      setError("A network error occurred while processing Helcim payment.");
     } finally {
       setLoading(false);
     }
@@ -1198,6 +1246,91 @@ export function Theme1CheckoutForm({
             </div>
           ) : null}
         </div>
+
+        <div className="mt-8 border-t border-slate-100 pt-6">
+          <h2 className="text-2xl font-semibold text-slate-900">Payment</h2>
+          <p className="mt-1 text-sm text-slate-500">
+            All transactions are secure and encrypted.
+          </p>
+
+          <div className="mt-4 space-y-3">
+            {store.paymentSettings?.stripe?.enabled && (
+              <label
+                className={`flex cursor-pointer items-center justify-between rounded-xl border p-4 transition-all ${
+                  provider === "stripe"
+                    ? "border-slate-900 bg-slate-50 ring-1 ring-slate-900"
+                    : "border-slate-200 bg-white hover:border-slate-300"
+                }`}
+              >
+                <div className="flex items-center gap-3">
+                  <input
+                    type="radio"
+                    name="paymentProvider"
+                    value="stripe"
+                    checked={provider === "stripe"}
+                    onChange={() => setProvider("stripe")}
+                    className="h-4 w-4 accent-slate-900"
+                  />
+                  <span className="font-semibold text-slate-900">
+                    Credit Card (via Stripe)
+                  </span>
+                </div>
+                <div className="flex gap-1">
+                  <div className="h-5 w-8 rounded bg-slate-100"></div>
+                  <div className="h-5 w-8 rounded bg-slate-100"></div>
+                </div>
+              </label>
+            )}
+
+            {store.paymentSettings?.helcim?.enabled && (
+              <div
+                className={`rounded-xl border transition-all ${
+                  provider === "helcim"
+                    ? "border-slate-900 bg-slate-50 ring-1 ring-slate-900"
+                    : "border-slate-200 bg-white hover:border-slate-300"
+                }`}
+              >
+                <label className="flex cursor-pointer items-center justify-between p-4">
+                  <div className="flex items-center gap-3">
+                    <input
+                      type="radio"
+                      name="paymentProvider"
+                      value="helcim"
+                      checked={provider === "helcim"}
+                      onChange={() => setProvider("helcim")}
+                      className="h-4 w-4 accent-slate-900"
+                    />
+                    <span className="font-semibold text-slate-900">
+                      Credit Card (via Helcim)
+                    </span>
+                  </div>
+                </label>
+
+                {provider === "helcim" && (
+                  <div className="border-t border-slate-200 p-4">
+                    <HelcimForm
+                      slug={slug}
+                      accountId={store.paymentSettings.helcim.accountId}
+                      amount={total}
+                      currency={currency}
+                      email={email}
+                      shipping={shipping}
+                      items={items}
+                      onSuccess={handleHelcimCheckout}
+                      onError={setError}
+                    />
+                  </div>
+                )}
+              </div>
+            )}
+
+            {!availableProviders.length && (
+              <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800">
+                This store is not configured to accept online payments.
+              </div>
+            )}
+          </div>
+        </div>
       </section>
 
       <aside className="hidden  self-start p-6 xl:block xl:pl-6 2xl:sticky 2xl:top-6">
@@ -1211,19 +1344,24 @@ export function Theme1CheckoutForm({
         ) : null}
 
         <button
-          type="submit"
-          onClick={handlePayNowClick}
-          disabled={loading || !store.paymentSettings?.stripe?.enabled}
+          type={provider === "stripe" ? "button" : "submit"}
+          onClick={(e) => {
+            if (provider === "stripe") {
+              e.preventDefault();
+              handleStripeCheckout();
+            }
+          }}
+          disabled={loading || provider === "none" || (provider === "helcim" && true)}
           className="mt-4 flex h-12 cursor-pointer w-full items-center justify-center gap-2 rounded-xl bg-[#1663d6] text-md font-semibold text-white transition hover:bg-[#1257bc] disabled:opacity-50"
         >
           {loading ? <Spinner size={16} className="text-white" /> : null}
           {loading
-            ? store.paymentSettings?.stripe?.enabled
-              ? "Redirecting..."
-              : "Processing..."
-            : store.paymentSettings?.stripe?.enabled
-              ? "Pay now"
-              : "Payment not ready"}
+            ? "Processing..."
+            : provider === "stripe"
+            ? "Pay now"
+            : provider === "helcim"
+            ? "Complete payment in Helcim form"
+            : "Select payment method"}
         </button>
       </aside>
     </form>

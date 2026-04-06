@@ -16,7 +16,7 @@ export function Theme2CheckoutPage({ slug, store }: ThemeCheckoutProps) {
       <main className="mx-auto w-full max-w-7xl px-6 py-10">
         <h1 className="text-4xl font-black uppercase">Checkout</h1>
         <div className="mt-6">
-          <Theme2CheckoutForm slug={slug} />
+          <Theme2CheckoutForm slug={slug} store={store} />
         </div>
       </main>
 

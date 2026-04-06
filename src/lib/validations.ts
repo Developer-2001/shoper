@@ -90,10 +90,26 @@ export const storeConfigSchema = z.object({
           accountId: z.string().default(""),
         })
         .default({ enabled: false, accountId: "" }),
+      helcim: z
+        .object({
+          enabled: z.boolean().default(false),
+          token: z.string().default(""),
+          accountId: z.string().default(""),
+        })
+        .default({
+          enabled: false,
+          token: "",
+          accountId: "",
+        }),
     })
     .optional()
     .default({
       stripe: { enabled: false, accountId: "" },
+      helcim: {
+        enabled: false,
+        token: "",
+        accountId: "",
+      },
     }),
 });
 
