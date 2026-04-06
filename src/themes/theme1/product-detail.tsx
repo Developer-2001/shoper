@@ -44,7 +44,15 @@ export function Theme1ProductDetail({ slug, product }: ThemeProductDetailProps) 
       <div>
         <div className="overflow-hidden rounded-2xl border border-slate-200 bg-slate-100">
           {isVideoUrl(activeMedia) ? (
-            <video src={activeMedia} className="h-[300px] w-full object-cover sm:h-[420px] lg:h-[520px]" controls autoPlay muted />
+            <video
+              src={activeMedia}
+              className="h-[300px] w-full object-cover sm:h-[420px] lg:h-[520px]"
+              controls
+              autoPlay
+              muted
+              playsInline
+              preload="metadata"
+            />
           ) : (
             <Image
               src={activeMedia}
@@ -69,7 +77,13 @@ export function Theme1ProductDetail({ slug, product }: ThemeProductDetailProps) 
                 }`}
               >
                 {isVideoUrl(media) ? (
-                  <video src={media} className="h-16 w-full object-cover" muted />
+                  <video
+                    src={media}
+                    className="h-16 w-full object-cover"
+                    muted
+                    playsInline
+                    preload="metadata"
+                  />
                 ) : (
                   <Image src={media} alt={`${product.name}-${index + 1}`} width={160} height={120} className="h-16 w-full object-cover" />
                 )}

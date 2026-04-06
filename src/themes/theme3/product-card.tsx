@@ -69,6 +69,7 @@ export function Theme3ProductCard({
               muted
               loop
               playsInline
+              preload="metadata"
             />
           ) : (
             <Image
@@ -131,7 +132,13 @@ export function Theme3ProductCard({
                 aria-label={`Show product media ${index + 1}`}
               >
                 {isVideoUrl(media) ? (
-                  <video src={media} className="h-10 w-10 object-cover" muted />
+                  <video
+                    src={media}
+                    className="h-10 w-10 object-cover"
+                    muted
+                    playsInline
+                    preload="metadata"
+                  />
                 ) : (
                   <Image
                     src={media}

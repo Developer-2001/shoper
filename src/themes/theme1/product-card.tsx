@@ -1,5 +1,4 @@
 "use client";
-"use client";
 
 import Image from "next/image";
 import Link from "next/link";
@@ -73,6 +72,7 @@ export function Theme1ProductCard({
               muted
               loop
               playsInline
+              preload="metadata"
             />
           ) : (
             <Image
@@ -137,7 +137,13 @@ export function Theme1ProductCard({
                 aria-label={`Show product media ${index + 1}`}
               >
                 {isVideoUrl(media) ? (
-                  <video src={media} className="h-10 w-10 object-cover" muted />
+                  <video
+                    src={media}
+                    className="h-10 w-10 object-cover"
+                    muted
+                    playsInline
+                    preload="metadata"
+                  />
                 ) : (
                   <Image
                     src={media}
