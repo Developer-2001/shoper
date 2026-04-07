@@ -7,7 +7,7 @@ import { Order } from "@/models/Order";
 import { Product } from "@/models/Product";
 import { Store } from "@/models/Store";
 
-type RangeKey = "daily" | "weekly" | "monthly" | "6month" | "yearly";
+type RangeKey = "daily" | "weekly" | "monthly" | "3month" | "6month" | "yearly";
 type BucketUnit = "hour" | "day" | "month";
 
 type ResolvedRange = {
@@ -75,6 +75,7 @@ const RANGE_KEYS: RangeKey[] = [
   "daily",
   "weekly",
   "monthly",
+  "3month",
   "6month",
   "yearly",
 ];
@@ -170,6 +171,19 @@ function toPresetRange(rangeKey: RangeKey, now: Date): ResolvedRange {
       start,
       end,
       label: "Last 30 days",
+      isCustom: false,
+    };
+  }
+
+  if (rangeKey === "3month") {
+    const end = now;
+    const start = startOfDay(new Date(now.getTime() - 89 * DAY_MS));
+    return {
+      key: rangeKey,
+      bucket: "day",
+      start,
+      end,
+      label: "Last 3 months",
       isCustom: false,
     };
   }
