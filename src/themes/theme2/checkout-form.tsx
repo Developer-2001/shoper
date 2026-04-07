@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useCallback, useState } from "react";
+import { useCallback, useState, useEffect } from "react";
 
 import { Spinner } from "@/components/admin/ui/loader";
 import { useAppDispatch, useAppSelector } from "@/hooks/useRedux";
@@ -49,6 +49,7 @@ export function Theme2CheckoutForm({ slug, store }: Theme2CheckoutFormProps) {
   const [error, setError] = useState("");
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [isHelcimActive, setIsHelcimActive] = useState(false);
+  const [isHelcimInitializing, setIsHelcimInitializing] = useState(false);
 
   const availableProviders = [
     ...(store.paymentSettings?.stripe?.enabled ? ["stripe"] : []),
@@ -56,6 +57,13 @@ export function Theme2CheckoutForm({ slug, store }: Theme2CheckoutFormProps) {
   ];
 
   const [provider, setProvider] = useState("none");
+
+  // Reset payment states when provider changes
+  useEffect(() => {
+    setIsHelcimActive(false);
+    setIsHelcimInitializing(false);
+    setError("");
+  }, [provider]);
 
   const total = items.reduce((sum, item) => sum + item.price * item.quantity, 0);
 
@@ -242,9 +250,9 @@ export function Theme2CheckoutForm({ slug, store }: Theme2CheckoutFormProps) {
 
               {store.paymentSettings?.helcim?.enabled && (
                 <div
-                  className={`rounded-2xl border transition-all ${
+                  className={`rounded-2xl border-2 transition-all ${
                     provider === "helcim"
-                      ? "border-amber-500 bg-amber-50 ring-1 ring-amber-500"
+                      ? "border-amber-500 bg-amber-50 ring-2 ring-amber-500/10"
                       : "border-amber-200 bg-white hover:border-amber-300"
                   }`}
                 >
@@ -273,7 +281,12 @@ export function Theme2CheckoutForm({ slug, store }: Theme2CheckoutFormProps) {
                         shipping={shipping}
                         items={items}
                         onSuccess={handleHelcimCheckout}
-                        onError={setError}
+                        onError={(msg) => {
+                          setError(msg);
+                          setIsHelcimInitializing(false);
+                          setIsHelcimActive(false);
+                        }}
+                        onReady={() => setIsHelcimInitializing(false)}
                         trigger={isHelcimActive}
                       />
                     </div>
@@ -302,18 +315,19 @@ export function Theme2CheckoutForm({ slug, store }: Theme2CheckoutFormProps) {
               } else if (provider === "helcim" && !isHelcimActive) {
                 e.preventDefault();
                 setIsHelcimActive(true);
+                setIsHelcimInitializing(true);
               }
             }}
             disabled={loading || provider === "none"}
             className="mt-4 flex w-full items-center justify-center gap-2 rounded-full bg-amber-500 py-3 text-sm font-bold uppercase tracking-wide text-amber-950 transition hover:bg-amber-600 disabled:opacity-50"
           >
-            {loading && <Spinner size={16} className="text-amber-950" />}
-            {loading
+            {(loading || isHelcimInitializing) && <Spinner size={16} className="text-amber-950" />}
+            {loading || isHelcimInitializing
               ? "Processing..."
               : provider === "stripe"
                 ? "Pay with Stripe"
                 : provider === "helcim"
-                  ? isHelcimActive ? "Complete payment above" : "Pay now"
+                  ? isHelcimActive ? (isHelcimInitializing ? "Loading payment..." : "Complete payment above") : "Pay now"
                   : "Select Payment Method"}
           </button>
         </section>

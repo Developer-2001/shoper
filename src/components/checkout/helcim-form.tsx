@@ -13,6 +13,7 @@ interface HelcimFormProps {
   items: any[];
   onSuccess: (transactionId: string) => void;
   onError: (error: string) => void;
+  onReady?: () => void;
   trigger?: boolean;
 }
 
@@ -32,11 +33,21 @@ export function HelcimForm({
   items,
   onSuccess,
   onError,
+  onReady,
   trigger = true,
 }: HelcimFormProps) {
   const [loading, setLoading] = useState(true);
+  const [isIframeReady, setIsIframeReady] = useState(false);
   const [checkoutToken, setCheckoutToken] = useState<string | null>(null);
   const hasInitialized = useRef(false);
+
+  // Reset initialization if trigger becomes false (user switched providers)
+  useEffect(() => {
+    if (!trigger) {
+      hasInitialized.current = false;
+      setIsIframeReady(false);
+    }
+  }, [trigger]);
 
   // Memoize data to prevent re-initialization loops
   const initData = useMemo(() => JSON.stringify({ items, email, shipping }), [items, email, shipping]);
@@ -114,6 +125,12 @@ export function HelcimForm({
           }
         }
 
+        // Handle READY event to hide loader
+        if (data.eventStatus === "READY" || data.event === "READY") {
+          setIsIframeReady(true);
+          onReady?.();
+        }
+
         // Handle errors
         if (data.eventStatus === "ERROR" || data.status === "DECLINED" || data.event === "ERROR") {
           onError(data.eventMessage || "Transaction declined.");
@@ -155,7 +172,7 @@ export function HelcimForm({
                 <p className="text-xs text-slate-500">Click the "Pay Now" button to load the secure payment form.</p>
              </div>
           </div>
-        ) : loading && (
+        ) : (loading || !isIframeReady) && (
           <div className="flex flex-col h-64 items-center justify-center space-y-4 py-20">
             <Spinner size={40} className="text-slate-900" />
             <p className="text-sm font-medium text-slate-500">Initializing secure payment...</p>
