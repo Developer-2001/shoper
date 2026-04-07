@@ -110,7 +110,9 @@ function changeClass(value: number) {
 }
 
 function normalizeStatusLabel(value: string) {
-  return value.replace(/_/g, " ").replace(/\b\w/g, (char) => char.toUpperCase());
+  return value
+    .replace(/_/g, " ")
+    .replace(/\b\w/g, (char) => char.toUpperCase());
 }
 
 export default function AdminHomePage() {
@@ -146,9 +148,12 @@ export default function AdminHomePage() {
           params.set("end", queryRange.end);
         }
 
-        const response = await fetch(`/api/admin/analytics?${params.toString()}`, {
-          signal: controller.signal,
-        });
+        const response = await fetch(
+          `/api/admin/analytics?${params.toString()}`,
+          {
+            signal: controller.signal,
+          },
+        );
 
         if (!response.ok) {
           const payload = (await response.json().catch(() => ({}))) as {
@@ -200,10 +205,7 @@ export default function AdminHomePage() {
 
   const paymentTotal = useMemo(
     () =>
-      (data?.paymentBreakdown || []).reduce(
-        (sum, item) => sum + item.count,
-        0,
-      ),
+      (data?.paymentBreakdown || []).reduce((sum, item) => sum + item.count, 0),
     [data?.paymentBreakdown],
   );
 
@@ -229,7 +231,7 @@ export default function AdminHomePage() {
         title="Analytics Dashboard"
         subtitle="Revenue, orders, inventory and product performance at a glance."
       />
-
+      {/* control section */}
       <section className="mb-4 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
         <div className="flex flex-wrap items-center gap-2">
           {RANGE_OPTIONS.map((option) => (
@@ -282,7 +284,9 @@ export default function AdminHomePage() {
             {data?.range?.label || "Loading range..."}
             {data?.range?.isCustom ? " (custom)" : ""}
           </p>
-          {refreshing ? <p className="text-xs text-indigo-600">Updating...</p> : null}
+          {refreshing ? (
+            <p className="text-xs text-indigo-600">Updating...</p>
+          ) : null}
         </div>
       </section>
 
@@ -316,12 +320,12 @@ export default function AdminHomePage() {
         </div>
       ) : (
         <>
-          <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-6">
+          <div className="grid gap-4 grid-cols-2 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-6">
             <article className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
               <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
                 Gross Revenue
               </p>
-              <p className="mt-2 text-2xl font-black text-slate-900">
+              <p className="mt-2 text-xl font-black text-slate-900">
                 {formatMoney(data.summary.revenue, data.store.currency)}
               </p>
               <p
@@ -337,7 +341,7 @@ export default function AdminHomePage() {
               <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
                 Paid Revenue
               </p>
-              <p className="mt-2 text-2xl font-black text-slate-900">
+              <p className="mt-2 text-xl font-black text-slate-900">
                 {formatMoney(data.summary.paidRevenue, data.store.currency)}
               </p>
               <p
@@ -353,7 +357,7 @@ export default function AdminHomePage() {
               <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
                 Orders
               </p>
-              <p className="mt-2 text-2xl font-black text-slate-900">
+              <p className="mt-2 text-xl font-black text-slate-900">
                 {compactNumber(data.summary.orders)}
               </p>
               <p
@@ -369,8 +373,11 @@ export default function AdminHomePage() {
               <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
                 Avg Order Value
               </p>
-              <p className="mt-2 text-2xl font-black text-slate-900">
-                {formatMoney(data.summary.averageOrderValue, data.store.currency)}
+              <p className="mt-2 text-xl font-black text-slate-900">
+                {formatMoney(
+                  data.summary.averageOrderValue,
+                  data.store.currency,
+                )}
               </p>
               <p
                 className={`mt-2 inline-flex rounded-full border px-2 py-1 text-xs font-semibold ${changeClass(
@@ -385,7 +392,7 @@ export default function AdminHomePage() {
               <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
                 Items Sold
               </p>
-              <p className="mt-2 text-2xl font-black text-slate-900">
+              <p className="mt-2 text-xl font-black text-slate-900">
                 {compactNumber(data.summary.itemsSold)}
               </p>
               <p
@@ -401,7 +408,7 @@ export default function AdminHomePage() {
               <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
                 Active Customers
               </p>
-              <p className="mt-2 text-2xl font-black text-slate-900">
+              <p className="mt-2 text-xl font-black text-slate-900">
                 {compactNumber(data.summary.customers)}
               </p>
               <p
@@ -475,7 +482,9 @@ export default function AdminHomePage() {
                     );
                   })
                 ) : (
-                  <p className="text-sm text-slate-500">No payment data in this range.</p>
+                  <p className="text-sm text-slate-500">
+                    No payment data in this range.
+                  </p>
                 )}
               </div>
             </section>
@@ -500,7 +509,9 @@ export default function AdminHomePage() {
                           <span className="font-medium text-slate-700">
                             {normalizeStatusLabel(item.status)}
                           </span>
-                          <span className="text-slate-500">{item.count} orders</span>
+                          <span className="text-slate-500">
+                            {item.count} orders
+                          </span>
                         </div>
                         <div className="h-2 rounded-full bg-slate-100">
                           <div
@@ -512,13 +523,17 @@ export default function AdminHomePage() {
                     );
                   })
                 ) : (
-                  <p className="text-sm text-slate-500">No status data in this range.</p>
+                  <p className="text-sm text-slate-500">
+                    No status data in this range.
+                  </p>
                 )}
               </div>
             </section>
 
             <section className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
-              <h3 className="text-base font-semibold text-slate-900">Inventory Snapshot</h3>
+              <h3 className="text-base font-semibold text-slate-900">
+                Inventory Snapshot
+              </h3>
               <p className="text-sm text-slate-500">
                 Current product and stock health.
               </p>
@@ -570,7 +585,9 @@ export default function AdminHomePage() {
 
           <div className="mt-4 grid gap-4 xl:grid-cols-2">
             <section className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
-              <h3 className="text-base font-semibold text-slate-900">Top Products</h3>
+              <h3 className="text-base font-semibold text-slate-900">
+                Top Products
+              </h3>
               <p className="text-sm text-slate-500">
                 Best-performing products by revenue in selected range.
               </p>
@@ -596,7 +613,9 @@ export default function AdminHomePage() {
                     </div>
                   ))
                 ) : (
-                  <p className="text-sm text-slate-500">No product sales in this range.</p>
+                  <p className="text-sm text-slate-500">
+                    No product sales in this range.
+                  </p>
                 )}
               </div>
             </section>
@@ -651,7 +670,9 @@ export default function AdminHomePage() {
           <section className="mt-4 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
             <div className="flex flex-wrap items-center justify-between gap-3">
               <div>
-                <p className="text-xs uppercase tracking-wide text-slate-500">Store</p>
+                <p className="text-xs uppercase tracking-wide text-slate-500">
+                  Store
+                </p>
                 <p className="text-lg font-bold text-slate-900">
                   {data.store.businessName}
                 </p>
@@ -682,4 +703,3 @@ export default function AdminHomePage() {
     </div>
   );
 }
-
