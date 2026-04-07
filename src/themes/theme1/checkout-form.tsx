@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import { useRouter } from "next/navigation";
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { ChevronDown, ChevronUp } from "lucide-react";
 import { City, Country, State } from "country-state-city";
 
@@ -614,7 +614,7 @@ export function Theme1CheckoutForm({
     }
   }
 
-  async function handleHelcimCheckout(transactionId: string) {
+  const handleHelcimCheckout = useCallback(async (transactionId: string) => {
     setLoading(true);
     setError("");
 
@@ -652,7 +652,7 @@ export function Theme1CheckoutForm({
     } finally {
       setLoading(false);
     }
-  }
+  }, [slug, email, shipping, useShippingAsBilling, billing, checkoutMeta.cartNote, discountCode, items, dispatch, checkoutMetaKey, router]);
 
   async function handleSubmit(event: React.FormEvent) {
     event.preventDefault();

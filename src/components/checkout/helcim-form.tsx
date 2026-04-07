@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { Spinner } from "@/components/admin/ui/loader";
 
 interface HelcimFormProps {
@@ -50,78 +50,75 @@ export function HelcimForm({
       script.onerror = () => onError("Failed to load Helcim payment service.");
       document.body.appendChild(script);
     }
+  }, [onError]);
 
+  const initSession = useCallback(async () => {
     if (!trigger) return;
-
-    // Initialize HelcimPay Session
-    async function initSession() {
-      try {
-        const response = await fetch(`/api/store/${slug}/payment/helcim/initialize`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ items, email, shipping }),
-        });
-
-        if (!response.ok) {
-          const data = await response.json();
-          throw new Error(data.error || "Failed to initialize Helcim session.");
-        }
-
-        const { checkoutToken } = await response.json();
-        setCheckoutToken(checkoutToken);
-      } catch (err: any) {
-        console.error(err);
-        onError(err.message);
-      } finally {
-        setLoading(false);
-      }
+    try {
+      const response = await fetch(`/api/store/${slug}/payment/helcim/initialize`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ items, email, shipping }),
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || "Failed to initialize Helcim payment.");
+      setCheckoutToken(data.checkoutToken);
+    } catch (err: any) {
+      console.error("Helcim Init Error:", err);
+      onError(err.message);
+    } finally {
+      setLoading(false);
     }
+  }, [slug, items, email, shipping, trigger, onError]);
 
+  useEffect(() => {
     initSession();
+  }, [initSession]);
 
-    // Listen for HelcimPay events
+  useEffect(() => {
     const handleMessage = (event: MessageEvent) => {
-      // HelcimPay sends messages via postMessage
       try {
         const data = typeof event.data === "string" ? JSON.parse(event.data) : event.data;
         
-        // Handle SUCCESS
-        if (data.eventStatus === "SUCCESS" || data.status === "APPROVED" || data.event === "SUCCESS") {
+        // HelcimPay.js SUCCESS message handling
+        const isSuccess = data.eventStatus === "SUCCESS" || data.status === "APPROVED" || data.event === "SUCCESS";
+        
+        if (isSuccess) {
           let transactionId = data.transactionId || data.cardToken;
-          
-          // Re-parse eventMessage if available (this contains the real transactionId for purchases)
+
+          // Re-parse eventMessage if available (nested JSON from Helcim)
           if (data.eventMessage) {
             try {
-              const messageJson = JSON.parse(data.eventMessage);
-              transactionId = messageJson.data?.transactionId || transactionId;
+              const nested = JSON.parse(data.eventMessage);
+              // Use data object structure if present (as seen in user response)
+              transactionId = nested.data?.transactionId || nested.transactionId || transactionId;
             } catch (e) {
-              console.error("Failed to parse Helcim eventMessage", e);
+              console.error("Failed parsing Helcim eventMessage", e);
             }
           }
-          
+
           if (transactionId) {
             onSuccess(transactionId);
           }
-        } 
-        
-        // Handle errors or close
+        }
+
         if (data.eventStatus === "ERROR" || data.status === "DECLINED" || data.event === "ERROR") {
           onError(data.eventMessage || "Transaction declined.");
         }
       } catch (e) {
-        // Not a valid JSON or from another source
+        // Not a Helcim message or re-broadcast
       }
     };
 
     window.addEventListener("message", handleMessage);
     return () => window.removeEventListener("message", handleMessage);
-  }, [slug, items, email, shipping, onError, onSuccess]);
+  }, [onSuccess, onError]);
 
   useEffect(() => {
     if (checkoutToken && (window as any).appendHelcimPayIframe) {
       const container = document.getElementById("helcim-pay-container");
       if (container) {
-        container.innerHTML = ""; // Clear loader
+        container.innerHTML = "";
         (window as any).appendHelcimPayIframe(checkoutToken, "helcim-pay-container");
       }
     }

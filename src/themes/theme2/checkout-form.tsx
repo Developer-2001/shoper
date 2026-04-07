@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useCallback, useState } from "react";
 
 import { Spinner } from "@/components/admin/ui/loader";
 import { useAppDispatch, useAppSelector } from "@/hooks/useRedux";
@@ -107,7 +107,7 @@ export function Theme2CheckoutForm({ slug, store }: Theme2CheckoutFormProps) {
     }
   }
 
-  async function handleHelcimCheckout(transactionId: string) {
+  const handleHelcimCheckout = useCallback(async (transactionId: string) => {
     setLoading(true);
     setError("");
 
@@ -146,7 +146,7 @@ export function Theme2CheckoutForm({ slug, store }: Theme2CheckoutFormProps) {
     } finally {
       setLoading(false);
     }
-  }
+  }, [slug, email, shipping, items, dispatch, router]);
 
   async function handleSubmit(event: React.FormEvent) {
     event.preventDefault();

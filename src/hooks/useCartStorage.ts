@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 
 import { clearSlugCart, setCartItems } from "@/store/slices/cartSlice";
 import { useAppDispatch, useAppSelector } from "@/hooks/useRedux";
@@ -11,27 +11,35 @@ const CART_EXPIRY_DAYS = 7;
 export function useCartStorage() {
   const dispatch = useAppDispatch();
   const items = useAppSelector((state) => state.cart.items);
+  const [isHydrated, setIsHydrated] = useState(false);
 
   useEffect(() => {
     const raw = localStorage.getItem(CART_STORAGE_KEY);
-    if (!raw) return;
+    if (!raw) {
+      setIsHydrated(true);
+      return;
+    }
 
     try {
       const parsed = JSON.parse(raw) as { expiresAt: number; items: typeof items };
       if (Date.now() > parsed.expiresAt) {
         localStorage.removeItem(CART_STORAGE_KEY);
-        return;
+      } else {
+        dispatch(setCartItems(parsed.items));
       }
-      dispatch(setCartItems(parsed.items));
     } catch {
       localStorage.removeItem(CART_STORAGE_KEY);
+    } finally {
+      setIsHydrated(true);
     }
   }, [dispatch]);
 
   useEffect(() => {
+    if (!isHydrated) return;
+
     const expiresAt = Date.now() + CART_EXPIRY_DAYS * 24 * 60 * 60 * 1000;
     localStorage.setItem(CART_STORAGE_KEY, JSON.stringify({ expiresAt, items }));
-  }, [items]);
+  }, [items, isHydrated]);
 
   return {
     clearStoreCart(slug: string) {
