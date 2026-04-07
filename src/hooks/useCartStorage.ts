@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import { clearSlugCart, setCartItems } from "@/store/slices/cartSlice";
 import { useAppDispatch, useAppSelector } from "@/hooks/useRedux";
@@ -12,6 +12,7 @@ export function useCartStorage() {
   const dispatch = useAppDispatch();
   const items = useAppSelector((state) => state.cart.items);
   const [isHydrated, setIsHydrated] = useState(false);
+  const hasInitialized = useRef(false);
 
   useEffect(() => {
     const raw = localStorage.getItem(CART_STORAGE_KEY);
@@ -36,6 +37,13 @@ export function useCartStorage() {
 
   useEffect(() => {
     if (!isHydrated) return;
+
+    // Skip the first "save" cycle that happens right after hydration
+    // because the Redux 'items' might still be the empty initial state
+    if (!hasInitialized.current) {
+      hasInitialized.current = true;
+      return;
+    }
 
     const expiresAt = Date.now() + CART_EXPIRY_DAYS * 24 * 60 * 60 * 1000;
     localStorage.setItem(CART_STORAGE_KEY, JSON.stringify({ expiresAt, items }));
