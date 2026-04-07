@@ -203,6 +203,7 @@ export function Theme3CheckoutForm({
   const [shipping, setShipping] = useState<AddressFormState>(EMPTY_ADDRESS);
   const [billing, setBilling] = useState<AddressFormState>(EMPTY_ADDRESS);
   const [useShippingAsBilling, setUseShippingAsBilling] = useState(true);
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [isHelcimActive, setIsHelcimActive] = useState(false);
   const [summaryOpen, setSummaryOpen] = useState(false);
   const [taxRatePercent, setTaxRatePercent] = useState(0);
@@ -637,22 +638,22 @@ export function Theme3CheckoutForm({
         }),
       });
 
+      const data = await response.json();
       if (!response.ok) {
-        const data = await response.json().catch(() => ({}));
         setError(data.error || "Helcim payment failed.");
         return;
       }
 
       dispatch(clearSlugCart({ slug }));
       localStorage.removeItem(checkoutMetaKey);
-      router.push(`/${slug}/checkout/success`);
+      setShowSuccessModal(true); // Show the success modal
     } catch (err) {
       console.error(err);
       setError("A network error occurred while processing Helcim payment.");
     } finally {
       setLoading(false);
     }
-  }, [slug, email, shipping, useShippingAsBilling, billing, checkoutMeta.cartNote, discountCode, items, dispatch, checkoutMetaKey, router]);
+  }, [slug, email, shipping, useShippingAsBilling, billing, checkoutMeta.cartNote, discountCode, items, dispatch, checkoutMetaKey]);
 
   async function handleSubmit(event: React.FormEvent) {
     event.preventDefault();
@@ -823,6 +824,28 @@ export function Theme3CheckoutForm({
           Note: {checkoutMeta.cartNote}
         </p>
       ) : null}
+      {/* Success Modal */}
+      {showSuccessModal && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-8 text-center animate-in fade-in zoom-in duration-300">
+            <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6">
+              <svg className="w-10 h-10 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
+              </svg>
+            </div>
+            <h2 className="text-3xl font-bold text-slate-900 mb-2">Payment Successful!</h2>
+            <p className="text-slate-600 mb-8 text-lg">
+              Thank you for your order. We've received your payment and are processing it now.
+            </p>
+            <button
+              onClick={() => router.push(`/${slug}`)}
+              className="w-full bg-slate-900 text-white font-bold py-4 rounded-xl hover:bg-slate-800 transition-all transform hover:scale-[1.02] active:scale-[0.98] shadow-lg text-lg"
+            >
+              Continue Shopping
+            </button>
+          </div>
+        </div>
+      )}
     </>
   );
 

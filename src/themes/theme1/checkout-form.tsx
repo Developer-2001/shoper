@@ -203,6 +203,7 @@ export function Theme1CheckoutForm({
   const [shipping, setShipping] = useState<AddressFormState>(EMPTY_ADDRESS);
   const [billing, setBilling] = useState<AddressFormState>(EMPTY_ADDRESS);
   const [useShippingAsBilling, setUseShippingAsBilling] = useState(true);
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [isHelcimActive, setIsHelcimActive] = useState(false);
   const [summaryOpen, setSummaryOpen] = useState(false);
   const [taxRatePercent, setTaxRatePercent] = useState(0);
@@ -645,7 +646,7 @@ export function Theme1CheckoutForm({
 
       dispatch(clearSlugCart({ slug }));
       localStorage.removeItem(checkoutMetaKey);
-      router.push(`/${slug}/checkout/success`);
+      setShowSuccessModal(true);
     } catch (err) {
       console.error(err);
       setError("A network error occurred while processing Helcim payment.");
@@ -823,6 +824,28 @@ export function Theme1CheckoutForm({
           Note: {checkoutMeta.cartNote}
         </p>
       ) : null}
+      {/* Success Modal */}
+      {showSuccessModal && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-8 text-center">
+            <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+              <svg className="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
+              </svg>
+            </div>
+            <h2 className="text-2xl font-bold text-slate-900 mb-2">Order Confirmed!</h2>
+            <p className="text-slate-600 mb-6">
+              Thank you for your purchase. Your payment was successful and your order is being processed.
+            </p>
+            <button
+              onClick={() => router.push(`/${slug}`)}
+              className="w-full bg-slate-900 text-white font-bold py-3 rounded-lg hover:bg-slate-800 transition-colors shadow-lg"
+            >
+              Continue Shopping
+            </button>
+          </div>
+        </div>
+      )}
     </>
   );
 

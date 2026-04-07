@@ -90,32 +90,33 @@ export function HelcimForm({
       try {
         const data = typeof event.data === "string" ? JSON.parse(event.data) : event.data;
         
-        // HelcimPay.js success tracking
+        // HelcimPay.js SUCCESS message handling
         const identifier = `helcim-pay-js-${checkoutToken}`;
-        const isHelcimMessage = data.eventName === identifier || data.event === "SUCCESS" || data.status === "APPROVED";
+        
+        // Deep search check for APPROVED status
+        const findStatus = (obj: any): string | undefined => {
+          if (!obj || typeof obj !== "object") return undefined;
+          if (obj.status === "APPROVED" || obj.eventStatus === "SUCCESS" || obj.event === "SUCCESS") return "APPROVED";
+          return findStatus(obj.data) || findStatus(obj.eventMessage ? JSON.parse(obj.eventMessage) : null);
+        };
 
-        if (isHelcimMessage) {
-          if (data.eventStatus === "SUCCESS" || data.status === "APPROVED" || data.event === "SUCCESS") {
-            let transactionId = data.transactionId || data.cardToken;
+        const findId = (obj: any): string | undefined => {
+          if (!obj || typeof obj !== "object") return undefined;
+          if (obj.transactionId || obj.cardToken) return obj.transactionId || obj.cardToken;
+          return findId(obj.data) || findId(obj.eventMessage ? JSON.parse(obj.eventMessage) : null);
+        };
 
-            // Re-parse eventMessage if available (contains the deep 'data' object)
-            if (data.eventMessage) {
-              try {
-                const nested = JSON.parse(data.eventMessage);
-                transactionId = nested.data?.transactionId || nested.transactionId || transactionId;
-              } catch (e) {
-                console.error("Failed parsing Helcim eventMessage", e);
-              }
-            }
-
-            if (transactionId) {
-              onSuccess(transactionId);
-            }
+        const status = findStatus(data);
+        if (status === "APPROVED") {
+          const transactionId = findId(data);
+          if (transactionId) {
+            onSuccess(transactionId);
           }
+        }
 
-          if (data.eventStatus === "ERROR" || data.status === "DECLINED" || data.event === "ERROR") {
-            onError(data.eventMessage || "Transaction declined.");
-          }
+        // Handle errors
+        if (data.eventStatus === "ERROR" || data.status === "DECLINED" || data.event === "ERROR") {
+          onError(data.eventMessage || "Transaction declined.");
         }
       } catch (e) {
         // Not a Helcim message
