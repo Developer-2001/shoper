@@ -348,10 +348,10 @@ export function Theme3CheckoutForm({
     [taxableAmount, shippingCharge, taxAmount],
   );
 
-  const hasShippingAddress = shipping.shippingAddress.trim().length > 0;
-  const shippingDisplayValue = hasShippingAddress
-    ? formatMoney(shippingCharge, currency)
-    : "Enter shipping address";
+  // const hasShippingAddress = shipping.shippingAddress.trim().length > 0;
+  // const shippingDisplayValue = hasShippingAddress
+  //   ? formatMoney(shippingCharge, currency)
+  //   : "Enter shipping address";
 
   useEffect(() => {
     const rawMeta = localStorage.getItem(checkoutMetaKey);
@@ -773,14 +773,14 @@ export function Theme3CheckoutForm({
           <span>{formatMoney(subtotal, currency)}</span>
         </div>
 
-        <div className="flex items-center justify-between">
+        {/* <div className="flex items-center justify-between">
           <span>Shipping</span>
           <span
             className={hasShippingAddress ? "text-slate-700" : "text-slate-500"}
           >
             {shippingDisplayValue}
           </span>
-        </div>
+        </div> */}
 
         {discountCode ? (
           <div className="flex items-center justify-between text-emerald-700">
