@@ -203,6 +203,7 @@ export function Theme3CheckoutForm({
   const [shipping, setShipping] = useState<AddressFormState>(EMPTY_ADDRESS);
   const [billing, setBilling] = useState<AddressFormState>(EMPTY_ADDRESS);
   const [useShippingAsBilling, setUseShippingAsBilling] = useState(true);
+  const [isHelcimActive, setIsHelcimActive] = useState(false);
   const [summaryOpen, setSummaryOpen] = useState(false);
   const [taxRatePercent, setTaxRatePercent] = useState(0);
   const [taxRateLabel, setTaxRateLabel] = useState("No sales tax");
@@ -1320,6 +1321,7 @@ export function Theme3CheckoutForm({
                       items={items}
                       onSuccess={handleHelcimCheckout}
                       onError={setError}
+                      trigger={isHelcimActive}
                     />
                   </div>
                 )}
@@ -1351,9 +1353,12 @@ export function Theme3CheckoutForm({
             if (provider === "stripe") {
               e.preventDefault();
               handleStripeCheckout();
+            } else if (provider === "helcim" && !isHelcimActive) {
+              e.preventDefault();
+              setIsHelcimActive(true);
             }
           }}
-          disabled={loading || provider === "none" || (provider === "helcim" && true)}
+          disabled={loading || provider === "none"}
           className="mt-4 flex h-12 cursor-pointer w-full items-center justify-center gap-2 rounded-xl bg-[#1663d6] text-md font-semibold text-white transition hover:bg-[#1257bc] disabled:opacity-50"
         >
           {loading ? <Spinner size={16} className="text-white" /> : null}
@@ -1362,7 +1367,7 @@ export function Theme3CheckoutForm({
             : provider === "stripe"
             ? "Pay now"
             : provider === "helcim"
-            ? "Complete payment in Helcim form"
+            ? isHelcimActive ? "Complete payment above" : "Pay now"
             : "Select payment method"}
         </button>
       </aside>

@@ -47,6 +47,7 @@ export function Theme2CheckoutForm({ slug, store }: Theme2CheckoutFormProps) {
   const [email, setEmail] = useState("");
   const [shipping, setShipping] = useState<AddressState>(EMPTY_ADDRESS);
   const [error, setError] = useState("");
+  const [isHelcimActive, setIsHelcimActive] = useState(false);
 
   const availableProviders = [
     ...(store.paymentSettings?.stripe?.enabled ? ["stripe"] : []),
@@ -276,6 +277,7 @@ export function Theme2CheckoutForm({ slug, store }: Theme2CheckoutFormProps) {
                       items={items}
                       onSuccess={handleHelcimCheckout}
                       onError={setError}
+                      trigger={isHelcimActive}
                     />
                   </div>
                 )}
@@ -300,9 +302,12 @@ export function Theme2CheckoutForm({ slug, store }: Theme2CheckoutFormProps) {
             if (provider === "stripe") {
               e.preventDefault();
               handleStripeCheckout();
+            } else if (provider === "helcim" && !isHelcimActive) {
+              e.preventDefault();
+              setIsHelcimActive(true);
             }
           }}
-          disabled={loading || provider === "none" || (provider === "helcim" && true)}
+          disabled={loading || provider === "none"}
           className="mt-4 flex w-full items-center justify-center gap-2 rounded-full bg-amber-500 py-3 text-sm font-bold uppercase tracking-wide text-amber-950 transition hover:bg-amber-600 disabled:opacity-50"
         >
           {loading && <Spinner size={16} className="text-amber-950" />}
@@ -311,7 +316,7 @@ export function Theme2CheckoutForm({ slug, store }: Theme2CheckoutFormProps) {
             : provider === "stripe"
               ? "Pay with Stripe"
               : provider === "helcim"
-                ? "Complete Helcim Form"
+                ? isHelcimActive ? "Complete Helcim Form" : "Pay now"
                 : "Select Payment Method"}
         </button>
       </section>
