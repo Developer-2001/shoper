@@ -41,7 +41,7 @@ type Order = {
   total?: number;
   status: string;
   paymentStatus?: "unpaid" | "paid" | "failed";
-  paymentProvider?: "stripe" | "none";
+  paymentProvider?: "stripe" | "helcim" | "none";
   paymentId?: string;
   createdAt?: string;
 };

@@ -49,7 +49,7 @@ export type OrderDocument = {
   currency: string;
   status: "confirmed" | "packed" | "shipped" | "delivered";
   paymentStatus: "unpaid" | "paid" | "failed";
-  paymentProvider: "stripe" | "none";
+  paymentProvider: "stripe" | "helcim" | "none";
   paymentId: string;
   paymentDetails?: any;
 };
@@ -115,7 +115,7 @@ const OrderSchema = new Schema<OrderDocument>(
     },
     paymentProvider: {
       type: String,
-      enum: ["stripe", "none"],
+      enum: ["stripe", "helcim", "none"],
       default: "none",
     },
     paymentId: { type: String, default: "" },
