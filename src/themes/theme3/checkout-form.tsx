@@ -846,7 +846,7 @@ export function Theme3CheckoutForm({
               Thank you for your order. We've received your payment and are processing it now.
             </p>
             <button
-              onClick={() => router.push(`/${slug}`)}
+              onClick={() => window.location.href = `/${slug}`}
               className="w-full bg-slate-900 text-white font-bold py-4 rounded-xl hover:bg-slate-800 transition-all transform hover:scale-[1.02] active:scale-[0.98] shadow-lg text-lg"
             >
               Continue Shopping
