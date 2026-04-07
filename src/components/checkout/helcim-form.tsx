@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Spinner } from "@/components/admin/ui/loader";
 
 interface HelcimFormProps {
@@ -36,6 +36,10 @@ export function HelcimForm({
 }: HelcimFormProps) {
   const [loading, setLoading] = useState(true);
   const [checkoutToken, setCheckoutToken] = useState<string | null>(null);
+  const hasInitialized = useRef(false);
+
+  // Memoize data to prevent re-initialization loops
+  const initData = useMemo(() => JSON.stringify({ items, email, shipping }), [items, email, shipping]);
 
   useEffect(() => {
     const scriptId = "helcim-pay-script";
@@ -53,23 +57,29 @@ export function HelcimForm({
   }, [onError]);
 
   const initSession = useCallback(async () => {
-    if (!trigger) return;
+    if (!trigger || hasInitialized.current) return;
+    
+    hasInitialized.current = true;
+    setLoading(true);
+
     try {
       const response = await fetch(`/api/store/${slug}/payment/helcim/initialize`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ items, email, shipping }),
+        body: initData,
       });
+      
       const data = await response.json();
       if (!response.ok) throw new Error(data.error || "Failed to initialize Helcim payment.");
       setCheckoutToken(data.checkoutToken);
     } catch (err: any) {
       console.error("Helcim Init Error:", err);
       onError(err.message);
+      hasInitialized.current = false; // Allow retry on error
     } finally {
       setLoading(false);
     }
-  }, [slug, items, email, shipping, trigger, onError]);
+  }, [slug, initData, trigger, onError]);
 
   useEffect(() => {
     initSession();
@@ -80,39 +90,41 @@ export function HelcimForm({
       try {
         const data = typeof event.data === "string" ? JSON.parse(event.data) : event.data;
         
-        // HelcimPay.js SUCCESS message handling
-        const isSuccess = data.eventStatus === "SUCCESS" || data.status === "APPROVED" || data.event === "SUCCESS";
-        
-        if (isSuccess) {
-          let transactionId = data.transactionId || data.cardToken;
+        // HelcimPay.js success tracking
+        const identifier = `helcim-pay-js-${checkoutToken}`;
+        const isHelcimMessage = data.eventName === identifier || data.event === "SUCCESS" || data.status === "APPROVED";
 
-          // Re-parse eventMessage if available (nested JSON from Helcim)
-          if (data.eventMessage) {
-            try {
-              const nested = JSON.parse(data.eventMessage);
-              // Use data object structure if present (as seen in user response)
-              transactionId = nested.data?.transactionId || nested.transactionId || transactionId;
-            } catch (e) {
-              console.error("Failed parsing Helcim eventMessage", e);
+        if (isHelcimMessage) {
+          if (data.eventStatus === "SUCCESS" || data.status === "APPROVED" || data.event === "SUCCESS") {
+            let transactionId = data.transactionId || data.cardToken;
+
+            // Re-parse eventMessage if available (contains the deep 'data' object)
+            if (data.eventMessage) {
+              try {
+                const nested = JSON.parse(data.eventMessage);
+                transactionId = nested.data?.transactionId || nested.transactionId || transactionId;
+              } catch (e) {
+                console.error("Failed parsing Helcim eventMessage", e);
+              }
+            }
+
+            if (transactionId) {
+              onSuccess(transactionId);
             }
           }
 
-          if (transactionId) {
-            onSuccess(transactionId);
+          if (data.eventStatus === "ERROR" || data.status === "DECLINED" || data.event === "ERROR") {
+            onError(data.eventMessage || "Transaction declined.");
           }
         }
-
-        if (data.eventStatus === "ERROR" || data.status === "DECLINED" || data.event === "ERROR") {
-          onError(data.eventMessage || "Transaction declined.");
-        }
       } catch (e) {
-        // Not a Helcim message or re-broadcast
+        // Not a Helcim message
       }
     };
 
     window.addEventListener("message", handleMessage);
     return () => window.removeEventListener("message", handleMessage);
-  }, [onSuccess, onError]);
+  }, [checkoutToken, onSuccess, onError]);
 
   useEffect(() => {
     if (checkoutToken && (window as any).appendHelcimPayIframe) {

@@ -118,11 +118,7 @@ export function Theme2CheckoutForm({ slug, store }: Theme2CheckoutFormProps) {
         body: JSON.stringify({
           transactionId,
           email,
-          shipping: {
-            ...shipping,
-            countryCode: "IN",
-            stateCode: "",
-          },
+          shipping,
           useShippingAsBilling: true,
           billing: shipping,
           items: items.map((item) => ({
