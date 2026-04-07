@@ -107,7 +107,7 @@ export function Theme2CheckoutForm({ slug, store }: Theme2CheckoutFormProps) {
     }
   }
 
-  async function handleHelcimCheckout(cardToken: string) {
+  async function handleHelcimCheckout(transactionId: string) {
     setLoading(true);
     setError("");
 
@@ -116,7 +116,7 @@ export function Theme2CheckoutForm({ slug, store }: Theme2CheckoutFormProps) {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          cardToken,
+          transactionId,
           email,
           shipping: {
             ...shipping,

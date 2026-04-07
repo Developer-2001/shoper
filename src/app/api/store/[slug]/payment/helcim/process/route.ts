@@ -14,22 +14,16 @@ export async function POST(
     await connectToDatabase();
     const { slug } = await params;
     const body = await request.json();
-    const { cardToken, ...checkoutData } = body;
+    const { transactionId, ...checkoutData } = body;
 
-    if (!cardToken) {
-      return NextResponse.json({ error: "Missing payment token" }, { status: 400 });
+    if (!transactionId) {
+      return NextResponse.json({ error: "Missing transaction ID" }, { status: 400 });
     }
 
     const store = await Store.findOne({ slug }).lean();
     if (!store) {
       return NextResponse.json({ error: "Store not found" }, { status: 404 });
     }
-
-    if (!store.paymentSettings?.helcim?.enabled) {
-      return NextResponse.json({ error: "Helcim is not enabled for this store" }, { status: 400 });
-    }
-
-    const { accountId, token: apiToken } = store.paymentSettings.helcim;
 
     const parsed = checkoutSchema.safeParse(checkoutData);
     if (!parsed.success) {
@@ -63,8 +57,8 @@ export async function POST(
     const itemCount = parsed.data.items.reduce((sum, item) => sum + item.quantity, 0);
     const orderNumber = `ORD-H-${Date.now().toString().slice(-7)}`;
 
-    // Create a pending order
-    const order = await Order.create({
+    // Create the order as paid (since Helcim already processed it)
+    await Order.create({
       storeId: store._id,
       orderNumber,
       items: parsed.data.items.map((item) => {
@@ -96,51 +90,14 @@ export async function POST(
       total,
       currency: products[0].currency || "CAD",
       status: "confirmed",
-      paymentStatus: "unpaid",
+      paymentStatus: "paid", // Already paid via iframe
       paymentProvider: "helcim",
-      paymentId: "",
-    });
-
-    // Process payment with Helcim API
-    const helcimResponse = await fetch("https://api.helcim.com/v2/payment/purchase", {
-      method: "POST",
-      headers: {
-        "api-token": apiToken,
-        "account-id": accountId, // Required for some Helcim endpoints
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        amount: Number(total.toFixed(2)),
-        currency: products[0].currency || "CAD",
-        cardToken: cardToken,
-        ipAddress: request.headers.get("x-forwarded-for") || "127.0.0.1",
-        ecommerce: true,
-        orderNumber: orderNumber,
-      }),
-    });
-
-    const helcimData = await helcimResponse.json();
-
-    if (!helcimResponse.ok || helcimData.status === "REJECTED" || helcimData.status === "DECLINED") {
-      // Update order status to failed
-      await Order.findByIdAndUpdate(order._id, { 
-        paymentStatus: "failed",
-        paymentId: helcimData.transactionId || ""
-      });
-      return NextResponse.json({ 
-        error: helcimData.errors || helcimData.message || "Payment declined by Helcim." 
-      }, { status: 400 });
-    }
-
-    // Success! Update order
-    await Order.findByIdAndUpdate(order._id, {
-      paymentStatus: "paid",
-      paymentId: String(helcimData.transactionId || helcimData.id || ""),
+      paymentId: String(transactionId),
     });
 
     return NextResponse.json({ success: true, orderNumber });
   } catch (error: any) {
-    console.error("Helcim payment processing failed:", error);
+    console.error("Helcim payment recording failed:", error);
     return NextResponse.json({ error: error.message || "Internal server error" }, { status: 500 });
   }
 }

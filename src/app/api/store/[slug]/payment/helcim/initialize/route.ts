@@ -51,9 +51,9 @@ export async function POST(
         "api-token": helcimToken,
       },
       body: JSON.stringify({
-        amount: 0,
+        amount: total,
         currency: items[0]?.currency || "CAD",
-        paymentType: "verify",
+        paymentType: "purchase",
         customer: {
           email: email,
           firstName: shipping.firstName,

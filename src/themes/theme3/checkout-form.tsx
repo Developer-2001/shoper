@@ -614,7 +614,7 @@ export function Theme3CheckoutForm({
     }
   }
 
-  async function handleHelcimCheckout(cardToken: string) {
+  async function handleHelcimCheckout(transactionId: string) {
     setLoading(true);
     setError("");
 
@@ -623,7 +623,7 @@ export function Theme3CheckoutForm({
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          cardToken,
+          transactionId,
           email,
           shipping,
           useShippingAsBilling,

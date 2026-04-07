@@ -21,7 +21,7 @@ export async function POST(request: Request) {
 
   try {
     event = stripe.webhooks.constructEvent(body, signature, webhookSecret!);
-    console.log(`✅ Webhook received: ${event.type}`);
+
   } catch (err: any) {
     console.error(`❌ Webhook signature verification failed: ${err.message}`);
     return NextResponse.json({ error: "Invalid signature" }, { status: 400 });
@@ -30,12 +30,11 @@ export async function POST(request: Request) {
   if (event.type === "checkout.session.completed") {
     const session = event.data.object as any;
     const metadata = session.metadata || {};
-    
+
     // Use client_reference_id as primary, then fall back to metadata
     const orderNumber = session.client_reference_id || metadata.orderNumber;
-    
-    console.log(`📦 Processing successful payment for order: ${orderNumber}`);
-    console.log(`🔹 Session ID: ${session.id}`);
+
+
 
     if (!orderNumber) {
       console.error("❌ No orderNumber found in session or metadata.");
@@ -57,9 +56,9 @@ export async function POST(request: Request) {
       );
 
       if (order) {
-        console.log(`✅ Order ${orderNumber} updated to 'paid'.`);
+        console.log(`✅ Order updated to 'paid'.`);
       } else {
-        console.error(`❌ Order ${orderNumber} not found in database.`);
+        console.error(`❌ Order not found in database.`);
         return NextResponse.json({ error: "Order not found" }, { status: 404 });
       }
 

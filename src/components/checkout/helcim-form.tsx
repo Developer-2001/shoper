@@ -82,17 +82,34 @@ export function HelcimForm({
     // Listen for HelcimPay events
     const handleMessage = (event: MessageEvent) => {
       // HelcimPay sends messages via postMessage
-      if (typeof event.data === "string") {
-        try {
-          const data = JSON.parse(event.data);
-          if (data.event === "SUCCESS" || data.status === "APPROVED") {
-            onSuccess(data.transactionId || data.cardToken);
-          } else if (data.event === "CLOSE" || data.status === "DECLINED") {
-            // Handle close or decline if needed
+      try {
+        const data = typeof event.data === "string" ? JSON.parse(event.data) : event.data;
+        
+        // Handle SUCCESS
+        if (data.eventStatus === "SUCCESS" || data.status === "APPROVED" || data.event === "SUCCESS") {
+          let transactionId = data.transactionId || data.cardToken;
+          
+          // Re-parse eventMessage if available (this contains the real transactionId for purchases)
+          if (data.eventMessage) {
+            try {
+              const messageJson = JSON.parse(data.eventMessage);
+              transactionId = messageJson.data?.transactionId || transactionId;
+            } catch (e) {
+              console.error("Failed to parse Helcim eventMessage", e);
+            }
           }
-        } catch (e) {
-          // Not a JSON message or not from HelcimPay
+          
+          if (transactionId) {
+            onSuccess(transactionId);
+          }
+        } 
+        
+        // Handle errors or close
+        if (data.eventStatus === "ERROR" || data.status === "DECLINED" || data.event === "ERROR") {
+          onError(data.eventMessage || "Transaction declined.");
         }
+      } catch (e) {
+        // Not a valid JSON or from another source
       }
     };
 
