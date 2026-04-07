@@ -55,7 +55,7 @@ export function Theme2CheckoutForm({ slug, store }: Theme2CheckoutFormProps) {
     ...(store.paymentSettings?.helcim?.enabled ? ["helcim"] : []),
   ];
 
-  const [provider, setProvider] = useState(availableProviders[0] || "none");
+  const [provider, setProvider] = useState("none");
 
   const total = items.reduce((sum, item) => sum + item.price * item.quantity, 0);
 
@@ -135,15 +135,15 @@ export function Theme2CheckoutForm({ slug, store }: Theme2CheckoutFormProps) {
         return;
       }
 
-      dispatch(clearSlugCart({ slug }));
       setShowSuccessModal(true);
+      dispatch(clearSlugCart({ slug }));
     } catch (err) {
       console.error(err);
       setError("Network error during Helcim checkout.");
     } finally {
       setLoading(false);
     }
-  }, [slug, email, shipping, items, dispatch, router]);
+  }, [slug, email, shipping, items, dispatch]);
 
   async function handleSubmit(event: React.FormEvent) {
     event.preventDefault();
@@ -170,8 +170,8 @@ export function Theme2CheckoutForm({ slug, store }: Theme2CheckoutFormProps) {
         return;
       }
 
-      dispatch(clearSlugCart({ slug }));
       setShowSuccessModal(true);
+      dispatch(clearSlugCart({ slug }));
     } catch (err) {
       console.error(err);
       setError("A network error occurred while placing your order.");
@@ -180,8 +180,8 @@ export function Theme2CheckoutForm({ slug, store }: Theme2CheckoutFormProps) {
     }
   }
 
-  if (!items.length) {
-    return <p className="text-amber-900">Cart is empty. Add products before checkout.</p>;
+  if (!items.length && !showSuccessModal) {
+    return <p className="p-8 text-center text-amber-900 border border-dashed border-amber-200 rounded-3xl bg-amber-50 mx-4 my-8 font-medium">Cart is empty. Add products before checkout.</p>;
   }
 
   return (
@@ -288,7 +288,7 @@ export function Theme2CheckoutForm({ slug, store }: Theme2CheckoutFormProps) {
           <h3 className="text-lg font-black uppercase tracking-wide text-amber-900">Summary</h3>
           <p className="mt-3 text-amber-800">Items: {items.length}</p>
           <p className="text-2xl font-black text-amber-950">
-            {formatMoney(total, items[0].currency)}
+            {formatMoney(total, items[0]?.currency || "CAD")}
           </p>
 
           {error ? <p className="mt-3 text-sm font-bold text-red-600">{error}</p> : null}
@@ -313,7 +313,7 @@ export function Theme2CheckoutForm({ slug, store }: Theme2CheckoutFormProps) {
               : provider === "stripe"
                 ? "Pay with Stripe"
                 : provider === "helcim"
-                  ? isHelcimActive ? "Complete Helcim Form" : "Pay now"
+                  ? isHelcimActive ? "Complete payment above" : "Pay now"
                   : "Select Payment Method"}
           </button>
         </section>
@@ -321,7 +321,7 @@ export function Theme2CheckoutForm({ slug, store }: Theme2CheckoutFormProps) {
       {/* Success Modal */}
       {showSuccessModal && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
-          <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-8 text-center">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-8 text-center animate-in fade-in zoom-in duration-300">
             <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
               <svg className="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />

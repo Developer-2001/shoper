@@ -220,7 +220,7 @@ export function Theme3CheckoutForm({
     ...(store.paymentSettings?.helcim?.enabled ? ["helcim"] : []),
   ];
 
-  const [provider, setProvider] = useState(availableProviders[0] || "none");
+  const [provider, setProvider] = useState("none");
 
   const checkoutMetaKey = `theme3CheckoutMeta:${slug}`;
   const currency = items[0]?.currency || "INR";
@@ -644,9 +644,9 @@ export function Theme3CheckoutForm({
         return;
       }
 
-      dispatch(clearSlugCart({ slug }));
       localStorage.removeItem(checkoutMetaKey);
-      setShowSuccessModal(true); // Show the success modal
+      setShowSuccessModal(true);
+      dispatch(clearSlugCart({ slug }));
     } catch (err) {
       console.error(err);
       setError("A network error occurred while processing Helcim payment.");
@@ -709,7 +709,7 @@ export function Theme3CheckoutForm({
     }
   }
 
-  if (!items.length) {
+  if (!items.length && !showSuccessModal) {
     return (
       <p className="rounded-2xl border border-dashed border-slate-300 bg-slate-50 p-6 text-slate-700">
         Cart is empty. Add products before checkout.
