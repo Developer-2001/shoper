@@ -13,6 +13,7 @@ export function useCartStorage() {
   const items = useAppSelector((state) => state.cart.items);
   const [isHydrated, setIsHydrated] = useState(false);
   const hasInitialized = useRef(false);
+  const savingTimerRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
     const raw = localStorage.getItem(CART_STORAGE_KEY);
@@ -38,15 +39,33 @@ export function useCartStorage() {
   useEffect(() => {
     if (!isHydrated) return;
 
-    // Skip the first "save" cycle that happens right after hydration
-    // because the Redux 'items' might still be the empty initial state
     if (!hasInitialized.current) {
       hasInitialized.current = true;
       return;
     }
 
-    const expiresAt = Date.now() + CART_EXPIRY_DAYS * 24 * 60 * 60 * 1000;
-    localStorage.setItem(CART_STORAGE_KEY, JSON.stringify({ expiresAt, items }));
+    if (savingTimerRef.current) {
+      clearTimeout(savingTimerRef.current);
+    }
+
+    savingTimerRef.current = setTimeout(() => {
+      const expiresAt = Date.now() + CART_EXPIRY_DAYS * 24 * 60 * 60 * 1000;
+      const cartData = JSON.stringify({ expiresAt, items });
+
+      if (cartData.length > 1000000) {
+        console.warn("Cart data too large for storage");
+        return;
+      }
+
+      localStorage.setItem(CART_STORAGE_KEY, cartData);
+      savingTimerRef.current = null;
+    }, 500);
+
+    return () => {
+      if (savingTimerRef.current) {
+        clearTimeout(savingTimerRef.current);
+      }
+    };
   }, [items, isHydrated]);
 
   return {
