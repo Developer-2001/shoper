@@ -143,8 +143,8 @@ export function Theme2CheckoutForm({ slug, store }: Theme2CheckoutFormProps) {
         return;
       }
 
-      setShowSuccessModal(true);
       dispatch(clearSlugCart({ slug }));
+      window.location.href = `/${slug}`;
     } catch (err) {
       console.error(err);
       setError("Network error during Helcim checkout.");

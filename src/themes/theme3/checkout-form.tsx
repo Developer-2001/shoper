@@ -653,8 +653,8 @@ export function Theme3CheckoutForm({
       }
 
       localStorage.removeItem(checkoutMetaKey);
-      setShowSuccessModal(true);
       dispatch(clearSlugCart({ slug }));
+      window.location.href = `/${slug}`;
     } catch (err) {
       console.error(err);
       setError("A network error occurred while processing Helcim payment.");
