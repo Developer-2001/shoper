@@ -2,8 +2,8 @@ import { headers } from "next/headers";
 
 import { getActiveStoreBySlug } from "@/lib/storefront-data";
 import { resolveThemeLayout } from "@/themes/theme-config";
-import { Theme1ProductsLoading } from "@/themes/theme1/products-loading";
-import { Theme3ProductsLoading } from "@/themes/theme3/products-loading";
+import { Theme1ProductDetailLoading } from "@/themes/theme1/product-detail-loading";
+import { Theme3ProductDetailLoading } from "@/themes/theme3/product-detail-loading";
 
 function extractSlugFromPath(pathname: string): string | null {
   const normalizedPath = pathname.split("?")[0]?.split("#")[0] ?? "";
@@ -53,12 +53,12 @@ function extractSlugFromHeaders(
   return null;
 }
 
-export default async function ProductsLoadingPage() {
+export default async function ProductDetailsLoadingPage() {
   const headerMap = await headers();
   const slug = extractSlugFromHeaders(headerMap);
 
   if (!slug) {
-    return <Theme3ProductsLoading />;
+    return <Theme3ProductDetailLoading />;
   }
 
   try {
@@ -66,11 +66,11 @@ export default async function ProductsLoadingPage() {
     const layout = resolveThemeLayout(store?.theme?.layout);
 
     if (layout === "theme1") {
-      return <Theme1ProductsLoading />;
+      return <Theme1ProductDetailLoading />;
     }
   } catch {
-    return <Theme3ProductsLoading />;
+    return <Theme3ProductDetailLoading />;
   }
 
-  return <Theme3ProductsLoading />;
+  return <Theme3ProductDetailLoading />;
 }
