@@ -19,14 +19,17 @@ import { toCollectionSlug } from "@/themes/theme1/collection-utils";
 import type { ThemeHomeProps } from "@/themes/types";
 
 const Theme1_COLLECTION_IMAGE_URLS = [
-  "https://storage.googleapis.com/canada-ecommerce-assets/skl/themeimages/a-1774845949350.avif",
-  "https://storage.googleapis.com/canada-ecommerce-assets/skl/themeimages/b-1774848444266.avif",
-  "https://storage.googleapis.com/canada-ecommerce-assets/skl/themeimages/c-1774848489198.webp",
-  "https://storage.googleapis.com/canada-ecommerce-assets/skl/themeimages/d-1774848498740.webp",
-  "https://storage.googleapis.com/canada-ecommerce-assets/skl/themeimages/e-1774848516907.webp",
-  "https://storage.googleapis.com/canada-ecommerce-assets/skl/themeimages/f-1774848530264.webp",
-  "https://storage.googleapis.com/canada-ecommerce-assets/skl/themeimages/g-1774848542532.webp",
-  "https://storage.googleapis.com/canada-ecommerce-assets/skl/themeimages/h-1774848555240.avif",
+  // "https://storage.googleapis.com/canada-ecommerce-assets/skl/themeimages/a-1774845949350.avif",
+  // "https://storage.googleapis.com/canada-ecommerce-assets/skl/themeimages/b-1774848444266.avif",
+  // "https://storage.googleapis.com/canada-ecommerce-assets/skl/themeimages/c-1774848489198.webp",
+  // "https://storage.googleapis.com/canada-ecommerce-assets/skl/themeimages/d-1774848498740.webp",
+  // "https://storage.googleapis.com/canada-ecommerce-assets/skl/themeimages/e-1774848516907.webp",
+  // "https://storage.googleapis.com/canada-ecommerce-assets/skl/themeimages/f-1774848530264.webp",
+  // "https://storage.googleapis.com/canada-ecommerce-assets/skl/themeimages/g-1774848542532.webp",
+  // "https://storage.googleapis.com/canada-ecommerce-assets/skl/themeimages/h-1774848555240.avif",
+  "https://storage.googleapis.com/canada-ecommerce-assets/luba/themeimages/light-beige-1776146429770.png",
+  "https://storage.googleapis.com/canada-ecommerce-assets/luba/themeimages/3b-1776146440123.png",
+  "https://storage.googleapis.com/canada-ecommerce-assets/luba/themeimages/sky-blue-1776146448052.png",
 ];
 
 export function Theme1Home({
@@ -40,14 +43,14 @@ export function Theme1Home({
   const sliderItems = [
     {
       imageUrl:
-        "https://storage.googleapis.com/canada-ecommerce-assets/skl/themeimages/slider1-1774845449106.webp",
+        "https://storage.googleapis.com/canada-ecommerce-assets/luba/themeimages/banner-2-1776145874359.png",
       title: "Elevate Your Style with the Perfect Accessory",
       description:
         "From everyday essentials to statement pieces, discover accessories that add the perfect finishing touch.",
     },
     {
       imageUrl:
-        "https://storage.googleapis.com/canada-ecommerce-assets/skl/themeimages/slider2-1774845547454.webp",
+        "https://storage.googleapis.com/canada-ecommerce-assets/luba/themeimages/banner-image-1776145860311.png",
       title: "Shine Brighter With Timeless Jewelry",
       description:
         "Discover beautifully crafted pieces designed to add elegance and confidence to every moment, elevating your look with timeless charm and grace.",
