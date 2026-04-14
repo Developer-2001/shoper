@@ -2,11 +2,15 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 import { addToCart } from "@/store/slices/cartSlice";
 import { useAppDispatch } from "@/hooks/useRedux";
 import { useCartStorage } from "@/hooks/useCartStorage";
+import {
+  toAnalyticsItem,
+  trackStorefrontEvent,
+} from "@/lib/storefront-analytics/client";
 import { useTheme3CartToast } from "@/themes/theme3/cart-toast";
 import { formatMoney, salePrice } from "@/utils/currency";
 import { isVideoUrl } from "@/utils/media";
@@ -22,6 +26,30 @@ export function Theme3ProductDetail({ slug, product }: ThemeProductDetailProps) 
   const activeMedia = mediaList[activeIndex] || product.images[0] || "/file.svg";
 
   const finalPrice = salePrice(product.price, product.discountPercentage);
+  const analyticsItem = useMemo(
+    () =>
+      toAnalyticsItem({
+        productId: product._id,
+        name: product.name,
+        category: product.category,
+        price: finalPrice,
+        quantity: 1,
+      }),
+    [product._id, product.name, product.category, finalPrice],
+  );
+
+  useEffect(() => {
+    trackStorefrontEvent({
+      event: "view_item",
+      slug,
+      storeTheme: "theme3",
+      ecommerce: {
+        currency: product.currency,
+        value: finalPrice,
+        items: [analyticsItem],
+      },
+    });
+  }, [slug, product.currency, finalPrice, analyticsItem]);
 
   function handleAddToCart() {
     dispatch(
@@ -35,6 +63,17 @@ export function Theme3ProductDetail({ slug, product }: ThemeProductDetailProps) 
         quantity: 1,
       }),
     );
+
+    trackStorefrontEvent({
+      event: "add_to_cart",
+      slug,
+      storeTheme: "theme3",
+      ecommerce: {
+        currency: product.currency,
+        value: finalPrice,
+        items: [analyticsItem],
+      },
+    });
 
     showAddedToCart(product.name);
   }

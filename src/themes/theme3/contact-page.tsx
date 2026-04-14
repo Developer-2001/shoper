@@ -3,6 +3,7 @@
 import { useState, type FormEvent } from "react";
 
 import { useCartStorage } from "@/hooks/useCartStorage";
+import { trackStorefrontEvent } from "@/lib/storefront-analytics/client";
 import { Theme3Footer } from "@/themes/theme3/footer";
 import { Theme3Navbar } from "@/themes/theme3/navbar";
 import type { StorefrontStore } from "@/themes/types";
@@ -22,6 +23,14 @@ export function Theme3ContactPage({ slug, store }: Theme3ContactPageProps) {
   function handleSubmit(event: FormEvent) {
     event.preventDefault();
     setSubmitted(true);
+    trackStorefrontEvent({
+      event: "generate_lead",
+      slug,
+      storeTheme: "theme3",
+      lead_type: "store_contact",
+      form_name: "contact_form",
+      page_type: "contact",
+    });
   }
   const THEME3_BANNER_MEDIA =
     "https://storage.googleapis.com/canada-ecommerce-assets/skl/themeimages/slider1-1774845449106.webp";

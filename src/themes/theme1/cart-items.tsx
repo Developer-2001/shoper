@@ -3,10 +3,14 @@
 import Image from "next/image";
 import Link from "next/link";
 import { Minus, Plus, Trash2, X, PlusIcon } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
 import { removeFromCart, updateCartQty } from "@/store/slices/cartSlice";
 import { useAppDispatch, useAppSelector } from "@/hooks/useRedux";
+import {
+  toAnalyticsItem,
+  trackStorefrontEvent,
+} from "@/lib/storefront-analytics/client";
 import { formatMoney } from "@/utils/currency";
 import { isVideoUrl } from "@/utils/media";
 
@@ -55,6 +59,19 @@ export function Theme1CartItems({ slug }: { slug: string }) {
     [grandTotal, currency],
   );
   const checkoutMetaKey = `Theme1CheckoutMeta:${slug}`;
+  const hasTrackedViewCartRef = useRef(false);
+  const analyticsItems = useMemo(
+    () =>
+      items.map((item) =>
+        toAnalyticsItem({
+          productId: item.productId,
+          name: item.name,
+          price: item.price,
+          quantity: item.quantity,
+        }),
+      ),
+    [items],
+  );
 
   useEffect(() => {
     localStorage.setItem(
@@ -73,6 +90,28 @@ export function Theme1CartItems({ slug }: { slug: string }) {
     appliedDiscountPercent,
     discountAmount,
   ]);
+
+  useEffect(() => {
+    if (!items.length) {
+      hasTrackedViewCartRef.current = false;
+      return;
+    }
+
+    if (hasTrackedViewCartRef.current) return;
+    hasTrackedViewCartRef.current = true;
+
+    trackStorefrontEvent({
+      event: "view_cart",
+      slug,
+      storeTheme: "theme1",
+      ecommerce: {
+        currency,
+        value: grandTotal,
+        ...(appliedDiscountCode ? { coupon: appliedDiscountCode } : {}),
+        items: analyticsItems,
+      },
+    });
+  }, [slug, items.length, currency, grandTotal, appliedDiscountCode, analyticsItems]);
 
   function clearDiscountState() {
     setDiscountCode("");
@@ -195,15 +234,36 @@ export function Theme1CartItems({ slug }: { slug: string }) {
                         disabled={disableDecrement}
                         aria-label={`Decrease quantity of ${item.name}`}
                         className="inline-flex h-9 w-9 items-center justify-center rounded-md text-[#1d4ed8] transition hover:bg-slate-100 cursor-pointer disabled:cursor-not-allowed disabled:text-slate-400 disabled:hover:bg-transparent"
-                        onClick={() =>
+                        onClick={() => {
+                          const nextQuantity = Math.max(1, item.quantity - 1);
+                          if (nextQuantity === item.quantity) return;
+
+                          trackStorefrontEvent({
+                            event: "remove_from_cart",
+                            slug,
+                            storeTheme: "theme1",
+                            ecommerce: {
+                              currency: item.currency,
+                              value: item.price,
+                              items: [
+                                toAnalyticsItem({
+                                  productId: item.productId,
+                                  name: item.name,
+                                  price: item.price,
+                                  quantity: 1,
+                                }),
+                              ],
+                            },
+                          });
+
                           dispatch(
                             updateCartQty({
                               productId: item.productId,
                               slug,
-                              quantity: Math.max(1, item.quantity - 1),
+                              quantity: nextQuantity,
                             }),
-                          )
-                        }
+                          );
+                        }}
                       >
                         <Minus size={18} />
                       </button>
@@ -214,26 +274,62 @@ export function Theme1CartItems({ slug }: { slug: string }) {
                         type="button"
                         aria-label={`Increase quantity of ${item.name}`}
                         className="inline-flex h-9 w-9 cursor-pointer items-center justify-center rounded-md text-[#1d4ed8] transition hover:bg-slate-100"
-                        onClick={() =>
+                        onClick={() => {
+                          trackStorefrontEvent({
+                            event: "add_to_cart",
+                            slug,
+                            storeTheme: "theme1",
+                            ecommerce: {
+                              currency: item.currency,
+                              value: item.price,
+                              items: [
+                                toAnalyticsItem({
+                                  productId: item.productId,
+                                  name: item.name,
+                                  price: item.price,
+                                  quantity: 1,
+                                }),
+                              ],
+                            },
+                          });
+
                           dispatch(
                             updateCartQty({
                               productId: item.productId,
                               slug,
                               quantity: item.quantity + 1,
                             }),
-                          )
-                        }
+                          );
+                        }}
                       >
                         <Plus size={18} />
                       </button>
                     </div>
                     <button
                       className="flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-red-500 px-4 text-sm font-semibold cursor-pointer tracking-wide text-white transition hover:bg-red-600 sm:h-14 sm:text-base"
-                      onClick={() =>
+                      onClick={() => {
+                        trackStorefrontEvent({
+                          event: "remove_from_cart",
+                          slug,
+                          storeTheme: "theme1",
+                          ecommerce: {
+                            currency: item.currency,
+                            value: item.price * item.quantity,
+                            items: [
+                              toAnalyticsItem({
+                                productId: item.productId,
+                                name: item.name,
+                                price: item.price,
+                                quantity: item.quantity,
+                              }),
+                            ],
+                          },
+                        });
+
                         dispatch(
                           removeFromCart({ productId: item.productId, slug }),
-                        )
-                      }
+                        );
+                      }}
                     >
                       <Trash2 size={18} />
                       Remove
@@ -356,6 +452,19 @@ export function Theme1CartItems({ slug }: { slug: string }) {
             <Link
               href={`/${slug}/checkout`}
               className="mt-4 block rounded-xl bg-[#1d4ed8] py-3 text-center text-[16px] font-semibold tracking-wide text-white transition hover:bg-[#1e40af]"
+              onClick={() =>
+                trackStorefrontEvent({
+                  event: "proceed_to_checkout_click",
+                  slug,
+                  storeTheme: "theme1",
+                  ecommerce: {
+                    currency,
+                    value: grandTotal,
+                    ...(appliedDiscountCode ? { coupon: appliedDiscountCode } : {}),
+                    items: analyticsItems,
+                  },
+                })
+              }
             >
               Checkout
             </Link>

@@ -1,9 +1,13 @@
 "use client";
 
 import { useSearchParams } from "next/navigation";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 import { useCartStorage } from "@/hooks/useCartStorage";
+import {
+  toAnalyticsItem,
+  trackStorefrontEvent,
+} from "@/lib/storefront-analytics/client";
 import { Theme3Navbar } from "@/themes/theme3/navbar";
 import { Theme3Footer } from "@/themes/theme3/footer";
 import { Theme3CartToastProvider } from "@/themes/theme3/cart-toast";
@@ -212,6 +216,35 @@ export function Theme3ProductsPage({
     }
     return filteredProducts;
   }, [filteredProducts, sortBy]);
+
+  const listingAnalyticsItems = useMemo(
+    () =>
+      sortedProducts.slice(0, 20).map((product) =>
+        toAnalyticsItem({
+          productId: product._id,
+          name: product.name,
+          category: product.category,
+          price: product.price,
+          quantity: 1,
+        }),
+      ),
+    [sortedProducts],
+  );
+
+  useEffect(() => {
+    if (!listingAnalyticsItems.length) return;
+
+    trackStorefrontEvent({
+      event: "view_item_list",
+      slug,
+      storeTheme: "theme3",
+      item_list_name: "products_listing",
+      ecommerce: {
+        currency: sortedProducts[0]?.currency || "INR",
+        items: listingAnalyticsItems,
+      },
+    });
+  }, [slug, sortedProducts, listingAnalyticsItems]);
 
   function openFilters() {
     setDraftProductIds(appliedProductIds);

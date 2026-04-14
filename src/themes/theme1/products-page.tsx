@@ -1,9 +1,13 @@
 "use client";
 
 import { useSearchParams } from "next/navigation";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 import { useCartStorage } from "@/hooks/useCartStorage";
+import {
+  toAnalyticsItem,
+  trackStorefrontEvent,
+} from "@/lib/storefront-analytics/client";
 import { Theme1Navbar } from "@/themes/theme1/navbar";
 import { Theme1Footer } from "@/themes/theme1/footer";
 import { Theme1CartToastProvider } from "@/themes/theme1/cart-toast";
@@ -213,6 +217,35 @@ export function Theme1ProductsPage({
     return filteredProducts;
   }, [filteredProducts, sortBy]);
 
+  const listingAnalyticsItems = useMemo(
+    () =>
+      sortedProducts.slice(0, 20).map((product) =>
+        toAnalyticsItem({
+          productId: product._id,
+          name: product.name,
+          category: product.category,
+          price: product.price,
+          quantity: 1,
+        }),
+      ),
+    [sortedProducts],
+  );
+
+  useEffect(() => {
+    if (!listingAnalyticsItems.length) return;
+
+    trackStorefrontEvent({
+      event: "view_item_list",
+      slug,
+      storeTheme: "theme1",
+      item_list_name: "products_listing",
+      ecommerce: {
+        currency: sortedProducts[0]?.currency || "INR",
+        items: listingAnalyticsItems,
+      },
+    });
+  }, [slug, sortedProducts, listingAnalyticsItems]);
+
   function openFilters() {
     setDraftProductIds(appliedProductIds);
     setDraftCategories(activeAppliedCategories);
@@ -325,7 +358,6 @@ export function Theme1ProductsPage({
     </Theme1CartToastProvider>
   );
 }
-
 
 
 

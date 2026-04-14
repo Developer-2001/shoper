@@ -1,11 +1,13 @@
 import Link from "next/link";
 import { AlertCircle, ArrowLeft } from "lucide-react";
+import { CheckoutCancelCleanup } from "./checkout-cancel-cleanup";
 
 export default async function CheckoutCancelPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
 
   return (
     <div className="flex min-h-screen flex-col items-center justify-center bg-slate-50 px-4 py-8">
+      <CheckoutCancelCleanup slug={slug} />
       <div className="w-full max-w-md rounded-3xl bg-white p-8 text-center shadow-xl shadow-slate-200/50 sm:p-12">
         <div className="mx-auto mb-6 flex h-20 w-20 items-center justify-center rounded-full bg-orange-100">
           <AlertCircle className="h-10 w-10 text-orange-600" />

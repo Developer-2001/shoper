@@ -7,6 +7,10 @@ import { useMemo, useState } from "react";
 
 import { addToCart } from "@/store/slices/cartSlice";
 import { useAppDispatch } from "@/hooks/useRedux";
+import {
+  toAnalyticsItem,
+  trackStorefrontEvent,
+} from "@/lib/storefront-analytics/client";
 import { useTheme1CartToast } from "@/themes/theme1/cart-toast";
 import { formatMoney, salePrice } from "@/utils/currency";
 import { isVideoUrl } from "@/utils/media";
@@ -38,6 +42,14 @@ export function Theme1ProductCard({
   const productHref = href || `/${slug}/product/${product._id}`;
 
   function addItem() {
+    const analyticsItem = toAnalyticsItem({
+      productId: product._id,
+      name: product.name,
+      category: product.category,
+      price: finalPrice,
+      quantity: 1,
+    });
+
     dispatch(
       addToCart({
         slug,
@@ -49,7 +61,41 @@ export function Theme1ProductCard({
         quantity: 1,
       }),
     );
+
+    trackStorefrontEvent({
+      event: "add_to_cart",
+      slug,
+      storeTheme: "theme1",
+      ecommerce: {
+        currency: product.currency,
+        value: finalPrice,
+        items: [analyticsItem],
+      },
+    });
+
     showAddedToCart(product.name);
+  }
+
+  function handleSelectItem() {
+    trackStorefrontEvent({
+      event: "select_item",
+      slug,
+      storeTheme: "theme1",
+      item_list_name: "store_products",
+      ecommerce: {
+        currency: product.currency,
+        value: finalPrice,
+        items: [
+          toAnalyticsItem({
+            productId: product._id,
+            name: product.name,
+            category: product.category,
+            price: finalPrice,
+            quantity: 1,
+          }),
+        ],
+      },
+    });
   }
 
   return (
@@ -63,6 +109,7 @@ export function Theme1ProductCard({
         <Link
           href={productHref}
           className="relative block aspect-square w-full"
+          onClick={handleSelectItem}
         >
           {isVideoUrl(activeMedia) ? (
             <video
@@ -108,6 +155,7 @@ export function Theme1ProductCard({
         <Link
           href={productHref}
           className="line-clamp-2 text-base font-semibold leading-tight text-slate-900 sm:text-lg"
+          onClick={handleSelectItem}
         >
           {product.name}
         </Link>

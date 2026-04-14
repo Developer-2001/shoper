@@ -3,9 +3,13 @@
 import Image from "next/image";
 import Link from "next/link";
 import { MoveLeft, MoveRight } from "lucide-react";
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
 import { useCartStorage } from "@/hooks/useCartStorage";
+import {
+  toAnalyticsItem,
+  trackStorefrontEvent,
+} from "@/lib/storefront-analytics/client";
 import { Theme1Announcement } from "@/themes/theme1/announcement";
 import { Theme1Navbar } from "@/themes/theme1/navbar";
 import { Theme1Footer } from "@/themes/theme1/footer";
@@ -70,6 +74,34 @@ export function Theme1Home({
   }, [collectionLabels]);
 
   const featuredProducts = products.slice(0, 4);
+  const featuredAnalyticsItems = useMemo(
+    () =>
+      featuredProducts.map((product) =>
+        toAnalyticsItem({
+          productId: product._id,
+          name: product.name,
+          category: product.category,
+          price: product.price,
+          quantity: 1,
+        }),
+      ),
+    [featuredProducts],
+  );
+
+  useEffect(() => {
+    if (!featuredAnalyticsItems.length) return;
+
+    trackStorefrontEvent({
+      event: "view_item_list",
+      slug,
+      storeTheme: "theme1",
+      item_list_name: "home_featured",
+      ecommerce: {
+        currency: featuredProducts[0]?.currency || "INR",
+        items: featuredAnalyticsItems,
+      },
+    });
+  }, [slug, featuredProducts, featuredAnalyticsItems]);
 
   function goPrev() {
     if (!sliderItems.length) return;

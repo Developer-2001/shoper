@@ -2,13 +2,19 @@
 
 import Image from "next/image";
 import { useRouter } from "next/navigation";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { ChevronDown, ChevronUp } from "lucide-react";
 import { City, Country, State } from "country-state-city";
 
 import { Spinner } from "@/components/admin/ui/loader";
 import { Skeleton } from "@/components/admin/ui/skeleton";
 import { useAppDispatch, useAppSelector } from "@/hooks/useRedux";
+import {
+  clearPendingPurchase,
+  savePendingPurchase,
+  toAnalyticsItem,
+  trackStorefrontEvent,
+} from "@/lib/storefront-analytics/client";
 import { clearSlugCart } from "@/store/slices/cartSlice";
 import { formatMoney } from "@/utils/currency";
 import { isVideoUrl } from "@/utils/media";
@@ -207,6 +213,7 @@ export function Theme1CheckoutForm({
   const [isHelcimActive, setIsHelcimActive] = useState(false);
   const [isHelcimInitializing, setIsHelcimInitializing] = useState(false);
   const [summaryOpen, setSummaryOpen] = useState(false);
+  const hasTrackedBeginCheckoutRef = useRef(false);
   const [taxRatePercent, setTaxRatePercent] = useState(0);
   const [taxRateLabel, setTaxRateLabel] = useState("No sales tax");
   const [taxLoading, setTaxLoading] = useState(false);
@@ -347,6 +354,41 @@ export function Theme1CheckoutForm({
     () => roundPrice(taxableAmount + shippingCharge + taxAmount),
     [taxableAmount, shippingCharge, taxAmount],
   );
+
+  const analyticsItems = useMemo(
+    () =>
+      items.map((item) =>
+        toAnalyticsItem({
+          productId: item.productId,
+          name: item.name,
+          price: item.price,
+          quantity: item.quantity,
+        }),
+      ),
+    [items],
+  );
+
+  useEffect(() => {
+    if (!items.length) {
+      hasTrackedBeginCheckoutRef.current = false;
+      return;
+    }
+
+    if (hasTrackedBeginCheckoutRef.current) return;
+    hasTrackedBeginCheckoutRef.current = true;
+
+    trackStorefrontEvent({
+      event: "begin_checkout",
+      slug,
+      storeTheme: "theme1",
+      ecommerce: {
+        currency,
+        value: total,
+        ...(discountCode ? { coupon: discountCode } : {}),
+        items: analyticsItems,
+      },
+    });
+  }, [slug, items.length, currency, total, discountCode, analyticsItems]);
 
   // const hasShippingAddress = shipping.shippingAddress.trim().length > 0;
   // const shippingDisplayValue = hasShippingAddress
@@ -577,6 +619,48 @@ export function Theme1CheckoutForm({
 
     setLoading(true);
     setError("");
+    clearPendingPurchase(slug);
+
+    trackStorefrontEvent({
+      event: "add_shipping_info",
+      slug,
+      storeTheme: "theme1",
+      ecommerce: {
+        currency,
+        value: total,
+        ...(discountCode ? { coupon: discountCode } : {}),
+        items: analyticsItems,
+      },
+      country: shipping.countryCode || shipping.country || "",
+      state: shipping.stateCode || shipping.state || "",
+      city: shipping.city || "",
+    });
+
+    trackStorefrontEvent({
+      event: "add_payment_info",
+      slug,
+      storeTheme: "theme1",
+      payment_type: "stripe_card",
+      ecommerce: {
+        currency,
+        value: total,
+        ...(discountCode ? { coupon: discountCode } : {}),
+        items: analyticsItems,
+      },
+    });
+
+    savePendingPurchase({
+      slug,
+      source: "stripe",
+      storeTheme: "theme1",
+      paymentType: "stripe_card",
+      value: total,
+      currency,
+      tax: taxAmount,
+      shipping: shippingCharge,
+      coupon: discountCode || undefined,
+      items: analyticsItems,
+    });
 
     try {
       const response = await fetch(`/api/store/${slug}/payment/session`, {
@@ -605,6 +689,7 @@ export function Theme1CheckoutForm({
           const firstKey = Object.keys(data.error.fieldErrors)[0];
           message = `${firstKey}: ${data.error.fieldErrors[firstKey][0]}`;
         }
+        clearPendingPurchase(slug);
         setError(message);
         return;
       }
@@ -613,10 +698,12 @@ export function Theme1CheckoutForm({
       if (url) {
         window.location.href = url;
       } else {
+        clearPendingPurchase(slug);
         setError("Payment session initialization failed.");
       }
     } catch (err) {
       console.error(err);
+      clearPendingPurchase(slug);
       setError("A network error occurred while starting your payment.");
     } finally {
       setLoading(false);
@@ -626,6 +713,35 @@ export function Theme1CheckoutForm({
   const handleHelcimCheckout = useCallback(async (transactionId: string) => {
     setLoading(true);
     setError("");
+    clearPendingPurchase(slug);
+
+    trackStorefrontEvent({
+      event: "add_shipping_info",
+      slug,
+      storeTheme: "theme1",
+      ecommerce: {
+        currency,
+        value: total,
+        ...(discountCode ? { coupon: discountCode } : {}),
+        items: analyticsItems,
+      },
+      country: shipping.countryCode || shipping.country || "",
+      state: shipping.stateCode || shipping.state || "",
+      city: shipping.city || "",
+    });
+
+    trackStorefrontEvent({
+      event: "add_payment_info",
+      slug,
+      storeTheme: "theme1",
+      payment_type: "helcim",
+      ecommerce: {
+        currency,
+        value: total,
+        ...(discountCode ? { coupon: discountCode } : {}),
+        items: analyticsItems,
+      },
+    });
 
     try {
       const response = await fetch(`/api/store/${slug}/payment/helcim/process`, {
@@ -651,22 +767,73 @@ export function Theme1CheckoutForm({
         setError(data.error || "Helcim payment failed.");
         return;
       }
+      const data = await response.json().catch(() => ({}));
+      const orderNumber =
+        typeof data.orderNumber === "string" ? data.orderNumber : "";
+
+      savePendingPurchase({
+        slug,
+        source: "helcim",
+        storeTheme: "theme1",
+        paymentType: "helcim",
+        transactionId: orderNumber || transactionId,
+        value: total,
+        currency,
+        tax: taxAmount,
+        shipping: shippingCharge,
+        coupon: discountCode || undefined,
+        items: analyticsItems,
+      });
 
       localStorage.removeItem(checkoutMetaKey);
       dispatch(clearSlugCart({ slug }));
-      window.location.href = `/${slug}`;
+      const query = new URLSearchParams();
+      if (orderNumber) {
+        query.set("order_number", orderNumber);
+      }
+      query.set("provider", "helcim");
+      const queryString = query.toString();
+      window.location.href = `/${slug}/checkout/success${queryString ? `?${queryString}` : ""}`;
     } catch (err) {
       console.error(err);
       setError("A network error occurred while processing Helcim payment.");
     } finally {
       setLoading(false);
     }
-  }, [slug, email, shipping, useShippingAsBilling, billing, checkoutMeta.cartNote, discountCode, items, dispatch, checkoutMetaKey, router]);
+  }, [slug, email, shipping, useShippingAsBilling, billing, checkoutMeta.cartNote, discountCode, items, dispatch, checkoutMetaKey, currency, total, analyticsItems, taxAmount, shippingCharge]);
 
   async function handleSubmit(event: React.FormEvent) {
     event.preventDefault();
     setLoading(true);
     setError("");
+
+    trackStorefrontEvent({
+      event: "add_shipping_info",
+      slug,
+      storeTheme: "theme1",
+      ecommerce: {
+        currency,
+        value: total,
+        ...(discountCode ? { coupon: discountCode } : {}),
+        items: analyticsItems,
+      },
+      country: shipping.countryCode || shipping.country || "",
+      state: shipping.stateCode || shipping.state || "",
+      city: shipping.city || "",
+    });
+
+    trackStorefrontEvent({
+      event: "add_payment_info",
+      slug,
+      storeTheme: "theme1",
+      payment_type: provider === "none" ? "manual" : provider,
+      ecommerce: {
+        currency,
+        value: total,
+        ...(discountCode ? { coupon: discountCode } : {}),
+        items: analyticsItems,
+      },
+    });
 
     try {
       const response = await fetch(`/api/store/${slug}/orders`, {
@@ -698,11 +865,37 @@ export function Theme1CheckoutForm({
         setError(message);
         return;
       }
+      const data = await response.json().catch(() => ({}));
+      const order = data?.order as
+        | { orderNumber?: string; total?: number; currency?: string }
+        | undefined;
+      const orderNumber = typeof order?.orderNumber === "string" ? order.orderNumber : "";
+      const paidTotal = Number(order?.total || total);
+      const paidCurrency = typeof order?.currency === "string" ? order.currency : currency;
+
+      savePendingPurchase({
+        slug,
+        source: "manual",
+        storeTheme: "theme1",
+        paymentType: provider === "none" ? "manual" : provider,
+        transactionId: orderNumber || undefined,
+        value: paidTotal,
+        currency: paidCurrency,
+        tax: taxAmount,
+        shipping: shippingCharge,
+        coupon: discountCode || undefined,
+        items: analyticsItems,
+      });
 
       dispatch(clearSlugCart({ slug }));
       localStorage.removeItem(checkoutMetaKey);
-      alert("Order confirmed successfully");
-      router.push(`/${slug}`);
+      const query = new URLSearchParams();
+      if (orderNumber) {
+        query.set("order_number", orderNumber);
+      }
+      query.set("provider", provider === "none" ? "manual" : provider);
+      const queryString = query.toString();
+      router.push(`/${slug}/checkout/success${queryString ? `?${queryString}` : ""}`);
     } catch {
       setError("A network error occurred while placing your order.");
     } finally {

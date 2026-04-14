@@ -7,6 +7,10 @@ import { useMemo, useState } from "react";
 
 import { addToCart } from "@/store/slices/cartSlice";
 import { useAppDispatch } from "@/hooks/useRedux";
+import {
+  toAnalyticsItem,
+  trackStorefrontEvent,
+} from "@/lib/storefront-analytics/client";
 import { useTheme3CartToast } from "@/themes/theme3/cart-toast";
 import { formatMoney, salePrice } from "@/utils/currency";
 import { isVideoUrl } from "@/utils/media";
@@ -38,6 +42,14 @@ export function Theme3ProductCard({
   const productHref = href || `/${slug}/product/${product._id}`;
 
   function addItem() {
+    const analyticsItem = toAnalyticsItem({
+      productId: product._id,
+      name: product.name,
+      category: product.category,
+      price: finalPrice,
+      quantity: 1,
+    });
+
     dispatch(
       addToCart({
         slug,
@@ -49,7 +61,41 @@ export function Theme3ProductCard({
         quantity: 1,
       }),
     );
+
+    trackStorefrontEvent({
+      event: "add_to_cart",
+      slug,
+      storeTheme: "theme3",
+      ecommerce: {
+        currency: product.currency,
+        value: finalPrice,
+        items: [analyticsItem],
+      },
+    });
+
     showAddedToCart(product.name);
+  }
+
+  function handleSelectItem() {
+    trackStorefrontEvent({
+      event: "select_item",
+      slug,
+      storeTheme: "theme3",
+      item_list_name: "store_products",
+      ecommerce: {
+        currency: product.currency,
+        value: finalPrice,
+        items: [
+          toAnalyticsItem({
+            productId: product._id,
+            name: product.name,
+            category: product.category,
+            price: finalPrice,
+            quantity: 1,
+          }),
+        ],
+      },
+    });
   }
 
   return (
@@ -60,7 +106,7 @@ export function Theme3ProductCard({
             SALE {Math.max(product.discountPercentage, 0)}% OFF
           </span>
         )}
-        <Link href={productHref} className="block">
+        <Link href={productHref} className="block" onClick={handleSelectItem}>
           {isVideoUrl(activeMedia) ? (
             <video
               src={activeMedia}
@@ -105,6 +151,7 @@ export function Theme3ProductCard({
         <Link
           href={productHref}
           className="line-clamp-2 text-base font-semibold leading-tight text-rose-950 sm:text-lg"
+          onClick={handleSelectItem}
         >
           {product.name}
         </Link>

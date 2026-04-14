@@ -1,15 +1,33 @@
 import Link from "next/link";
 import { CheckCircle2, ShoppingBag } from "lucide-react";
 import { ClearCartClient } from "./clear-cart-client";
+import { CheckoutSuccessAnalytics } from "./checkout-success-analytics";
 
 export const dynamic = "force-dynamic";
 
-export default async function CheckoutSuccessPage({ params }: { params: Promise<{ slug: string }> }) {
+export default async function CheckoutSuccessPage({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ slug: string }>;
+  searchParams: Promise<{
+    session_id?: string;
+    order_number?: string;
+    provider?: string;
+  }>;
+}) {
   const { slug } = await params;
+  const query = await searchParams;
 
   return (
     <div className="flex min-h-screen flex-col items-center justify-center bg-slate-50 px-4 py-8">
       <ClearCartClient slug={slug} />
+      <CheckoutSuccessAnalytics
+        slug={slug}
+        sessionId={query.session_id}
+        orderNumber={query.order_number}
+        provider={query.provider}
+      />
       <div className="w-full max-w-md rounded-3xl bg-white p-8 text-center shadow-xl shadow-slate-200/50 sm:p-12">
         <div className="mx-auto mb-6 flex h-20 w-20 items-center justify-center rounded-full bg-green-100">
           <CheckCircle2 className="h-10 w-10 text-green-600" />
