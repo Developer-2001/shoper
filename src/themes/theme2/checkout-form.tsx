@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import Image from "next/image";
 import { useCallback, useEffect, useMemo, useState } from "react";
@@ -11,6 +11,7 @@ import { formatMoney } from "@/utils/currency";
 import { isVideoUrl } from "@/utils/media";
 import { THEME2_COUNTRY_OPTIONS } from "@/themes/theme2/theme2-config";
 import type { StorefrontStore } from "@/themes/types";
+import { resolveCountryCode } from "@/lib/sales-tax";
 
 type Theme2CheckoutFormProps = { slug: string; store: StorefrontStore };
 

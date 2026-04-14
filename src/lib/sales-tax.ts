@@ -1,7 +1,7 @@
 import { Country, State } from "country-state-city";
 import SalesTax from "sales-tax";
 
-type TaxEstimateInput = {
+export type TaxEstimateInput = {
   country?: string;
   countryCode?: string;
   state?: string;
@@ -33,7 +33,7 @@ function getTaxOriginCountryCode() {
   return "";
 }
 
-function resolveCountryCode(country?: string, countryCode?: string) {
+export function resolveCountryCode(country?: string, countryCode?: string) {
   const directCode = normalizeCode(countryCode);
   if (directCode && Country.getCountryByCode(directCode)) {
     return directCode;
