@@ -1,21 +1,21 @@
-"use client";
+﻿"use client";
 
 import { useCartStorage } from "@/hooks/useCartStorage";
-import { Theme2Navbar } from "@/themes/theme2/navbar";
-import { Theme2Footer } from "@/themes/theme2/footer";
 import { Theme2CartItems } from "@/themes/theme2/cart-items";
+import { Theme2Footer } from "@/themes/theme2/footer";
+import { Theme2Navbar } from "@/themes/theme2/navbar";
 import type { ThemeCartProps } from "@/themes/types";
 
 export function Theme2CartPage({ slug, store }: ThemeCartProps) {
   useCartStorage();
 
   return (
-    <div className="min-h-screen bg-[linear-gradient(180deg,#fff8e7_0%,#fff 45%)] text-amber-950">
-      <Theme2Navbar slug={slug} logoText={store.logoText || store.businessName} />
+    <div className="min-h-screen bg-[#f4f4f1] text-[#2d3f3c]">
+      <Theme2Navbar slug={slug} logoText={store.logoText || "PRESENT DAY"} />
 
-      <main className="mx-auto w-full max-w-7xl px-6 py-10">
-        <h1 className="text-4xl font-black uppercase">Your Cart</h1>
-        <div className="mt-6">
+      <main className="mx-auto w-full max-w-6xl px-4 py-8">
+        <h1 className="text-6xl leading-none text-[#243733] [font-family:var(--font-theme2-serif)]">Cart</h1>
+        <div className="mt-5">
           <Theme2CartItems slug={slug} />
         </div>
       </main>
@@ -28,6 +28,7 @@ export function Theme2CartPage({ slug, store }: ThemeCartProps) {
         contactEmail={store.contactEmail}
         contactPhone={store.contactPhone}
         footerLinks={store.footerLinks || []}
+        socialLinks={store.socialLinks}
       />
     </div>
   );

@@ -1,23 +1,22 @@
-"use client";
+﻿"use client";
 
-import { useRouter } from "next/navigation";
-import { useCallback, useState, useEffect } from "react";
+import Image from "next/image";
+import { useCallback, useEffect, useMemo, useState } from "react";
 
 import { Spinner } from "@/components/admin/ui/loader";
+import { HelcimForm } from "@/components/checkout/helcim-form";
 import { useAppDispatch, useAppSelector } from "@/hooks/useRedux";
 import { clearSlugCart } from "@/store/slices/cartSlice";
 import { formatMoney } from "@/utils/currency";
-
-import { HelcimForm } from "@/components/checkout/helcim-form";
+import { isVideoUrl } from "@/utils/media";
+import { THEME2_COUNTRY_OPTIONS } from "@/themes/theme2/theme2-config";
 import type { StorefrontStore } from "@/themes/types";
 
-type Theme2CheckoutFormProps = {
-  slug: string;
-  store: StorefrontStore;
-};
+type Theme2CheckoutFormProps = { slug: string; store: StorefrontStore };
 
-type AddressState = {
+type Address = {
   country: string;
+  countryCode: string;
   firstName: string;
   lastName: string;
   shippingAddress: string;
@@ -26,8 +25,9 @@ type AddressState = {
   postalCode: string;
 };
 
-const EMPTY_ADDRESS: AddressState = {
-  country: "India",
+const emptyAddress: Address = {
+  country: "Canada",
+  countryCode: "CA",
   firstName: "",
   lastName: "",
   shippingAddress: "",
@@ -37,17 +37,14 @@ const EMPTY_ADDRESS: AddressState = {
 };
 
 export function Theme2CheckoutForm({ slug, store }: Theme2CheckoutFormProps) {
-  const router = useRouter();
   const dispatch = useAppDispatch();
-  const items = useAppSelector((state) =>
-    state.cart.items.filter((item) => item.slug === slug),
-  );
-
-  const [loading, setLoading] = useState(false);
+  const items = useAppSelector((state) => state.cart.items.filter((item) => item.slug === slug));
   const [email, setEmail] = useState("");
-  const [shipping, setShipping] = useState<AddressState>(EMPTY_ADDRESS);
+  const [shipping, setShipping] = useState<Address>(emptyAddress);
+  const [discountCode, setDiscountCode] = useState("");
+  const [provider, setProvider] = useState("none");
   const [error, setError] = useState("");
-  const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [loading, setLoading] = useState(false);
   const [isHelcimActive, setIsHelcimActive] = useState(false);
   const [isHelcimInitializing, setIsHelcimInitializing] = useState(false);
 
@@ -56,27 +53,32 @@ export function Theme2CheckoutForm({ slug, store }: Theme2CheckoutFormProps) {
     ...(store.paymentSettings?.helcim?.enabled ? ["helcim"] : []),
   ];
 
-  const [provider, setProvider] = useState("none");
-
-  // Reset payment states when provider changes
   useEffect(() => {
-    setIsHelcimActive(false);
-    setIsHelcimInitializing(false);
-    setError("");
-  }, [provider]);
+    if (availableProviders.includes(provider)) return;
+    setProvider(availableProviders[0] || "none");
+  }, [availableProviders, provider]);
 
-  const total = items.reduce((sum, item) => sum + item.price * item.quantity, 0);
+  const subtotal = useMemo(() => items.reduce((sum, item) => sum + item.price * item.quantity, 0), [items]);
+  const discountAmount = discountCode ? subtotal * 0.1 : 0;
+  const total = subtotal - discountAmount;
+  const currency = items[0]?.currency || "CAD";
 
-  function updateShipping(field: keyof AddressState, value: string) {
+  function updateAddress(field: keyof Address, value: string) {
     setShipping((prev) => ({ ...prev, [field]: value }));
   }
 
-  async function handleStripeCheckout() {
-    if (!store.paymentSettings?.stripe?.enabled) {
-      setError("Stripe is not enabled.");
-      return;
+  function validForm() {
+    if (!email.trim()) return "Email required.";
+    if (!shipping.firstName || !shipping.lastName) return "Name is required.";
+    if (!shipping.shippingAddress || !shipping.city || !shipping.state || !shipping.postalCode) {
+      return "Complete delivery address is required.";
     }
+    return "";
+  }
 
+  async function handleStripeCheckout() {
+    const invalid = validForm();
+    if (invalid) return setError(invalid);
     setLoading(true);
     setError("");
 
@@ -86,40 +88,32 @@ export function Theme2CheckoutForm({ slug, store }: Theme2CheckoutFormProps) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           email,
-          shipping: {
-            ...shipping,
-            countryCode: "IN", // Theme 2 is hardcoded for now, ideally would use a selector
-            stateCode: "",
-          },
+          shipping,
           useShippingAsBilling: true,
           billing: shipping,
-          items: items.map((item) => ({
-            productId: item.productId,
-            quantity: item.quantity,
-          })),
+          discountCode,
+          cartNote: localStorage.getItem(`theme2CheckoutMeta:${slug}`) || "",
+          items: items.map((item) => ({ productId: item.productId, quantity: item.quantity })),
         }),
       });
-
       if (!response.ok) {
         const data = await response.json().catch(() => ({}));
-        setError(data.error || "Failed to initiate Stripe payment.");
-        return;
+        return setError(data.error || "Stripe checkout failed.");
       }
-
       const { url } = await response.json();
       if (url) window.location.href = url;
-    } catch (err) {
-      console.error(err);
-      setError("Network error during Stripe checkout.");
+    } catch {
+      setError("Network error during checkout.");
     } finally {
       setLoading(false);
     }
   }
 
   const handleHelcimCheckout = useCallback(async (transactionId: string) => {
+    const invalid = validForm();
+    if (invalid) return setError(invalid);
     setLoading(true);
     setError("");
-
     try {
       const response = await fetch(`/api/store/${slug}/payment/helcim/process`, {
         method: "POST",
@@ -130,230 +124,109 @@ export function Theme2CheckoutForm({ slug, store }: Theme2CheckoutFormProps) {
           shipping,
           useShippingAsBilling: true,
           billing: shipping,
-          items: items.map((item) => ({
-            productId: item.productId,
-            quantity: item.quantity,
-          })),
+          discountCode,
+          cartNote: localStorage.getItem(`theme2CheckoutMeta:${slug}`) || "",
+          items: items.map((item) => ({ productId: item.productId, quantity: item.quantity })),
         }),
       });
-
       if (!response.ok) {
         const data = await response.json().catch(() => ({}));
-        setError(data.error || "Helcim payment failed.");
-        return;
+        return setError(data.error || "Helcim payment failed.");
       }
-
       dispatch(clearSlugCart({ slug }));
       window.location.href = `/${slug}`;
-    } catch (err) {
-      console.error(err);
-      setError("Network error during Helcim checkout.");
+    } catch {
+      setError("Network error during Helcim payment.");
     } finally {
       setLoading(false);
     }
-  }, [slug, email, shipping, items, dispatch]);
+  }, [dispatch, email, shipping, discountCode, items, slug]);
 
-  async function handleSubmit(event: React.FormEvent) {
-    event.preventDefault();
-    setLoading(true);
-    try {
-      const response = await fetch(`/api/store/${slug}/orders`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          email,
-          shipping,
-          useShippingAsBilling: true,
-          billing: shipping,
-          items: items.map((item) => ({
-            productId: item.productId,
-            quantity: item.quantity,
-          })),
-        }),
-      });
+  if (!items.length) return <p className="rounded border border-dashed p-8 text-center">Cart is empty.</p>;
 
-      if (!response.ok) {
-        const data = await response.json().catch(() => ({}));
-        setError(data.error || "Failed to place order. Please check your details.");
-        return;
-      }
-
-      setShowSuccessModal(true);
-      dispatch(clearSlugCart({ slug }));
-    } catch (err) {
-      console.error(err);
-      setError("A network error occurred while placing your order.");
-    } finally {
-      setLoading(false);
-    }
-  }
-
-  if (!items.length && !showSuccessModal) {
-    return <p className="p-8 text-center text-amber-900 border border-dashed border-amber-200 rounded-3xl bg-amber-50 mx-4 my-8 font-medium">Cart is empty. Add products before checkout.</p>;
-  }
+  const input = "h-11 w-full rounded border border-[#d5d8dd] bg-white px-3 text-sm";
 
   return (
-    <div className="relative">
-      <form onSubmit={handleSubmit} className="grid gap-6 lg:grid-cols-[1fr_340px]">
-        <section className="space-y-4 rounded-3xl border border-amber-200 bg-white p-5">
-          <h2 className="text-xl font-black uppercase tracking-wide text-amber-900">
-            Shipping Details
-          </h2>
-
-          <input
-            required
-            value={email}
-            onChange={(event) => setEmail(event.target.value)}
-            placeholder="email"
-            className="w-full rounded-2xl border border-amber-200 px-4 py-2.5 text-amber-900 outline-none focus:border-amber-500"
-          />
-
-          {Object.keys(shipping).map((key) => (
-            <input
-              key={key}
-              required
-              value={shipping[key as keyof AddressState]}
-              onChange={(event) =>
-                updateShipping(key as keyof AddressState, event.target.value)
-              }
-              placeholder={key}
-              className="w-full rounded-2xl border border-amber-200 px-4 py-2.5 text-amber-900 outline-none focus:border-amber-500"
-            />
-          ))}
-
-          <div className="mt-8 border-t border-amber-100 pt-6">
-            <h2 className="text-xl font-black uppercase tracking-wide text-amber-900">
-              Payment Method
-            </h2>
-            <div className="mt-4 space-y-3">
-              {store.paymentSettings?.stripe?.enabled && (
-                <label
-                  className={`flex cursor-pointer items-center justify-between rounded-2xl border p-4 transition-all ${
-                    provider === "stripe"
-                      ? "border-amber-500 bg-amber-50 ring-1 ring-amber-500"
-                      : "border-amber-200 bg-white hover:border-amber-300"
-                  }`}
-                >
-                  <div className="flex items-center gap-3">
-                    <input
-                      type="radio"
-                      name="paymentProvider"
-                      value="stripe"
-                      checked={provider === "stripe"}
-                      onChange={() => setProvider("stripe")}
-                      className="h-4 w-4 accent-amber-600"
-                    />
-                    <span className="font-bold text-amber-900">Credit Card (Stripe)</span>
-                  </div>
-                </label>
-              )}
-
-              {store.paymentSettings?.helcim?.enabled && (
-                <div
-                  className={`rounded-2xl border-2 transition-all ${
-                    provider === "helcim"
-                      ? "border-amber-500 bg-amber-50 ring-2 ring-amber-500/10"
-                      : "border-amber-200 bg-white hover:border-amber-300"
-                  }`}
-                >
-                  <label className="flex cursor-pointer items-center justify-between p-4">
-                    <div className="flex items-center gap-3">
-                      <input
-                        type="radio"
-                        name="paymentProvider"
-                        value="helcim"
-                        checked={provider === "helcim"}
-                        onChange={() => setProvider("helcim")}
-                        className="h-4 w-4 accent-amber-600"
-                      />
-                      <span className="font-bold text-amber-900">Credit Card (Helcim)</span>
-                    </div>
-                  </label>
-
-                  {provider === "helcim" && (
-                    <div className="border-t border-amber-200 p-4">
-                      <HelcimForm
-                        slug={slug}
-                        accountId={store.paymentSettings.helcim.accountId}
-                        amount={total}
-                        currency={items[0]?.currency || "CAD"}
-                        email={email}
-                        shipping={shipping}
-                        items={items}
-                        onSuccess={handleHelcimCheckout}
-                        onError={(msg) => {
-                          setError(msg);
-                          setIsHelcimInitializing(false);
-                          setIsHelcimActive(false);
-                        }}
-                        onReady={() => setIsHelcimInitializing(false)}
-                        trigger={isHelcimActive}
-                      />
-                    </div>
-                  )}
-                </div>
-              )}
-            </div>
+    <div className="[font-family:var(--font-theme2-sans)]">
+      <div className="grid border border-[#d8dcdf] bg-white lg:grid-cols-[1fr_0.9fr]">
+        <section className="space-y-6 px-6 py-8 md:px-10">
+          <div className="text-center">
+            <p className="text-[10px] uppercase tracking-[0.22em] text-[#6b737f]">EST 2015</p>
+            <p className="text-3xl [font-family:var(--font-theme2-serif)]">PRESENT DAY</p>
+            <p className="text-[10px] uppercase tracking-[0.22em] text-[#6b737f]">Gift Boxes & Baskets</p>
           </div>
-        </section>
-
-        <section className="h-fit rounded-3xl border border-amber-200 bg-white p-5">
-          <h3 className="text-lg font-black uppercase tracking-wide text-amber-900">Summary</h3>
-          <p className="mt-3 text-amber-800">Items: {items.length}</p>
-          <p className="text-2xl font-black text-amber-950">
-            {formatMoney(total, items[0]?.currency || "CAD")}
-          </p>
-
-          {error ? <p className="mt-3 text-sm font-bold text-red-600">{error}</p> : null}
-
-          <button
-            type={provider === "stripe" ? "button" : "submit"}
-            onClick={(e) => {
-              if (provider === "stripe") {
-                e.preventDefault();
-                handleStripeCheckout();
-              } else if (provider === "helcim" && !isHelcimActive) {
-                e.preventDefault();
-                setIsHelcimActive(true);
-                setIsHelcimInitializing(true);
-              }
+          <button type="button" className="h-11 w-full rounded bg-[#5b3df4] text-white">shop</button>
+          <input type="email" required value={email} onChange={(event) => setEmail(event.target.value)} placeholder="YOUR email (not your recipient's)" className={input} />
+          <select
+            value={shipping.country}
+            onChange={(event) => {
+              const country = event.target.value;
+              setShipping((prev) => ({ ...prev, country, countryCode: resolveCountryCode(country) }));
             }}
-            disabled={loading || provider === "none"}
-            className="mt-4 flex w-full items-center justify-center gap-2 rounded-full bg-amber-500 py-3 text-sm font-bold uppercase tracking-wide text-amber-950 transition hover:bg-amber-600 disabled:opacity-50"
+            className={input}
           >
-            {(loading || isHelcimInitializing) && <Spinner size={16} className="text-amber-950" />}
-            {loading || isHelcimInitializing
-              ? "Processing..."
-              : provider === "stripe"
-                ? "Pay with Stripe"
-                : provider === "helcim"
-                  ? isHelcimActive ? (isHelcimInitializing ? "Loading payment..." : "Complete payment above") : "Pay now"
-                  : "Select Payment Method"}
+            {THEME2_COUNTRY_OPTIONS.map((item) => <option key={item.code} value={item.value}>{item.label}</option>)}
+          </select>
+          <div className="grid gap-3 sm:grid-cols-2">
+            <input value={shipping.firstName} onChange={(event) => updateAddress("firstName", event.target.value)} placeholder="First name" className={input} />
+            <input value={shipping.lastName} onChange={(event) => updateAddress("lastName", event.target.value)} placeholder="Last name" className={input} />
+          </div>
+          <input value={shipping.shippingAddress} onChange={(event) => updateAddress("shippingAddress", event.target.value)} placeholder="Address" className={input} />
+          <div className="grid gap-3 sm:grid-cols-3">
+            <input value={shipping.city} onChange={(event) => updateAddress("city", event.target.value)} placeholder="City" className={input} />
+            <input value={shipping.state} onChange={(event) => updateAddress("state", event.target.value)} placeholder="Province" className={input} />
+            <input value={shipping.postalCode} onChange={(event) => updateAddress("postalCode", event.target.value)} placeholder="Postal code" className={input} />
+          </div>
+
+          <div className="space-y-2 rounded border border-[#d7dce1] p-4">
+            {store.paymentSettings?.stripe?.enabled && <label className="flex items-center gap-2"><input type="radio" name="provider" checked={provider === "stripe"} onChange={() => setProvider("stripe")} /> Credit card</label>}
+            {store.paymentSettings?.helcim?.enabled && <label className="flex items-center gap-2"><input type="radio" name="provider" checked={provider === "helcim"} onChange={() => setProvider("helcim")} /> Credit card (Helcim)</label>}
+            {!availableProviders.length && <p className="text-sm text-[#646f7a]">Payment provider not configured.</p>}
+            {provider === "helcim" && store.paymentSettings?.helcim?.enabled && (
+              <HelcimForm
+                slug={slug}
+                accountId={store.paymentSettings.helcim.accountId}
+                amount={total}
+                currency={currency}
+                email={email}
+                shipping={shipping}
+                items={items}
+                onSuccess={handleHelcimCheckout}
+                onError={(message) => { setError(message); setIsHelcimInitializing(false); setIsHelcimActive(false); }}
+                onReady={() => setIsHelcimInitializing(false)}
+                trigger={isHelcimActive}
+              />
+            )}
+          </div>
+
+          {error ? <p className="rounded border border-red-200 bg-red-50 p-3 text-sm text-red-600">{error}</p> : null}
+          <button
+            type="button"
+            onClick={() => provider === "stripe" ? void handleStripeCheckout() : setIsHelcimActive(true)}
+            disabled={loading || provider === "none" || (provider === "helcim" && isHelcimActive)}
+            className="flex h-12 w-full items-center justify-center gap-2 rounded bg-[#1696dc] text-white disabled:opacity-60"
+          >
+            {(loading || isHelcimInitializing) && <Spinner size={16} className="text-white" />}
+            {provider === "helcim" && isHelcimActive ? "Complete payment above" : "Pay now"}
           </button>
         </section>
-      </form>
-      {/* Success Modal */}
-      {showSuccessModal && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
-          <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-8 text-center animate-in fade-in zoom-in duration-300">
-            <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
-              <svg className="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
-              </svg>
-            </div>
-            <h2 className="text-2xl font-bold text-slate-900 mb-2">Order Confirmed!</h2>
-            <p className="text-slate-600 mb-6 font-['Inter']">
-              Thank you for your purchase. Your payment was successful and your order is being processed.
-            </p>
-            <button
-              onClick={() => router.push(`/${slug}`)}
-              className="w-full bg-slate-900 text-white font-bold py-3 rounded-lg hover:bg-slate-800 transition-colors shadow-lg font-['Inter']"
-            >
-              Continue Shopping
-            </button>
+
+        <aside className="border-t bg-[#f7f7f8] px-6 py-8 lg:border-l lg:border-t-0">
+          <div className="space-y-4">
+            {items.map((item) => (
+              <div key={item.productId} className="flex gap-3">
+                <div className="h-16 w-16 overflow-hidden rounded border bg-white">
+                  {isVideoUrl(item.image) ? <video src={item.image} className="h-full w-full object-cover" muted /> : <Image src={item.image} alt={item.name} width={64} height={64} className="h-full w-full object-cover" />}
+                </div>
+                <div className="flex-1"><p className="text-sm font-semibold">{item.name}</p><p className="text-xs">Qty {item.quantity}</p></div>
+                <p className="text-sm font-semibold">{formatMoney(item.price * item.quantity, item.currency)}</p>
+              </div>
+            ))}
           </div>
-        </div>
-      )}
+          <div className="mt-5 flex gap-2"><input value={discountCode} onChange={(event) => setDiscountCode(event.target.value)} placeholder="Discount code" className={`${input} flex-1`} /><button type="button" className="h-11 rounded border px-4 text-sm">Apply</button></div>
+          <div className="mt-6 space-y-2 text-sm"><div className="flex justify-between"><span>Subtotal</span><span>{formatMoney(subtotal, currency)}</span></div>{discountCode ? <div className="flex justify-between text-emerald-700"><span>Discount</span><span>-{formatMoney(discountAmount, currency)}</span></div> : null}<div className="flex justify-between text-lg"><span>Total</span><span>{formatMoney(total, currency)}</span></div></div>
+        </aside>
+      </div>
     </div>
   );
 }

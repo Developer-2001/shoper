@@ -1,16 +1,16 @@
-"use client";
+﻿"use client";
 
-import { Theme2Navbar } from "@/themes/theme2/navbar";
 import { Theme2Footer } from "@/themes/theme2/footer";
+import { Theme2Navbar } from "@/themes/theme2/navbar";
 import { Theme2ProductDetail } from "@/themes/theme2/product-detail";
 import type { ThemeProductDetailProps } from "@/themes/types";
 
 export function Theme2ProductDetailPage({ slug, store, product }: ThemeProductDetailProps) {
   return (
-    <div className="min-h-screen bg-[linear-gradient(180deg,#fff8e7_0%,#fff 45%)] text-amber-950">
-      <Theme2Navbar slug={slug} logoText={store.logoText || store.businessName} />
+    <div className="min-h-screen bg-[#f4f4f1] text-[#233532]">
+      <Theme2Navbar slug={slug} logoText={store.logoText || "PRESENT DAY"} />
 
-      <main className="mx-auto w-full max-w-7xl px-6 py-10">
+      <main className="mx-auto w-full max-w-6xl px-4 py-8">
         <Theme2ProductDetail slug={slug} store={store} product={product} />
       </main>
 
@@ -22,6 +22,7 @@ export function Theme2ProductDetailPage({ slug, store, product }: ThemeProductDe
         contactEmail={store.contactEmail}
         contactPhone={store.contactPhone}
         footerLinks={store.footerLinks || []}
+        socialLinks={store.socialLinks}
       />
     </div>
   );

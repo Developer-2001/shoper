@@ -1,105 +1,155 @@
-"use client";
+﻿"use client";
 
 import Image from "next/image";
 import Link from "next/link";
+import { useMemo } from "react";
 
 import { useCartStorage } from "@/hooks/useCartStorage";
-import { Theme2Navbar } from "@/themes/theme2/navbar";
 import { Theme2Footer } from "@/themes/theme2/footer";
+import { Theme2Navbar } from "@/themes/theme2/navbar";
 import { Theme2ProductCard } from "@/themes/theme2/product-card";
+import { Theme2SectionHeading } from "@/themes/theme2/components/theme2-section-heading";
+import {
+  THEME2_CATALOGUE_BANNER,
+  THEME2_CATEGORY_IMAGE_URLS,
+  THEME2_FEATURED_IN,
+  THEME2_HOME_HERO,
+} from "@/themes/theme2/theme2-config";
+import { categoryMatchesCollectionSlug, toCollectionSlug } from "@/themes/theme2/collection-utils";
 import type { ThemeHomeProps } from "@/themes/types";
 
-export function Theme2Home({ slug, store, products }: ThemeHomeProps) {
+const FALLBACK_CATEGORY_LABELS = [
+  "Gifts For All Occasions",
+  "Wedding Gifts",
+  "Corporate Gifts",
+];
+
+export function Theme2Home({ slug, store, products, categories = [] }: ThemeHomeProps) {
   useCartStorage();
 
-  const featuredProducts = products.slice(0, 6);
+  const categoryTiles = useMemo(() => {
+    const labels = categories
+      .map((category) => category.name?.trim())
+      .filter((value): value is string => Boolean(value))
+      .slice(0, 3);
+
+    const resolvedLabels = labels.length
+      ? [...labels, ...FALLBACK_CATEGORY_LABELS].slice(0, 3)
+      : FALLBACK_CATEGORY_LABELS;
+
+    return resolvedLabels.map((label, index) => ({
+      label,
+      imageUrl: THEME2_CATEGORY_IMAGE_URLS[index] || THEME2_CATEGORY_IMAGE_URLS[0],
+      href: `/${slug}/product?categories=${encodeURIComponent(toCollectionSlug(label))}`,
+    }));
+  }, [categories, slug]);
+
+  const featuredProducts = useMemo(() => {
+    const productByCategory = products.find((product) =>
+      categoryTiles.some((category) =>
+        categoryMatchesCollectionSlug(product.category, toCollectionSlug(category.label)),
+      ),
+    );
+
+    if (!productByCategory) {
+      return products.slice(0, 4);
+    }
+
+    const ordered = [productByCategory, ...products.filter((item) => item._id !== productByCategory._id)];
+    return ordered.slice(0, 4);
+  }, [categoryTiles, products]);
 
   return (
-    <div className="min-h-screen bg-[radial-gradient(circle_at_top,#fff3d6_0%,#fff8e7_40%,#fff_100%)] text-amber-950">
-      <Theme2Navbar slug={slug} logoText={store.logoText || store.businessName} />
+    <div className="min-h-screen bg-[#f4f4f1] text-[#263833]">
+      <Theme2Navbar slug={slug} logoText={store.logoText || "PRESENT DAY"} />
 
-      <section className="mx-auto grid w-full max-w-7xl gap-8 px-6 pb-10 pt-10 lg:grid-cols-[1.15fr_1fr] lg:items-center">
-        <div>
-          <p className="text-xs font-bold uppercase tracking-[0.22em] text-amber-700">{store.businessName}</p>
-          <h1 className="mt-3 text-5xl font-black uppercase leading-tight text-amber-950 md:text-6xl">
-            Build Your Signature Shopping Experience
-          </h1>
-          <p className="mt-5 max-w-2xl text-lg text-amber-900">
-            {store.about || "Premium picks, reliable delivery, and standout value in every product."}
-          </p>
-
-          <div className="mt-7 flex flex-wrap gap-3">
-            <Link
-              href={`/${slug}/product`}
-              className="rounded-full bg-amber-500 px-7 py-3 text-sm font-bold uppercase tracking-wide text-amber-950 transition hover:bg-amber-400"
-            >
-              Shop All Products
-            </Link>
-            <Link
-              href={`/${slug}/cart`}
-              className="rounded-full border border-amber-300 bg-white px-7 py-3 text-sm font-bold uppercase tracking-wide text-amber-900 transition hover:border-amber-500"
-            >
-              Go To Cart
-            </Link>
+      <main className="pb-8">
+        <section className="mx-auto mt-4 w-full  px-4">
+          <div className="relative overflow-hidden border border-[#b6bebb]">
+            <Image
+              src={THEME2_HOME_HERO.imageUrl}
+              alt="Gift boxes and baskets"
+              width={1800}
+              height={980}
+              className="h-[240px] w-full object-cover sm:h-[360px] lg:h-[540px]"
+              sizes="100vw"
+              priority
+            />
+            <div className="absolute inset-0 bg-gradient-to-r from-black/35 via-black/10 to-transparent" />
+            <div className="absolute left-4 top-1/2 max-w-md -translate-y-1/2 text-white sm:left-8 lg:left-12">
+              <h1 className="text-4xl leading-none [font-family:var(--font-theme2-serif)] sm:text-6xl lg:text-7xl">
+                {THEME2_HOME_HERO.title}
+              </h1>
+              <p className="mt-2 text-sm uppercase tracking-[0.18em] sm:text-base">{THEME2_HOME_HERO.subtitle}</p>
+              <Link
+                href={`/${slug}/product`}
+                className="mt-6 inline-flex items-center bg-[#9db597] px-5 py-3 text-sm font-semibold uppercase tracking-[0.12em] text-white transition hover:bg-[#8ca886]"
+              >
+                {THEME2_HOME_HERO.ctaLabel}
+              </Link>
+            </div>
           </div>
-        </div>
+        </section>
 
-        <Image
-          src="https://storage.googleapis.com/canada-ecommerce-assets/ranka/theme3-collection-labels/a-1774629332806.avif"
-          alt={store.businessName}
-          width={1200}
-          height={900}
-          className="h-105 w-full rounded-4xl  border border-amber-200 object-cover shadow-[0_40px_80px_-60px_rgba(146,64,14,0.9)]"
-          sizes="(max-width: 1024px) 100vw, 45vw"
-        />
-      </section>
+        <section className="mx-auto mt-12 w-full max-w-6xl px-4 text-center text-[#2d3f3b]">
+          <p className="text-3xl [font-family:var(--font-theme2-serif)] sm:text-4xl">Local Toronto Delivery</p>
+          <p className="mt-4 text-3xl [font-family:var(--font-theme2-serif)] sm:text-4xl">Shipping across Canada & United States</p>
+        </section>
 
-      <section className="mx-auto w-full max-w-7xl px-6">
-        <div className="flex snap-x gap-4 overflow-x-auto pb-2">
-          <Image
-            src="https://storage.googleapis.com/canada-ecommerce-assets/ranka/theme3-collection-labels/a-1774629332806.avif"
-            alt="showcase-1"
-            width={1100}
-            height={760}
-            className="h-52 w-[85%] min-w-[85%] snap-start rounded-3xl border border-amber-200 object-cover md:h-64 md:w-[48%] md:min-w-[48%]"
-            sizes="(max-width: 768px) 85vw, 48vw"
-          />
-          <Image
-            src="https://storage.googleapis.com/canada-ecommerce-assets/ranka/theme3-collection-labels/a-1774629332806.avif"
-            alt="showcase-2"
-            width={1100}
-            height={760}
-            className="h-52 w-[85%] min-w-[85%] snap-start rounded-3xl border border-amber-200 object-cover md:h-64 md:w-[48%] md:min-w-[48%]"
-            sizes="(max-width: 768px) 85vw, 48vw"
-          />
-          <Image
-            src="https://storage.googleapis.com/canada-ecommerce-assets/ranka/theme3-collection-labels/a-1774629332806.avif"
-            alt="showcase-3"
-            width={1100}
-            height={760}
-            className="h-52 w-[85%] min-w-[85%] snap-start rounded-3xl border border-amber-200 object-cover md:h-64 md:w-[48%] md:min-w-[48%]"
-            sizes="(max-width: 768px) 85vw, 48vw"
-          />
-        </div>
-      </section>
-
-      <section className="mx-auto mt-12 w-full max-w-7xl px-6">
-        <div className="flex items-end justify-between gap-4">
-          <div>
-            <p className="text-xs font-bold uppercase tracking-[0.22em] text-amber-700">Company Branding</p>
-            <h2 className="mt-2 text-3xl font-black uppercase text-amber-950">Featured Products</h2>
+        <section className="mt-12">
+          <Theme2SectionHeading title="Categories" />
+          <div className="mx-auto mt-8 grid w-full max-w-6xl gap-6 px-4 md:grid-cols-3">
+            {categoryTiles.map((category) => (
+              <Link key={category.label} href={category.href} className="group relative overflow-hidden border border-[#d6dcd9]">
+                <Image
+                  src={category.imageUrl}
+                  alt={category.label}
+                  width={700}
+                  height={500}
+                  className="h-56 w-full object-cover transition duration-500 group-hover:scale-105"
+                  sizes="(max-width: 768px) 100vw, 33vw"
+                />
+                <div className="absolute inset-0 bg-black/30" />
+                <div className="absolute inset-0 flex items-center justify-center px-5 text-center text-4xl uppercase leading-tight tracking-[0.05em] text-white [font-family:var(--font-theme2-serif)]">
+                  {category.label}
+                </div>
+              </Link>
+            ))}
           </div>
-          <Link href={`/${slug}/product`} className="text-sm font-bold uppercase tracking-wide text-amber-800 underline">
-            View all
-          </Link>
-        </div>
+        </section>
 
-        <div className="mt-6 grid gap-5 md:grid-cols-2 xl:grid-cols-3">
-          {featuredProducts.map((product) => (
-            <Theme2ProductCard key={product._id} slug={slug} product={product} />
-          ))}
-        </div>
-      </section>
+        <section className="mt-12">
+          <Theme2SectionHeading title="Featured Products" />
+          <div className="mx-auto mt-8 grid w-full max-w-6xl gap-6 px-4 sm:grid-cols-2 lg:grid-cols-4">
+            {featuredProducts.map((product) => (
+              <Theme2ProductCard key={product._id} slug={slug} product={product} />
+            ))}
+          </div>
+        </section>
+
+        <section className="mx-auto mt-14 w-full max-w-6xl px-4 text-center">
+          <p className="text-xl uppercase tracking-[0.28em] text-[#334743]">Featured In:</p>
+          <div className="mt-8 grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-5">
+            {THEME2_FEATURED_IN.map((logo) => (
+              <div
+                key={logo}
+                className="flex h-14 items-center justify-center border border-[#d6dcd9] bg-[#f8f8f6] px-2 text-sm font-semibold uppercase tracking-[0.08em] text-[#556662]"
+              >
+                {logo}
+              </div>
+            ))}
+          </div>
+        </section>
+
+        <section className="mx-auto mt-16 w-full max-w-6xl px-4">
+          <div className="border-y border-[#b6bebb] py-12 text-center">
+            <h2 className="text-5xl uppercase tracking-[0.08em] text-[#2c3d39] [font-family:var(--font-theme2-serif)] sm:text-6xl">
+              {THEME2_CATALOGUE_BANNER.title}
+            </h2>
+            <p className="mt-4 text-sm uppercase tracking-[0.22em] text-[#8ba58a]">{THEME2_CATALOGUE_BANNER.subtitle}</p>
+          </div>
+        </section>
+      </main>
 
       <Theme2Footer
         slug={slug}
@@ -109,8 +159,8 @@ export function Theme2Home({ slug, store, products }: ThemeHomeProps) {
         contactEmail={store.contactEmail}
         contactPhone={store.contactPhone}
         footerLinks={store.footerLinks || []}
+        socialLinks={store.socialLinks}
       />
     </div>
   );
 }
-
