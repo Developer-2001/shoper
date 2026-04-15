@@ -41,7 +41,7 @@ export function Theme2ProductsPage({ slug, store, products }: ThemeProductsProps
       <Theme2Navbar slug={slug} logoText={store.logoText || "PRESENT DAY"} />
 
       <main className="pb-8">
-        <section className="mx-auto mt-4 w-full max-w-6xl px-4">
+        <section className="mx-auto mt-4 w-full max-w-7xl px-4">
           <div className="relative overflow-hidden border border-[#b6bebb]">
             <Image
               src={THEME2_COLLECTION_HERO.imageUrl}
@@ -61,7 +61,7 @@ export function Theme2ProductsPage({ slug, store, products }: ThemeProductsProps
           </div>
         </section>
 
-        <section className="mx-auto mt-10 w-full max-w-6xl px-4">
+        <section className="mx-auto mt-10 w-full max-w-7xl px-4">
           <div className="mb-5 flex items-center justify-between border-b border-[#c7cecb] pb-3">
             <p className="text-sm uppercase tracking-[0.16em] text-[#3e504d]">{filteredProducts.length} products</p>
             <div className="flex items-center gap-3 text-[#435652]">

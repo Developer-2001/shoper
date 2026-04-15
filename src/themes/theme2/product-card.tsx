@@ -13,7 +13,13 @@ type Theme2ProductCardProps = {
 };
 
 export function Theme2ProductCard({ slug, product }: Theme2ProductCardProps) {
-  const finalPrice = salePrice(product.price, product.discountPercentage);
+  const productPrice = Number(product.price) || 0;
+  const discountPercentage = Math.max(
+    0,
+    Number(product.discountPercentage) || 0,
+  );
+  const finalPrice = salePrice(productPrice, discountPercentage);
+  const showDiscountPrice = discountPercentage > 0 && finalPrice < productPrice;
   const firstMedia = product.images[0] || "/file.svg";
 
   return (
@@ -43,8 +49,8 @@ export function Theme2ProductCard({ slug, product }: Theme2ProductCardProps) {
 
         <div className="mt-1 flex items-center gap-2 text-[#2f3f3c]">
           <p className="text-sm font-semibold">{formatMoney(finalPrice, product.currency)}</p>
-          {product.discountPercentage > 0 ? (
-            <p className="text-xs text-[#6f817d] line-through">{formatMoney(product.price, product.currency)}</p>
+          {showDiscountPrice ? (
+            <p className="text-xs text-[#6f817d] line-through">{formatMoney(productPrice, product.currency)}</p>
           ) : null}
         </div>
       </div>

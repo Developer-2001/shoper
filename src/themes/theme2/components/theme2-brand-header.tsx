@@ -39,7 +39,7 @@ export function Theme2BrandHeader({ slug, logoText }: Theme2BrandHeaderProps) {
 
   return (
     <>
-      <div className="mx-auto w-full max-w-6xl px-4 pt-5 pb-4">
+      <div className="mx-auto w-full max-w-7xl px-4 pt-5 pb-4">
         <div className="flex items-center justify-between text-md text-[#2f4f4a]">
           <button
             type="button"
