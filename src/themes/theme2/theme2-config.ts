@@ -1,11 +1,19 @@
 ﻿
-export const THEME2_HOME_HERO = {
+export const THEME2_HOME_HERO = [{
   imageUrl:
     "https://storage.googleapis.com/canada-ecommerce-assets/hamperforyou/themeimages/hampers-1a-1776170327368.png",
   title: "Gift Boxes & Baskets",
   subtitle: "Curated with fine local goods",
   ctaLabel: "See The Collection",
-};
+},
+{
+  imageUrl:
+    "https://storage.googleapis.com/canada-ecommerce-assets/hamperforyou/themeimages/dsc2477-a8d506dc-0f5c-4d9f-9ad1-87a5d07c9f20-1776170440767.webp",
+  title: "Gift Boxes & Baskets",
+  subtitle: "Curated with fine local goods",
+  ctaLabel: "See The Collection",
+}
+];
 
 export const THEME2_COLLECTION_HERO = {
   imageUrl:

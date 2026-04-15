@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 import { useCartStorage } from "@/hooks/useCartStorage";
 import { Theme2Footer } from "@/themes/theme2/footer";
@@ -26,6 +26,29 @@ const FALLBACK_CATEGORY_LABELS = [
 
 export function Theme2Home({ slug, store, products, categories = [] }: ThemeHomeProps) {
   useCartStorage();
+  const [activeHeroIndex, setActiveHeroIndex] = useState(0);
+
+  const heroSlides = THEME2_HOME_HERO.length
+    ? THEME2_HOME_HERO
+    : [{
+        imageUrl: "https://storage.googleapis.com/canada-ecommerce-assets/hamperforyou/themeimages/hampers-1a-1776170327368.png",
+        title: "Gift Boxes & Baskets",
+        subtitle: "Curated with fine local goods",
+        ctaLabel: "See The Collection",
+      }];
+
+  useEffect(() => {
+    if (heroSlides.length <= 1) return;
+
+    const interval = window.setInterval(() => {
+      setActiveHeroIndex((previous) => (previous + 1) % heroSlides.length);
+    }, 5000);
+
+    return () => window.clearInterval(interval);
+  }, [heroSlides.length]);
+
+  const visibleHeroIndex = activeHeroIndex % heroSlides.length;
+  const activeHero = heroSlides[visibleHeroIndex] || heroSlides[0];
 
   const categoryTiles = useMemo(() => {
     const labels = categories
@@ -67,7 +90,8 @@ export function Theme2Home({ slug, store, products, categories = [] }: ThemeHome
         <section className="mx-auto mt-4 w-full  px-4">
           <div className="relative overflow-hidden border border-[#b6bebb]">
             <Image
-              src={THEME2_HOME_HERO.imageUrl}
+              key={activeHero.imageUrl}
+              src={activeHero.imageUrl}
               alt="Gift boxes and baskets"
               width={1800}
               height={980}
@@ -78,14 +102,14 @@ export function Theme2Home({ slug, store, products, categories = [] }: ThemeHome
             <div className="absolute inset-0 bg-gradient-to-r from-black/35 via-black/10 to-transparent" />
             <div className="absolute left-4 top-1/2 max-w-md -translate-y-1/2 text-white sm:left-8 lg:left-12">
               <h1 className="text-4xl leading-none [font-family:var(--font-theme2-serif)] sm:text-6xl lg:text-7xl">
-                {THEME2_HOME_HERO.title}
+                {activeHero.title}
               </h1>
-              <p className="mt-2 text-sm uppercase tracking-[0.18em] sm:text-base">{THEME2_HOME_HERO.subtitle}</p>
+              <p className="mt-2 text-sm uppercase tracking-[0.18em] sm:text-base">{activeHero.subtitle}</p>
               <Link
                 href={`/${slug}/product`}
                 className="mt-6 inline-flex items-center bg-[#9db597] px-5 py-3 text-sm font-semibold uppercase tracking-[0.12em] text-white transition hover:bg-[#8ca886]"
               >
-                {THEME2_HOME_HERO.ctaLabel}
+                {activeHero.ctaLabel}
               </Link>
             </div>
           </div>
