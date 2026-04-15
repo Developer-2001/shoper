@@ -36,7 +36,10 @@ type CheckoutMetaState = {
   discountPercentage: number;
 };
 
-const CHECKOUT_DISCOUNT_CODES: Record<string, { code: string; percent: number }> = {
+const CHECKOUT_DISCOUNT_CODES: Record<
+  string,
+  { code: string; percent: number }
+> = {
   deva123: { code: "Deva123", percent: 20 },
   vinayak123: { code: "Vinayak123", percent: 30 },
 };
@@ -126,7 +129,9 @@ async function detectCountryCodeFromRequest() {
     if (!response.ok) return "";
 
     const data = await response.json();
-    const countryCode = String(data?.countryCode || "").trim().toUpperCase();
+    const countryCode = String(data?.countryCode || "")
+      .trim()
+      .toUpperCase();
     if (countryCode && Country.getCountryByCode(countryCode)) {
       return countryCode;
     }
@@ -160,7 +165,9 @@ async function detectCountryCodeFromBrowserLocation() {
     const latitude = position.coords.latitude;
     const longitude = position.coords.longitude;
 
-    const reverseUrl = new URL("https://api.bigdatacloud.net/data/reverse-geocode-client");
+    const reverseUrl = new URL(
+      "https://api.bigdatacloud.net/data/reverse-geocode-client",
+    );
     reverseUrl.searchParams.set("latitude", String(latitude));
     reverseUrl.searchParams.set("longitude", String(longitude));
     reverseUrl.searchParams.set("localityLanguage", "en");
@@ -169,7 +176,9 @@ async function detectCountryCodeFromBrowserLocation() {
     if (!response.ok) return "";
 
     const data = await response.json();
-    const countryCode = String(data?.countryCode || data?.countryCode2 || "").trim().toUpperCase();
+    const countryCode = String(data?.countryCode || data?.countryCode2 || "")
+      .trim()
+      .toUpperCase();
 
     if (countryCode && Country.getCountryByCode(countryCode)) {
       return countryCode;
@@ -182,17 +191,22 @@ async function detectCountryCodeFromBrowserLocation() {
 }
 
 function loadCheckoutMeta(checkoutMetaKey: string): CheckoutMetaState {
-  if (typeof window === "undefined") return { cartNote: "", discountCode: "", discountPercentage: 0 };
+  if (typeof window === "undefined")
+    return { cartNote: "", discountCode: "", discountPercentage: 0 };
 
   const rawMeta = window.localStorage.getItem(checkoutMetaKey);
-  if (!rawMeta) return { cartNote: "", discountCode: "", discountPercentage: 0 };
+  if (!rawMeta)
+    return { cartNote: "", discountCode: "", discountPercentage: 0 };
 
   try {
     const parsedMeta = JSON.parse(rawMeta) as Partial<CheckoutMetaState>;
     return {
       cartNote: parsedMeta.cartNote || "",
       discountCode: parsedMeta.discountCode || "",
-      discountPercentage: typeof parsedMeta.discountPercentage === "number" ? parsedMeta.discountPercentage : 0,
+      discountPercentage:
+        typeof parsedMeta.discountPercentage === "number"
+          ? parsedMeta.discountPercentage
+          : 0,
     };
   } catch {
     window.localStorage.removeItem(checkoutMetaKey);
@@ -202,15 +216,21 @@ function loadCheckoutMeta(checkoutMetaKey: string): CheckoutMetaState {
 
 export function Theme2CheckoutForm({ slug, store }: Theme2CheckoutFormProps) {
   const dispatch = useAppDispatch();
-  const items = useAppSelector((state) => state.cart.items.filter((item) => item.slug === slug));
+  const items = useAppSelector((state) =>
+    state.cart.items.filter((item) => item.slug === slug),
+  );
   const checkoutMetaKey = `theme2CheckoutMeta:${slug}`;
 
   const [email, setEmail] = useState("");
   const [shipping, setShipping] = useState<AddressFormState>(EMPTY_ADDRESS);
   const [billing, setBilling] = useState<AddressFormState>(EMPTY_ADDRESS);
   const [useShippingAsBilling, setUseShippingAsBilling] = useState(true);
-  const [checkoutMeta] = useState<CheckoutMetaState>(() => loadCheckoutMeta(checkoutMetaKey));
-  const [provider, setProvider] = useState(() => getAvailableProviders(store)[0] || "none");
+  const [checkoutMeta] = useState<CheckoutMetaState>(() =>
+    loadCheckoutMeta(checkoutMetaKey),
+  );
+  const [provider, setProvider] = useState(
+    () => getAvailableProviders(store)[0] || "none",
+  );
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [isHelcimActive, setIsHelcimActive] = useState(false);
@@ -220,21 +240,50 @@ export function Theme2CheckoutForm({ slug, store }: Theme2CheckoutFormProps) {
   const [taxLoading, setTaxLoading] = useState(false);
 
   const availableProviders = getAvailableProviders(store);
-  const activeProvider = availableProviders.includes(provider) ? provider : (availableProviders[0] || "none");
+  const activeProvider = availableProviders.includes(provider)
+    ? provider
+    : availableProviders[0] || "none";
 
-  const countries = useMemo(() => Country.getAllCountries().sort((a, b) => a.name.localeCompare(b.name)), []);
-  const shippingStates = useMemo(() => (shipping.countryCode ? State.getStatesOfCountry(shipping.countryCode) : []), [shipping.countryCode]);
-  const shippingCities = useMemo(() => (shipping.countryCode && shipping.stateCode ? City.getCitiesOfState(shipping.countryCode, shipping.stateCode) : []), [shipping.countryCode, shipping.stateCode]);
+  const countries = useMemo(
+    () =>
+      Country.getAllCountries().sort((a, b) => a.name.localeCompare(b.name)),
+    [],
+  );
+  const shippingStates = useMemo(
+    () =>
+      shipping.countryCode
+        ? State.getStatesOfCountry(shipping.countryCode)
+        : [],
+    [shipping.countryCode],
+  );
+  const shippingCities = useMemo(
+    () =>
+      shipping.countryCode && shipping.stateCode
+        ? City.getCitiesOfState(shipping.countryCode, shipping.stateCode)
+        : [],
+    [shipping.countryCode, shipping.stateCode],
+  );
 
-  const billingStates = useMemo(() => (billing.countryCode ? State.getStatesOfCountry(billing.countryCode) : []), [billing.countryCode]);
-  const billingCities = useMemo(() => (billing.countryCode && billing.stateCode ? City.getCitiesOfState(billing.countryCode, billing.stateCode) : []), [billing.countryCode, billing.stateCode]);
+  const billingStates = useMemo(
+    () =>
+      billing.countryCode ? State.getStatesOfCountry(billing.countryCode) : [],
+    [billing.countryCode],
+  );
+  const billingCities = useMemo(
+    () =>
+      billing.countryCode && billing.stateCode
+        ? City.getCitiesOfState(billing.countryCode, billing.stateCode)
+        : [],
+    [billing.countryCode, billing.stateCode],
+  );
 
   const countryOptions = useMemo(
     () => toSingleSelectOptions(countries, (country) => country.isoCode),
     [countries],
   );
   const shippingStateOptions = useMemo(
-    () => toSingleSelectOptions(shippingStates, (stateItem) => stateItem.isoCode),
+    () =>
+      toSingleSelectOptions(shippingStates, (stateItem) => stateItem.isoCode),
     [shippingStates],
   );
   const shippingCityOptions = useMemo(
@@ -247,7 +296,8 @@ export function Theme2CheckoutForm({ slug, store }: Theme2CheckoutFormProps) {
     [shippingCities],
   );
   const billingStateOptions = useMemo(
-    () => toSingleSelectOptions(billingStates, (stateItem) => stateItem.isoCode),
+    () =>
+      toSingleSelectOptions(billingStates, (stateItem) => stateItem.isoCode),
     [billingStates],
   );
   const billingCityOptions = useMemo(
@@ -260,17 +310,27 @@ export function Theme2CheckoutForm({ slug, store }: Theme2CheckoutFormProps) {
     [billingCities],
   );
 
-  const itemCount = useMemo(() => items.reduce((sum, item) => sum + item.quantity, 0), [items]);
-  const subtotal = useMemo(() => items.reduce((sum, item) => sum + item.price * item.quantity, 0), [items]);
+  const itemCount = useMemo(
+    () => items.reduce((sum, item) => sum + item.quantity, 0),
+    [items],
+  );
+  const subtotal = useMemo(
+    () => items.reduce((sum, item) => sum + item.price * item.quantity, 0),
+    [items],
+  );
 
   const matchedDiscount = useMemo(() => {
     const normalized = checkoutMeta.discountCode.trim().toLowerCase();
     return CHECKOUT_DISCOUNT_CODES[normalized] || null;
   }, [checkoutMeta.discountCode]);
 
-  const discountPercentage = matchedDiscount?.percent || checkoutMeta.discountPercentage || 0;
+  const discountPercentage =
+    matchedDiscount?.percent || checkoutMeta.discountPercentage || 0;
   const discountCode = matchedDiscount?.code || "";
-  const discountAmount = useMemo(() => roundPrice((subtotal * discountPercentage) / 100), [subtotal, discountPercentage]);
+  const discountAmount = useMemo(
+    () => roundPrice((subtotal * discountPercentage) / 100),
+    [subtotal, discountPercentage],
+  );
   const taxableAmount = Math.max(0, subtotal - discountAmount);
   const taxAmount = useMemo(
     () => roundPrice((taxableAmount * taxRatePercent) / 100),
@@ -306,8 +366,11 @@ export function Theme2CheckoutForm({ slug, store }: Theme2CheckoutFormProps) {
 
     async function detectAndApplyCountry() {
       const fromRequest = await detectCountryCodeFromRequest();
-      const fromLocation = fromRequest ? "" : await detectCountryCodeFromBrowserLocation();
-      const fromLocale = fromRequest || fromLocation ? "" : detectBrowserCountryCode();
+      const fromLocation = fromRequest
+        ? ""
+        : await detectCountryCodeFromBrowserLocation();
+      const fromLocale =
+        fromRequest || fromLocation ? "" : detectBrowserCountryCode();
 
       const detectedCountryCode = fromRequest || fromLocation || fromLocale;
       if (!detectedCountryCode || cancelled) return;
@@ -433,7 +496,10 @@ export function Theme2CheckoutForm({ slug, store }: Theme2CheckoutFormProps) {
   }
 
   function setShippingState(stateCode: string) {
-    const selectedState = State.getStateByCodeAndCountry(stateCode, shipping.countryCode);
+    const selectedState = State.getStateByCodeAndCountry(
+      stateCode,
+      shipping.countryCode,
+    );
     setShipping((prev) => ({
       ...prev,
       state: selectedState?.name || "",
@@ -455,7 +521,10 @@ export function Theme2CheckoutForm({ slug, store }: Theme2CheckoutFormProps) {
   }
 
   function setBillingState(stateCode: string) {
-    const selectedState = State.getStateByCodeAndCountry(stateCode, billing.countryCode);
+    const selectedState = State.getStateByCodeAndCountry(
+      stateCode,
+      billing.countryCode,
+    );
     setBilling((prev) => ({
       ...prev,
       state: selectedState?.name || "",
@@ -466,7 +535,8 @@ export function Theme2CheckoutForm({ slug, store }: Theme2CheckoutFormProps) {
 
   function validateAddress(address: AddressFormState) {
     if (!address.countryCode || !address.country) return "Country is required.";
-    if (!address.firstName || !address.lastName) return "First name and last name are required.";
+    if (!address.firstName || !address.lastName)
+      return "First name and last name are required.";
     if (!address.shippingAddress) return "Address is required.";
     if (!address.state) return "State/Province is required.";
     if (!address.city) return "City is required.";
@@ -491,7 +561,9 @@ export function Theme2CheckoutForm({ slug, store }: Theme2CheckoutFormProps) {
 
   async function handleStripeCheckout() {
     if (!store.paymentSettings?.stripe?.enabled) {
-      setError("This store is currently not set up to receive Stripe payments.");
+      setError(
+        "This store is currently not set up to receive Stripe payments.",
+      );
       return;
     }
 
@@ -512,7 +584,10 @@ export function Theme2CheckoutForm({ slug, store }: Theme2CheckoutFormProps) {
           billing: useShippingAsBilling ? shipping : billing,
           cartNote: checkoutMeta.cartNote,
           discountCode,
-          items: items.map((item) => ({ productId: item.productId, quantity: item.quantity })),
+          items: items.map((item) => ({
+            productId: item.productId,
+            quantity: item.quantity,
+          })),
         }),
       });
 
@@ -542,20 +617,26 @@ export function Theme2CheckoutForm({ slug, store }: Theme2CheckoutFormProps) {
     setError("");
 
     try {
-      const response = await fetch(`/api/store/${slug}/payment/helcim/process`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          transactionId,
-          email,
-          shipping,
-          useShippingAsBilling,
-          billing: useShippingAsBilling ? shipping : billing,
-          cartNote: checkoutMeta.cartNote,
-          discountCode,
-          items: items.map((item) => ({ productId: item.productId, quantity: item.quantity })),
-        }),
-      });
+      const response = await fetch(
+        `/api/store/${slug}/payment/helcim/process`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            transactionId,
+            email,
+            shipping,
+            useShippingAsBilling,
+            billing: useShippingAsBilling ? shipping : billing,
+            cartNote: checkoutMeta.cartNote,
+            discountCode,
+            items: items.map((item) => ({
+              productId: item.productId,
+              quantity: item.quantity,
+            })),
+          }),
+        },
+      );
 
       if (!response.ok) {
         const data = await response.json().catch(() => ({}));
@@ -572,25 +653,53 @@ export function Theme2CheckoutForm({ slug, store }: Theme2CheckoutFormProps) {
     }
   }
 
-  if (!items.length) return <p className="rounded border border-dashed p-8 text-center">Cart is empty.</p>;
+  if (!items.length)
+    return (
+      <p className="rounded border border-dashed p-8 text-center">
+        Cart is empty.
+      </p>
+    );
 
-  const inputClass = "mt-1 h-11 w-full rounded border border-[#ccd3d0] bg-white px-3 text-sm text-[#304340] outline-none transition focus:border-[#8ea39e] focus:ring-2 focus:ring-[#dce4e1]";
+  const inputClass =
+    "mt-1 h-11 w-full rounded border border-[#ccd3d0] bg-white px-3 text-sm text-[#304340] outline-none transition focus:border-[#8ea39e] focus:ring-2 focus:ring-[#dce4e1]";
 
   return (
     <div className="[font-family:var(--font-theme2-sans)]">
       <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_360px]">
         <section className="space-y-6 border border-[#cad1ce] bg-white p-6 md:p-8">
           <div>
-            <h2 className="text-2xl [font-family:var(--font-theme2-serif)] text-[#2f403d]">Contact</h2>
-            <label className="mt-3 block text-sm text-[#5f726e]" htmlFor="checkout-email">Email</label>
-            <input id="checkout-email" type="email" required value={email} onChange={(event) => setEmail(event.target.value)} className={inputClass} placeholder="you@example.com" />
+            <h2 className="text-2xl [font-family:var(--font-theme2-serif)] text-[#2f403d]">
+              Contact
+            </h2>
+            <label
+              className="mt-3 block text-sm text-[#5f726e]"
+              htmlFor="checkout-email"
+            >
+              Email
+            </label>
+            <input
+              id="checkout-email"
+              type="email"
+              required
+              value={email}
+              onChange={(event) => setEmail(event.target.value)}
+              className={inputClass}
+              placeholder="you@example.com"
+            />
           </div>
 
           <div>
-            <h2 className="text-2xl [font-family:var(--font-theme2-serif)] text-[#2f403d]">Shipping Address</h2>
+            <h2 className="text-2xl [font-family:var(--font-theme2-serif)] text-[#2f403d]">
+              Shipping Address
+            </h2>
             <div className="mt-3 grid gap-3 md:grid-cols-2">
               <div className="md:col-span-2">
-                <label className="text-sm text-[#5f726e]" htmlFor="shipping-country">Country</label>
+                <label
+                  className="text-sm text-[#5f726e]"
+                  htmlFor="shipping-country"
+                >
+                  Country
+                </label>
                 <Theme2SingleSelectDropdown
                   id="shipping-country"
                   value={shipping.countryCode}
@@ -601,12 +710,65 @@ export function Theme2CheckoutForm({ slug, store }: Theme2CheckoutFormProps) {
                 />
               </div>
 
-              <div><label className="text-sm text-[#5f726e]" htmlFor="shipping-firstName">First Name</label><input id="shipping-firstName" required value={shipping.firstName} onChange={(event) => updateShipping("firstName", event.target.value)} className={inputClass} /></div>
-              <div><label className="text-sm text-[#5f726e]" htmlFor="shipping-lastName">Last Name</label><input id="shipping-lastName" required value={shipping.lastName} onChange={(event) => updateShipping("lastName", event.target.value)} className={inputClass} /></div>
-              <div className="md:col-span-2"><label className="text-sm text-[#5f726e]" htmlFor="shipping-address">Shipping Address</label><input id="shipping-address" required value={shipping.shippingAddress} onChange={(event) => updateShipping("shippingAddress", event.target.value)} className={inputClass} /></div>
+              <div>
+                <label
+                  className="text-sm text-[#5f726e]"
+                  htmlFor="shipping-firstName"
+                >
+                  First Name
+                </label>
+                <input
+                  id="shipping-firstName"
+                  required
+                  value={shipping.firstName}
+                  onChange={(event) =>
+                    updateShipping("firstName", event.target.value)
+                  }
+                  className={inputClass}
+                />
+              </div>
+              <div>
+                <label
+                  className="text-sm text-[#5f726e]"
+                  htmlFor="shipping-lastName"
+                >
+                  Last Name
+                </label>
+                <input
+                  id="shipping-lastName"
+                  required
+                  value={shipping.lastName}
+                  onChange={(event) =>
+                    updateShipping("lastName", event.target.value)
+                  }
+                  className={inputClass}
+                />
+              </div>
+              <div className="md:col-span-2">
+                <label
+                  className="text-sm text-[#5f726e]"
+                  htmlFor="shipping-address"
+                >
+                  Shipping Address
+                </label>
+                <input
+                  id="shipping-address"
+                  required
+                  value={shipping.shippingAddress}
+                  onChange={(event) =>
+                    updateShipping("shippingAddress", event.target.value)
+                  }
+                  className={inputClass}
+                />
+              </div>
 
               <div>
-                <label className="text-sm text-[#5f726e]" htmlFor="shipping-state">State / Province</label>
+                <label
+                  className="text-sm text-[#5f726e]"
+                  htmlFor="shipping-state"
+                >
+                  State / Province
+                </label>
                 {shippingStates.length ? (
                   <Theme2SingleSelectDropdown
                     id="shipping-state"
@@ -618,12 +780,25 @@ export function Theme2CheckoutForm({ slug, store }: Theme2CheckoutFormProps) {
                     disabled={!shipping.countryCode}
                   />
                 ) : (
-                  <input id="shipping-state" required value={shipping.state} onChange={(event) => updateShipping("state", event.target.value)} className={inputClass} />
+                  <input
+                    id="shipping-state"
+                    required
+                    value={shipping.state}
+                    onChange={(event) =>
+                      updateShipping("state", event.target.value)
+                    }
+                    className={inputClass}
+                  />
                 )}
               </div>
 
               <div>
-                <label className="text-sm text-[#5f726e]" htmlFor="shipping-city">City</label>
+                <label
+                  className="text-sm text-[#5f726e]"
+                  htmlFor="shipping-city"
+                >
+                  City
+                </label>
                 {shippingCities.length ? (
                   <Theme2SingleSelectDropdown
                     id="shipping-city"
@@ -635,24 +810,65 @@ export function Theme2CheckoutForm({ slug, store }: Theme2CheckoutFormProps) {
                     disabled={!shipping.stateCode}
                   />
                 ) : (
-                  <input id="shipping-city" required value={shipping.city} onChange={(event) => updateShipping("city", event.target.value)} className={inputClass} />
+                  <input
+                    id="shipping-city"
+                    required
+                    value={shipping.city}
+                    onChange={(event) =>
+                      updateShipping("city", event.target.value)
+                    }
+                    className={inputClass}
+                  />
                 )}
               </div>
 
-              <div className="md:col-span-2"><label className="text-sm text-[#5f726e]" htmlFor="shipping-postalCode">Postal Code</label><input id="shipping-postalCode" required value={shipping.postalCode} onChange={(event) => updateShipping("postalCode", event.target.value)} className={inputClass} /></div>
+              <div className="md:col-span-2">
+                <label
+                  className="text-sm text-[#5f726e]"
+                  htmlFor="shipping-postalCode"
+                >
+                  Postal Code
+                </label>
+                <input
+                  id="shipping-postalCode"
+                  required
+                  value={shipping.postalCode}
+                  onChange={(event) =>
+                    updateShipping("postalCode", event.target.value)
+                  }
+                  className={inputClass}
+                />
+              </div>
             </div>
           </div>
 
           <div>
             <div className="flex flex-col items-start gap-3 sm:flex-row sm:items-center sm:justify-between">
-              <h2 className="text-2xl [font-family:var(--font-theme2-serif)] text-[#2f403d]">Billing Address</h2>
-              <label className="inline-flex items-center gap-2 text-sm text-[#445955]"><input type="checkbox" checked={useShippingAsBilling} onChange={(event) => setUseShippingAsBilling(event.target.checked)} className="h-4 w-4 accent-[#395f58]" />Use shipping address as billing address</label>
+              <h2 className="text-2xl [font-family:var(--font-theme2-serif)] text-[#2f403d]">
+                Billing Address
+              </h2>
+              <label className="inline-flex items-center gap-2 text-sm text-[#445955]">
+                <input
+                  type="checkbox"
+                  checked={useShippingAsBilling}
+                  onChange={(event) =>
+                    setUseShippingAsBilling(event.target.checked)
+                  }
+                  className="h-4 w-4 accent-[#395f58]"
+                />
+                Use shipping address as billing address
+              </label>
             </div>
 
             {!useShippingAsBilling ? (
               <div className="mt-3 grid gap-3 md:grid-cols-2">
                 <div className="md:col-span-2">
-                  <label className="text-sm text-[#5f726e]" htmlFor="billing-country">Country</label>
+                  <label
+                    className="text-sm text-[#5f726e]"
+                    htmlFor="billing-country"
+                  >
+                    Country
+                  </label>
                   <Theme2SingleSelectDropdown
                     id="billing-country"
                     value={billing.countryCode}
@@ -663,12 +879,65 @@ export function Theme2CheckoutForm({ slug, store }: Theme2CheckoutFormProps) {
                   />
                 </div>
 
-                <div><label className="text-sm text-[#5f726e]" htmlFor="billing-firstName">First Name</label><input id="billing-firstName" required={!useShippingAsBilling} value={billing.firstName} onChange={(event) => updateBilling("firstName", event.target.value)} className={inputClass} /></div>
-                <div><label className="text-sm text-[#5f726e]" htmlFor="billing-lastName">Last Name</label><input id="billing-lastName" required={!useShippingAsBilling} value={billing.lastName} onChange={(event) => updateBilling("lastName", event.target.value)} className={inputClass} /></div>
-                <div className="md:col-span-2"><label className="text-sm text-[#5f726e]" htmlFor="billing-address">Shipping Address</label><input id="billing-address" required={!useShippingAsBilling} value={billing.shippingAddress} onChange={(event) => updateBilling("shippingAddress", event.target.value)} className={inputClass} /></div>
+                <div>
+                  <label
+                    className="text-sm text-[#5f726e]"
+                    htmlFor="billing-firstName"
+                  >
+                    First Name
+                  </label>
+                  <input
+                    id="billing-firstName"
+                    required={!useShippingAsBilling}
+                    value={billing.firstName}
+                    onChange={(event) =>
+                      updateBilling("firstName", event.target.value)
+                    }
+                    className={inputClass}
+                  />
+                </div>
+                <div>
+                  <label
+                    className="text-sm text-[#5f726e]"
+                    htmlFor="billing-lastName"
+                  >
+                    Last Name
+                  </label>
+                  <input
+                    id="billing-lastName"
+                    required={!useShippingAsBilling}
+                    value={billing.lastName}
+                    onChange={(event) =>
+                      updateBilling("lastName", event.target.value)
+                    }
+                    className={inputClass}
+                  />
+                </div>
+                <div className="md:col-span-2">
+                  <label
+                    className="text-sm text-[#5f726e]"
+                    htmlFor="billing-address"
+                  >
+                    Shipping Address
+                  </label>
+                  <input
+                    id="billing-address"
+                    required={!useShippingAsBilling}
+                    value={billing.shippingAddress}
+                    onChange={(event) =>
+                      updateBilling("shippingAddress", event.target.value)
+                    }
+                    className={inputClass}
+                  />
+                </div>
 
                 <div>
-                  <label className="text-sm text-[#5f726e]" htmlFor="billing-state">State / Province</label>
+                  <label
+                    className="text-sm text-[#5f726e]"
+                    htmlFor="billing-state"
+                  >
+                    State / Province
+                  </label>
                   {billingStates.length ? (
                     <Theme2SingleSelectDropdown
                       id="billing-state"
@@ -680,12 +949,25 @@ export function Theme2CheckoutForm({ slug, store }: Theme2CheckoutFormProps) {
                       disabled={!billing.countryCode}
                     />
                   ) : (
-                    <input id="billing-state" required={!useShippingAsBilling} value={billing.state} onChange={(event) => updateBilling("state", event.target.value)} className={inputClass} />
+                    <input
+                      id="billing-state"
+                      required={!useShippingAsBilling}
+                      value={billing.state}
+                      onChange={(event) =>
+                        updateBilling("state", event.target.value)
+                      }
+                      className={inputClass}
+                    />
                   )}
                 </div>
 
                 <div>
-                  <label className="text-sm text-[#5f726e]" htmlFor="billing-city">City</label>
+                  <label
+                    className="text-sm text-[#5f726e]"
+                    htmlFor="billing-city"
+                  >
+                    City
+                  </label>
                   {billingCities.length ? (
                     <Theme2SingleSelectDropdown
                       id="billing-city"
@@ -697,69 +979,210 @@ export function Theme2CheckoutForm({ slug, store }: Theme2CheckoutFormProps) {
                       disabled={!billing.stateCode}
                     />
                   ) : (
-                    <input id="billing-city" required={!useShippingAsBilling} value={billing.city} onChange={(event) => updateBilling("city", event.target.value)} className={inputClass} />
+                    <input
+                      id="billing-city"
+                      required={!useShippingAsBilling}
+                      value={billing.city}
+                      onChange={(event) =>
+                        updateBilling("city", event.target.value)
+                      }
+                      className={inputClass}
+                    />
                   )}
                 </div>
 
-                <div className="md:col-span-2"><label className="text-sm text-[#5f726e]" htmlFor="billing-postalCode">Postal Code</label><input id="billing-postalCode" required={!useShippingAsBilling} value={billing.postalCode} onChange={(event) => updateBilling("postalCode", event.target.value)} className={inputClass} /></div>
+                <div className="md:col-span-2">
+                  <label
+                    className="text-sm text-[#5f726e]"
+                    htmlFor="billing-postalCode"
+                  >
+                    Postal Code
+                  </label>
+                  <input
+                    id="billing-postalCode"
+                    required={!useShippingAsBilling}
+                    value={billing.postalCode}
+                    onChange={(event) =>
+                      updateBilling("postalCode", event.target.value)
+                    }
+                    className={inputClass}
+                  />
+                </div>
               </div>
             ) : null}
           </div>
 
           <div className="border-t border-[#d4dbd8] pt-6">
-            <h2 className="text-2xl [font-family:var(--font-theme2-serif)] text-[#2f403d]">Payment</h2>
-            <p className="mt-1 text-sm text-[#5f726e]">All transactions are secure and encrypted.</p>
+            <h2 className="text-2xl [font-family:var(--font-theme2-serif)] text-[#2f403d]">
+              Payment
+            </h2>
+            <p className="mt-1 text-sm text-[#5f726e]">
+              All transactions are secure and encrypted.
+            </p>
             <div className="mt-4 space-y-3">
-              {store.paymentSettings?.stripe?.enabled && <label className={`flex cursor-pointer items-center justify-between border p-4 ${activeProvider === "stripe" ? "border-[#8ea39e] bg-[#f4f7f5]" : "border-[#d1d8d5] bg-white"}`}><div className="flex items-center gap-3"><input type="radio" name="paymentProvider" value="stripe" checked={activeProvider === "stripe"} onChange={() => setProvider("stripe")} className="h-4 w-4 accent-[#395f58]" /><span className="font-semibold text-[#2f403d]">Credit Card (via Stripe)</span></div></label>}
+              {store.paymentSettings?.stripe?.enabled && (
+                <label
+                  className={`flex cursor-pointer items-center justify-between border p-4 ${activeProvider === "stripe" ? "border-[#8ea39e] bg-[#f4f7f5]" : "border-[#d1d8d5] bg-white"}`}
+                >
+                  <div className="flex items-center gap-3">
+                    <input
+                      type="radio"
+                      name="paymentProvider"
+                      value="stripe"
+                      checked={activeProvider === "stripe"}
+                      onChange={() => setProvider("stripe")}
+                      className="h-4 w-4 accent-[#395f58]"
+                    />
+                    <span className="font-semibold text-[#2f403d]">
+                      Credit Card (via Stripe)
+                    </span>
+                  </div>
+                </label>
+              )}
 
               {store.paymentSettings?.helcim?.enabled && (
-                <div className={`border ${activeProvider === "helcim" ? "border-[#8ea39e] bg-[#f4f7f5]" : "border-[#d1d8d5] bg-white"}`}>
-                  <label className="flex cursor-pointer items-center justify-between p-4"><div className="flex items-center gap-3"><input type="radio" name="paymentProvider" value="helcim" checked={activeProvider === "helcim"} onChange={() => setProvider("helcim")} className="h-4 w-4 accent-[#395f58]" /><span className="font-semibold text-[#2f403d]">Credit Card (via Helcim)</span></div></label>
-                  {activeProvider === "helcim" ? <div className="border-t border-[#d1d8d5] p-4"><HelcimForm slug={slug} accountId={store.paymentSettings.helcim.accountId} amount={total} currency={currency} email={email} shipping={shipping} items={items} onSuccess={handleHelcimCheckout} onError={(message) => { setError(message); setIsHelcimInitializing(false); setIsHelcimActive(false); }} onReady={() => setIsHelcimInitializing(false)} trigger={isHelcimActive} /></div> : null}
+                <div
+                  className={`border ${activeProvider === "helcim" ? "border-[#8ea39e] bg-[#f4f7f5]" : "border-[#d1d8d5] bg-white"}`}
+                >
+                  <label className="flex cursor-pointer items-center justify-between p-4">
+                    <div className="flex items-center gap-3">
+                      <input
+                        type="radio"
+                        name="paymentProvider"
+                        value="helcim"
+                        checked={activeProvider === "helcim"}
+                        onChange={() => setProvider("helcim")}
+                        className="h-4 w-4 accent-[#395f58]"
+                      />
+                      <span className="font-semibold text-[#2f403d]">
+                        Credit Card (via Helcim)
+                      </span>
+                    </div>
+                  </label>
+                  {activeProvider === "helcim" ? (
+                    <div className="border-t border-[#d1d8d5] p-4">
+                      <HelcimForm
+                        slug={slug}
+                        accountId={store.paymentSettings.helcim.accountId}
+                        amount={total}
+                        currency={currency}
+                        email={email}
+                        shipping={shipping}
+                        items={items}
+                        onSuccess={handleHelcimCheckout}
+                        onError={(message) => {
+                          setError(message);
+                          setIsHelcimInitializing(false);
+                          setIsHelcimActive(false);
+                        }}
+                        onReady={() => setIsHelcimInitializing(false)}
+                        trigger={isHelcimActive}
+                      />
+                    </div>
+                  ) : null}
                 </div>
               )}
 
-              {!availableProviders.length && <div className="border border-amber-300 bg-amber-50 p-4 text-sm text-amber-800">This store is not configured to accept online payments.</div>}
+              {!availableProviders.length && (
+                <div className="border border-amber-300 bg-amber-50 p-4 text-sm text-amber-800">
+                  This store is not configured to accept online payments.
+                </div>
+              )}
             </div>
           </div>
 
-          {error ? <p className="rounded border border-red-200 bg-red-50 p-3 text-sm text-red-600">{error}</p> : null}
+          {error ? (
+            <p className="rounded border border-red-200 bg-red-50 p-3 text-sm text-red-600">
+              {error}
+            </p>
+          ) : null}
         </section>
 
         <aside className="h-fit border border-[#cad1ce] bg-[#f7f9f7] p-6 text-[#2f403d] lg:sticky lg:top-6">
-          <h3 className="text-2xl [font-family:var(--font-theme2-serif)]">Order Summary</h3>
+          <h3 className="text-2xl [font-family:var(--font-theme2-serif)]">
+            Order Summary
+          </h3>
 
           <div className="mt-4 space-y-3">
             {items.map((item) => (
               <div key={item.productId} className="flex items-center gap-3">
                 <div className="relative h-16 w-16 shrink-0 overflow-hidden border border-[#d2d9d6] bg-[#f8f9f8]">
-                  {isVideoUrl(item.image) ? <video src={item.image} className="h-full w-full object-cover" muted playsInline preload="metadata" /> : <Image src={item.image} alt={item.name} fill className="object-cover" sizes="64px" />}
-                  <span className="absolute -right-1 -top-1 inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-[#304340] px-1 text-[10px] font-bold text-white">{item.quantity}</span>
+                  {isVideoUrl(item.image) ? (
+                    <video
+                      src={item.image}
+                      className="h-full w-full object-cover"
+                      muted
+                      playsInline
+                      preload="metadata"
+                    />
+                  ) : (
+                    <Image
+                      src={item.image}
+                      alt={item.name}
+                      fill
+                      className="object-cover"
+                      sizes="64px"
+                    />
+                  )}
+                  <span className="absolute -right-1 -top-1 inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-[#304340] px-1 text-[10px] font-bold text-white">
+                    {item.quantity}
+                  </span>
                 </div>
-                <div className="min-w-0 flex-1"><p className="truncate text-sm font-semibold text-[#2f403d]">{item.name}</p></div>
-                <p className="text-sm font-semibold text-[#2f403d]">{formatMoney(item.price * item.quantity, item.currency)}</p>
+                <div className="min-w-0 flex-1">
+                  <p className="truncate text-sm font-semibold text-[#2f403d]">
+                    {item.name}
+                  </p>
+                </div>
+                <p className="text-sm font-semibold text-[#2f403d]">
+                  {formatMoney(item.price * item.quantity, item.currency)}
+                </p>
               </div>
             ))}
           </div>
 
           <div className="mt-6 space-y-2 border-t border-[#d4dbd8] pt-4 text-sm text-[#445955]">
-            <div className="flex items-center justify-between"><span>Subtotal ({itemCount} items)</span><span>{formatMoney(subtotal, currency)}</span></div>
-            {discountCode ? <div className="flex items-center justify-between text-emerald-700"><span>Discount ({discountCode})</span><span>-{formatMoney(discountAmount, currency)}</span></div> : null}
+            <div className="flex items-center justify-between">
+              <span>Subtotal ({itemCount} items)</span>
+              <span>{formatMoney(subtotal, currency)}</span>
+            </div>
+            {discountCode ? (
+              <div className="flex items-center justify-between text-emerald-700">
+                <span>Discount ({discountCode})</span>
+                <span>-{formatMoney(discountAmount, currency)}</span>
+              </div>
+            ) : null}
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-1">
                 <span>Estimated taxes (</span>
-                <span>{taxLoading ? "..." : `${taxRatePercent.toFixed(2)}%`}</span>
+                <span>
+                  {taxLoading ? "..." : `${taxRatePercent.toFixed(2)}%`}
+                </span>
                 <span>)</span>
               </div>
-              <span>{taxLoading ? "Calculating..." : formatMoney(taxAmount, currency)}</span>
+              <span>
+                {taxLoading
+                  ? "Calculating..."
+                  : formatMoney(taxAmount, currency)}
+              </span>
             </div>
             <div className="text-xs text-[#6f827d]">
               {taxLoading ? "Checking tax rate..." : taxRateLabel}
             </div>
-            <div className="flex items-center justify-between border-t border-[#d4dbd8] pt-3"><span className="text-base font-semibold text-[#2f403d]">Total</span><span className="text-xl [font-family:var(--font-theme2-serif)] text-[#2f403d]">{formatMoney(total, currency)}</span></div>
+            <div className="flex items-center justify-between border-t border-[#d4dbd8] pt-3">
+              <span className="text-base font-semibold text-[#2f403d]">
+                Total
+              </span>
+              <span className="text-xl [font-family:var(--font-theme2-serif)] text-[#2f403d]">
+                {formatMoney(total, currency)}
+              </span>
+            </div>
           </div>
 
-          {checkoutMeta.cartNote ? <p className="mt-3 border-t border-[#d4dbd8] pt-3 text-xs text-[#5f726e]">Note: {checkoutMeta.cartNote}</p> : null}
+          {checkoutMeta.cartNote ? (
+            <p className="mt-3 border-t border-[#d4dbd8] pt-3 text-xs text-[#5f726e]">
+              Note: {checkoutMeta.cartNote}
+            </p>
+          ) : null}
 
           <button
             type="button"
@@ -776,8 +1199,20 @@ export function Theme2CheckoutForm({ slug, store }: Theme2CheckoutFormProps) {
             disabled={loading || activeProvider === "none"}
             className="mt-5 flex h-12 w-full items-center justify-center gap-2 bg-[#95af8f] text-sm font-semibold uppercase tracking-[0.14em] text-white transition hover:bg-[#809c7c] disabled:opacity-50"
           >
-            {loading || isHelcimInitializing ? <Spinner size={16} className="text-white" /> : null}
-            {loading || isHelcimInitializing ? "Processing..." : activeProvider === "stripe" ? "Pay now" : activeProvider === "helcim" ? (isHelcimActive ? (isHelcimInitializing ? "Loading payment..." : "Complete payment above") : "Pay now") : "Select payment method"}
+            {loading || isHelcimInitializing ? (
+              <Spinner size={16} className="text-white" />
+            ) : null}
+            {loading || isHelcimInitializing
+              ? "Processing..."
+              : activeProvider === "stripe"
+                ? "Pay now"
+                : activeProvider === "helcim"
+                  ? isHelcimActive
+                    ? isHelcimInitializing
+                      ? "Loading payment..."
+                      : "Complete payment above"
+                    : "Pay now"
+                  : "Select payment method"}
           </button>
         </aside>
       </div>

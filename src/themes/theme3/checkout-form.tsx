@@ -1037,7 +1037,7 @@ export function Theme3CheckoutForm({
             </div>
             <h2 className="text-3xl font-bold text-slate-900 mb-2">Payment Successful!</h2>
             <p className="text-slate-600 mb-8 text-lg">
-              Thank you for your order. We've received your payment and are processing it now.
+              Thank you for your order. We&rsquo;ve received your payment and are processing it now.
             </p>
             <button
               onClick={() => window.location.href = `/${slug}`}
