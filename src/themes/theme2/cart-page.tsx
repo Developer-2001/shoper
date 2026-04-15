@@ -13,9 +13,9 @@ export function Theme2CartPage({ slug, store }: ThemeCartProps) {
     <div className="min-h-screen bg-[#f4f4f1] text-[#2d3f3c]">
       <Theme2Navbar slug={slug} logoText={store.logoText || "PRESENT DAY"} />
 
-      <main className="mx-auto w-full max-w-6xl px-4 py-8">
-        <h1 className="text-6xl leading-none text-[#243733] [font-family:var(--font-theme2-serif)]">Cart</h1>
-        <div className="mt-5">
+      <main className="mx-auto w-full max-w-7xl px-4 py-8">
+       
+        <div className="mt-2">
           <Theme2CartItems slug={slug} />
         </div>
       </main>
