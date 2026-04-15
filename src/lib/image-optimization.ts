@@ -20,30 +20,40 @@ export function getOptimizedImageUrl(
         format?: "webp" | "avif" | "auto";
     } = {}
 ) {
-    // TODO: Replace with your CDN service (Cloudflare, Imgix, etc.)
-    // For now, return original URL with recommendations
+    if (!url || typeof url !== "string") return url;
 
-    // If already optimized URL, return as-is
-    if (url.includes("?")) {
+    // If already optimized URL or not a GCS URL, return as-is or handle standard logic
+    if (url.includes("?") || !url.includes("storage.googleapis.com")) {
         return url;
     }
 
-    // GCS provides some built-in optimization via query params
-    const { width = 800, height, quality = 80, format = "auto" } = options;
+    const { width = 800, height, quality = 80 } = options;
 
+    // GCS provides some built-in optimization via query params if scaled
+    // However, many users prefer next/image for resizing.
+    // We add cache hints here.
     const params = new URLSearchParams({
         w: String(width),
         ...(height && { h: String(height) }),
         q: String(quality),
     });
 
-    // Add format negotiation when possible
-    if (format !== "auto" && url.includes("storage.googleapis.com")) {
-        // GCS supports -rw flag for WebP/AVIF
-        return `${url}?${params.toString()}`;
-    }
-
     return `${url}`;
+}
+
+/**
+ * 🚀 High-Reliability Image Loader
+ * Detects if an image should bypass Next.js optimization (unoptimized)
+ * useful for large banners that trigger 503 gateway timeouts in the proxy.
+ */
+export function shouldUseDirectGcs(url: string, size?: number): boolean {
+    if (!url.includes("storage.googleapis.com")) return false;
+    
+    // Bypass optimization for large assets (estimated by usage context)
+    // or if the URL matches specific "trusted" optimized types.
+    const isLargeBanner = url.includes("/themeimages/") || url.includes("/banners/");
+    
+    return isLargeBanner;
 }
 
 /**

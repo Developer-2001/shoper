@@ -1,10 +1,11 @@
-﻿"use client";
+"use client";
 
 import Image from "next/image";
 import Link from "next/link";
 import { useMemo } from "react";
 
 import { useCartStorage } from "@/hooks/useCartStorage";
+import { shouldUseDirectGcs } from "@/lib/image-optimization";
 import { Theme2Footer } from "@/themes/theme2/footer";
 import { Theme2Navbar } from "@/themes/theme2/navbar";
 import { Theme2ProductCard } from "@/themes/theme2/product-card";
@@ -74,6 +75,7 @@ export function Theme2Home({ slug, store, products, categories = [] }: ThemeHome
               className="h-[240px] w-full object-cover sm:h-[360px] lg:h-[540px]"
               sizes="100vw"
               priority
+              unoptimized={shouldUseDirectGcs(THEME2_HOME_HERO.imageUrl)}
             />
             <div className="absolute inset-0 bg-gradient-to-r from-black/35 via-black/10 to-transparent" />
             <div className="absolute left-4 top-1/2 max-w-md -translate-y-1/2 text-white sm:left-8 lg:left-12">
@@ -108,6 +110,7 @@ export function Theme2Home({ slug, store, products, categories = [] }: ThemeHome
                   height={500}
                   className="h-56 w-full object-cover transition duration-500 group-hover:scale-105"
                   sizes="(max-width: 768px) 100vw, 33vw"
+                  unoptimized={shouldUseDirectGcs(category.imageUrl)}
                 />
                 <div className="absolute inset-0 bg-black/30" />
                 <div className="absolute inset-0 flex items-center justify-center px-5 text-center text-4xl uppercase leading-tight tracking-[0.05em] text-white [font-family:var(--font-theme2-serif)]">
