@@ -8,6 +8,7 @@ import { useCartStorage } from "@/hooks/useCartStorage";
 import { Theme2Footer } from "@/themes/theme2/footer";
 import { Theme2Navbar } from "@/themes/theme2/navbar";
 import { Theme2ProductCard } from "@/themes/theme2/product-card";
+import { Theme2CartToastProvider } from "@/themes/theme2/cart-toast";
 import { Theme2SectionHeading } from "@/themes/theme2/components/theme2-section-heading";
 import {
   THEME2_CATALOGUE_BANNER,
@@ -83,8 +84,9 @@ export function Theme2Home({ slug, store, products, categories = [] }: ThemeHome
   }, [categoryTiles, products]);
 
   return (
-    <div className="min-h-screen bg-[#f4f4f1] text-[#263833]">
-      <Theme2Navbar slug={slug} logoText={store.logoText || "PRESENT DAY"} />
+    <Theme2CartToastProvider>
+      <div className="min-h-screen bg-[#f4f4f1] text-[#263833]">
+        <Theme2Navbar slug={slug} logoText={store.logoText || "PRESENT DAY"} />
 
       <main className="pb-8">
         <section className="mx-auto mt-4 w-full  px-4">
@@ -152,7 +154,7 @@ export function Theme2Home({ slug, store, products, categories = [] }: ThemeHome
         </section>
 
         <section className="mx-auto mt-14 w-full max-w-6xl px-4 text-center">
-          <p className="text-xl uppercase tracking-[0.28em] text-[#334743]">Featured In:</p>
+          <p className="text-xl uppercase tracking-[0.28em] text-[#334743]">Featured In</p>
           <div className="mt-8 grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-5">
             {THEME2_FEATURED_IN.map((logo) => (
               <div
@@ -175,16 +177,17 @@ export function Theme2Home({ slug, store, products, categories = [] }: ThemeHome
         </section>
       </main>
 
-      <Theme2Footer
-        slug={slug}
-        companyName={store.businessName}
-        about={store.about}
-        address={store.address}
-        contactEmail={store.contactEmail}
-        contactPhone={store.contactPhone}
-        footerLinks={store.footerLinks || []}
-        socialLinks={store.socialLinks}
-      />
-    </div>
+        <Theme2Footer
+          slug={slug}
+          companyName={store.businessName}
+          about={store.about}
+          address={store.address}
+          contactEmail={store.contactEmail}
+          contactPhone={store.contactPhone}
+          footerLinks={store.footerLinks || []}
+          socialLinks={store.socialLinks}
+        />
+      </div>
+    </Theme2CartToastProvider>
   );
 }

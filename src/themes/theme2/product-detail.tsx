@@ -7,6 +7,7 @@ import { useMemo, useState } from "react";
 import { useAppDispatch } from "@/hooks/useRedux";
 import { useCartStorage } from "@/hooks/useCartStorage";
 import { addToCart } from "@/store/slices/cartSlice";
+import { useTheme2CartToast } from "@/themes/theme2/cart-toast";
 import { formatMoney, salePrice } from "@/utils/currency";
 import { isVideoUrl } from "@/utils/media";
 import type { ThemeProductDetailProps } from "@/themes/types";
@@ -20,6 +21,7 @@ function splitDescription(value: string) {
 
 export function Theme2ProductDetail({ slug, product }: ThemeProductDetailProps) {
   const dispatch = useAppDispatch();
+  const { showAddedToCart } = useTheme2CartToast();
   useCartStorage();
 
   const [activeIndex, setActiveIndex] = useState(0);
@@ -44,6 +46,7 @@ export function Theme2ProductDetail({ slug, product }: ThemeProductDetailProps) 
         quantity: 1,
       }),
     );
+    showAddedToCart(product.name);
   }
 
   return (

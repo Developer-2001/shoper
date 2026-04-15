@@ -9,6 +9,7 @@ import { useCartStorage } from "@/hooks/useCartStorage";
 import { Theme2Footer } from "@/themes/theme2/footer";
 import { Theme2Navbar } from "@/themes/theme2/navbar";
 import { Theme2ProductCard } from "@/themes/theme2/product-card";
+import { Theme2CartToastProvider } from "@/themes/theme2/cart-toast";
 import { categoryMatchesCollectionSlug, toCollectionSlug } from "@/themes/theme2/collection-utils";
 import { THEME2_COLLECTION_HERO } from "@/themes/theme2/theme2-config";
 import type { ThemeProductsProps } from "@/themes/types";
@@ -37,8 +38,9 @@ export function Theme2ProductsPage({ slug, store, products }: ThemeProductsProps
   }, [products, categoryFilter]);
 
   return (
-    <div className="min-h-screen bg-[#f4f4f1] text-[#263833]">
-      <Theme2Navbar slug={slug} logoText={store.logoText || "PRESENT DAY"} />
+    <Theme2CartToastProvider>
+      <div className="min-h-screen bg-[#f4f4f1] text-[#263833]">
+        <Theme2Navbar slug={slug} logoText={store.logoText || "PRESENT DAY"} />
 
       <main className="pb-8">
         <section className="mx-auto mt-4 w-full max-w-7xl px-4">
@@ -88,16 +90,17 @@ export function Theme2ProductsPage({ slug, store, products }: ThemeProductsProps
         </section>
       </main>
 
-      <Theme2Footer
-        slug={slug}
-        companyName={store.businessName}
-        about={store.about}
-        address={store.address}
-        contactEmail={store.contactEmail}
-        contactPhone={store.contactPhone}
-        footerLinks={store.footerLinks || []}
-        socialLinks={store.socialLinks}
-      />
-    </div>
+        <Theme2Footer
+          slug={slug}
+          companyName={store.businessName}
+          about={store.about}
+          address={store.address}
+          contactEmail={store.contactEmail}
+          contactPhone={store.contactPhone}
+          footerLinks={store.footerLinks || []}
+          socialLinks={store.socialLinks}
+        />
+      </div>
+    </Theme2CartToastProvider>
   );
 }
