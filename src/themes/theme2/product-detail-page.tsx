@@ -12,7 +12,7 @@ export function Theme2ProductDetailPage({ slug, store, product }: ThemeProductDe
       <div className="min-h-screen bg-[#f4f4f1] text-[#233532]">
         <Theme2Navbar slug={slug} logoText={store.logoText || "PRESENT DAY"} />
 
-        <main className="mx-auto w-full max-w-6xl px-4 py-8">
+        <main className="mx-auto w-full max-w-7xl px-4 py-8">
           <Theme2ProductDetail slug={slug} store={store} product={product} />
         </main>
 
