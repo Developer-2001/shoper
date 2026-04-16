@@ -46,7 +46,8 @@ export function getOptimizedImageUrl(
  * Detects if an image should bypass Next.js optimization (unoptimized)
  * useful for large banners that trigger 503 gateway timeouts in the proxy.
  */
-export function shouldUseDirectGcs(url: string, size?: number): boolean {
+export function shouldUseDirectGcs(url?: string | null, size?: number): boolean {
+    if (!url || typeof url !== "string") return false;
     if (!url.includes("storage.googleapis.com")) return false;
     
     // Bypass optimization for large assets (estimated by usage context)

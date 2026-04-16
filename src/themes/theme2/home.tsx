@@ -101,7 +101,7 @@ export function Theme2Home({ slug, store, products, categories = [] }: ThemeHome
               className="h-[240px] w-full object-cover sm:h-[360px] lg:h-[540px]"
               sizes="100vw"
               priority
-              unoptimized={shouldUseDirectGcs(THEME2_HOME_HERO.imageUrl)}
+              unoptimized={shouldUseDirectGcs(activeHero.imageUrl)}
             />
             <div className="absolute inset-0 bg-gradient-to-r from-black/35 via-black/10 to-transparent" />
             <div className="absolute left-4 top-1/2 max-w-md -translate-y-1/2 text-white sm:left-8 lg:left-12">
