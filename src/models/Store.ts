@@ -22,6 +22,7 @@ export type StoreDocument = {
   contactEmail: string;
   contactPhone: string;
   logoText: string;
+  reportLink: string;
   socialLinks: {
     instagram?: string;
     facebook?: string;
@@ -64,6 +65,7 @@ const StoreSchema = new Schema<StoreDocument>(
     contactEmail: { type: String, default: "" },
     contactPhone: { type: String, default: "" },
     logoText: { type: String, default: "Shoper Store" },
+    reportLink: { type: String, default: "" },
     socialLinks: {
       instagram: { type: String, default: "" },
       facebook: { type: String, default: "" },

@@ -55,6 +55,7 @@ export const categorySchema = z.object({
 export const storeConfigSchema = z.object({
   companyName: z.string().min(2),
   logoText: z.string().min(1),
+  reportLink: z.string().trim().url().or(z.literal("")).optional().default(""),
   about: z.string().optional().default(""),
   address: z.string().optional().default(""),
   contactEmail: z.string().email(),

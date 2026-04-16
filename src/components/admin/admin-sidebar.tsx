@@ -3,7 +3,17 @@
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { Home, Package, ShoppingBag, Settings, User, LogOut, ShieldCheck, X as CloseIcon } from "lucide-react";
+import {
+  BarChart3,
+  Home,
+  LogOut,
+  Package,
+  Settings,
+  ShieldCheck,
+  ShoppingBag,
+  User,
+  X as CloseIcon,
+} from "lucide-react";
 
 type SessionRole = "store_admin" | "platform_admin";
 
@@ -11,6 +21,7 @@ const storeLinks = [
   { href: "/admin/home", label: "Home", icon: Home },
   { href: "/admin/products", label: "Products", icon: Package },
   { href: "/admin/orders", label: "Orders", icon: ShoppingBag },
+  { href: "/admin/analytics", label: "Analytics", icon: BarChart3 },
   { href: "/admin/configure-store", label: "Configure Store", icon: Settings },
   { href: "/admin/profile", label: "Profile", icon: User },
 ];
@@ -102,7 +113,7 @@ export function AdminSidebar({ isOpen, onClose }: AdminSidebarProps) {
           <button
             type="button"
             onClick={handleLogout}
-            className="flex w-full items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-50 transition-colors"
+            className="flex w-full cursor-pointer items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-50 transition-colors"
           >
             <LogOut size={16} />
             Logout

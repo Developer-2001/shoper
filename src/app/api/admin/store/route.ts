@@ -37,6 +37,7 @@ export async function PUT(request: Request) {
     {
       businessName: parsed.data.companyName,
       logoText: parsed.data.logoText,
+      reportLink: parsed.data.reportLink,
       about: parsed.data.about,
       address: parsed.data.address,
       contactEmail: parsed.data.contactEmail,

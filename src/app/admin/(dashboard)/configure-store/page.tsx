@@ -10,6 +10,7 @@ import { Spinner } from "@/components/admin/ui/loader";
 const defaultForm = {
   companyName: "",
   logoText: "",
+  reportLink: "",
   about: "",
   address: "",
   contactEmail: "",
@@ -54,7 +55,7 @@ export default function ConfigureStorePage() {
   const [saving, setSaving] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  const [isPaymentProviderOpen, setIsPaymentProviderOpen] = useState(true);
+  const [isPaymentProviderOpen, setIsPaymentProviderOpen] = useState(false);
 
   function buildPayload(overrides?: Partial<typeof defaultForm>) {
     const merged = {
@@ -65,6 +66,7 @@ export default function ConfigureStorePage() {
     return {
       companyName: merged.companyName,
       logoText: merged.logoText,
+      reportLink: merged.reportLink.trim(),
       about: merged.about,
       address: merged.address,
       contactEmail: merged.contactEmail,
@@ -116,6 +118,7 @@ export default function ConfigureStorePage() {
         setForm({
           companyName: store.businessName || "",
           logoText: store.logoText || "",
+          reportLink: store.reportLink || "",
           about: store.about || "",
           address: store.address || "",
           contactEmail: store.contactEmail || "",
@@ -242,6 +245,7 @@ export default function ConfigureStorePage() {
                   required
                 />
               </Field>
+
               <Field id="contactEmail" label="Contact Email">
                 <input
                   id="contactEmail"
@@ -293,6 +297,27 @@ export default function ConfigureStorePage() {
                   className={textareaClass}
                 />
               </Field>
+              <div className="sm:col-span-2 md:col-span-2">
+                <Field
+                  id="reportLink"
+                  label="Looker Studio Report URL"
+                  helper="Paste the Looker Studio embed/reporting URL for this store."
+                >
+                  <input
+                    id="reportLink"
+                    type="url"
+                    value={form.reportLink}
+                    onChange={(event) =>
+                      setForm((prev) => ({
+                        ...prev,
+                        reportLink: event.target.value,
+                      }))
+                    }
+                    className={inputClass}
+                    placeholder="https://datastudio.google.com/embed/reporting/..."
+                  />
+                </Field>
+              </div>
             </div>
           </section>
 
@@ -376,189 +401,193 @@ export default function ConfigureStorePage() {
             </Field>
           </section>
 
-          <section className="mt-8 border-t border-slate-100 pt-6">
-            <button
-              type="button"
-              onClick={() => setIsPaymentProviderOpen((previous) => !previous)}
-              className="flex w-full items-center justify-between rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-left"
-              aria-expanded={isPaymentProviderOpen}
-            >
-              <span className="text-base font-bold text-slate-900">
-                Payment Provider (Canada)
-              </span>
+          <section className="mt-4 border-t border-slate-100 pt-6">
+            <div className="rounded-xl border border-slate-200 bg-slate-50">
+              <button
+                type="button"
+                onClick={() =>
+                  setIsPaymentProviderOpen((previous) => !previous)
+                }
+                className="flex w-full cursor-pointer items-center justify-between px-4 py-3 text-left"
+                aria-expanded={isPaymentProviderOpen}
+              >
+                <span className="text-base font-bold text-slate-900">
+                  Payment Provider (Canada)
+                </span>
+                {isPaymentProviderOpen ? (
+                  <ChevronUp size={18} className="text-slate-700" />
+                ) : (
+                  <ChevronDown size={18} className="text-slate-700" />
+                )}
+              </button>
+
               {isPaymentProviderOpen ? (
-                <ChevronUp size={18} className="text-slate-700" />
-              ) : (
-                <ChevronDown size={18} className="text-slate-700" />
-              )}
-            </button>
-
-            {isPaymentProviderOpen ? (
-              <>
-                <div className="mt-4 max-w-md">
-                <div className="rounded-2xl border border-slate-200 bg-slate-50/50 p-5">
-                  <div className="mb-4 flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <h4 className="text-lg font-bold text-slate-800">
-                        Stripe Connect
-                      </h4>
-                      {form.stripeEnabled && form.stripeAccountId ? (
-                        <span className="rounded-full bg-green-100 px-2 py-1 text-xs font-bold text-green-700">
-                          Connected
-                        </span>
-                      ) : (
-                        <span className="rounded-full bg-slate-200 px-2 py-1 text-xs font-bold text-slate-600">
-                          Not Connected
-                        </span>
-                      )}
-                    </div>
-                  </div>
-
-                  <p className="mb-6 text-sm text-slate-600">
-                    {form.stripeEnabled
-                      ? "Your store is connected to Stripe. Customers can now pay you directly."
-                      : "Connect your Stripe account to receive direct payments from customers. No technical setup required."}
-                  </p>
-
-                  {form.stripeEnabled && form.stripeAccountId ? (
-                    <div className="space-y-4">
-                      <div className="rounded-xl border border-slate-200 bg-white p-3 font-mono text-sm text-slate-500">
-                        ID: {form.stripeAccountId}
+                <div className="grid grid-cols-1 gap-4 border-t border-slate-200 p-4 lg:grid-cols-2">
+                  <div className="rounded-2xl border border-slate-200 bg-slate-50/50 p-5">
+                    <div className="mb-4 flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <h4 className="text-lg font-bold text-slate-800">
+                          Stripe Connect
+                        </h4>
+                        {form.stripeEnabled && form.stripeAccountId ? (
+                          <span className="rounded-full bg-green-100 px-2 py-1 text-xs font-bold text-green-700">
+                            Connected
+                          </span>
+                        ) : (
+                          <span className="rounded-full bg-slate-200 px-2 py-1 text-xs font-bold text-slate-600">
+                            Not Connected
+                          </span>
+                        )}
                       </div>
-                      <button
-                        type="button"
-                        onClick={async () => {
-                          if (
-                            !confirm(
-                              "Are you sure you want to disconnect Stripe? Customers won't be able to buy from your store.",
+                    </div>
+
+                    <p className="mb-6 text-sm text-slate-600">
+                      {form.stripeEnabled
+                        ? "Your store is connected to Stripe. Customers can now pay you directly."
+                        : "Connect your Stripe account to receive direct payments from customers. No technical setup required."}
+                    </p>
+
+                    {form.stripeEnabled && form.stripeAccountId ? (
+                      <div className="space-y-4">
+                        <div className="rounded-xl border border-slate-200 bg-white p-3 font-mono text-sm text-slate-500">
+                          ID: {form.stripeAccountId}
+                        </div>
+                        <button
+                          type="button"
+                          onClick={async () => {
+                            if (
+                              !confirm(
+                                "Are you sure you want to disconnect Stripe? Customers won't be able to buy from your store.",
+                              )
                             )
-                          )
-                            return;
-                          setSaving(true);
-                          try {
-                            const res = await fetch("/api/admin/store", {
-                              method: "PUT",
-                              headers: { "Content-Type": "application/json" },
-                              body: JSON.stringify(
-                                buildPayload({
+                              return;
+                            setSaving(true);
+                            try {
+                              const res = await fetch("/api/admin/store", {
+                                method: "PUT",
+                                headers: { "Content-Type": "application/json" },
+                                body: JSON.stringify(
+                                  buildPayload({
+                                    stripeEnabled: false,
+                                    stripeAccountId: "",
+                                  }),
+                                ),
+                              });
+                              if (res.ok) {
+                                setForm((previous) => ({
+                                  ...previous,
                                   stripeEnabled: false,
                                   stripeAccountId: "",
-                                }),
-                              ),
-                            });
-                            if (res.ok) {
-                              setForm((previous) => ({
-                                ...previous,
-                                stripeEnabled: false,
-                                stripeAccountId: "",
-                              }));
+                                }));
+                              }
+                            } catch {
+                              alert("Failed to disconnect");
+                            } finally {
+                              setSaving(false);
                             }
+                          }}
+                          className="text-sm font-semibold text-red-600 underline hover:text-red-700"
+                        >
+                          Disconnect account
+                        </button>
+                      </div>
+                    ) : (
+                      <button
+                        type="button"
+                        disabled={saving}
+                        onClick={async () => {
+                          setSaving(true);
+                          try {
+                            const res = await fetch(
+                              "/api/admin/stripe/onboard",
+                            );
+                            const data = await res.json();
+                            if (data.url) window.location.href = data.url;
+                            else
+                              alert(
+                                data.error || "Failed to start onboarding.",
+                              );
                           } catch {
-                            alert("Failed to disconnect");
+                            alert("A network error occurred.");
                           } finally {
                             setSaving(false);
                           }
                         }}
-                        className="text-sm font-semibold text-red-600 underline hover:text-red-700"
+                        className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#635BFF] py-3 font-semibold text-white shadow-sm transition-colors hover:bg-[#5851E0] disabled:opacity-50"
                       >
-                        Disconnect account
+                        {saving ? <Spinner size={16} /> : null}
+                        Connect with Stripe
                       </button>
-                    </div>
-                  ) : (
-                    <button
-                      type="button"
-                      disabled={saving}
-                      onClick={async () => {
-                        setSaving(true);
-                        try {
-                          const res = await fetch("/api/admin/stripe/onboard");
-                          const data = await res.json();
-                          if (data.url) window.location.href = data.url;
-                          else
-                            alert(data.error || "Failed to start onboarding.");
-                        } catch {
-                          alert("A network error occurred.");
-                        } finally {
-                          setSaving(false);
-                        }
-                      }}
-                      className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#635BFF] py-3 font-semibold text-white shadow-sm transition-colors hover:bg-[#5851E0] disabled:opacity-50"
-                    >
-                      {saving ? <Spinner size={16} /> : null}
-                      Connect with Stripe
-                    </button>
-                  )}
-                </div>
-              </div>
-
-              <div className="mt-6 max-w-md">
-                <div className="rounded-2xl border border-slate-200 bg-slate-50/50 p-5">
-                  <div className="mb-4 flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <h4 className="text-lg font-bold text-slate-800">
-                        Helcim Payments
-                      </h4>
-                      {form.helcimEnabled ? (
-                        <span className="rounded-full bg-green-100 px-2 py-1 text-xs font-bold text-green-700">
-                          Enabled
-                        </span>
-                      ) : (
-                        <span className="rounded-full bg-slate-200 px-2 py-1 text-xs font-bold text-slate-600">
-                          Disabled
-                        </span>
-                      )}
-                    </div>
-                    <label className="relative inline-flex cursor-pointer items-center">
-                      <input
-                        type="checkbox"
-                        className="peer sr-only"
-                        checked={form.helcimEnabled}
-                        onChange={(event) =>
-                          setForm((prev) => ({
-                            ...prev,
-                            helcimEnabled: event.target.checked,
-                          }))
-                        }
-                      />
-                      <div className="peer h-6 w-11 rounded-full bg-slate-200 after:absolute after:top-[2px] after:left-[2px] after:h-5 after:w-5 after:rounded-full after:border after:border-slate-300 after:bg-white after:transition-all after:content-[''] peer-checked:bg-slate-900 peer-checked:after:translate-x-full peer-checked:after:border-white peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-slate-300"></div>
-                    </label>
+                    )}
                   </div>
 
-                  <div className="space-y-4">
-                    <Field id="helcimAccountId" label="Helcim Account ID">
-                      <input
-                        id="helcimAccountId"
-                        value={form.helcimAccountId}
-                        onChange={(event) =>
-                          setForm((prev) => ({
-                            ...prev,
-                            helcimAccountId: event.target.value,
-                          }))
-                        }
-                        className={inputClass}
-                        placeholder="e.g. 123456"
-                      />
-                    </Field>
-                    <Field id="helcimToken" label="API Token">
-                      <input
-                        id="helcimToken"
-                        type="password"
-                        value={form.helcimToken}
-                        onChange={(event) =>
-                          setForm((prev) => ({
-                            ...prev,
-                            helcimToken: event.target.value,
-                          }))
-                        }
-                        className={inputClass}
-                        placeholder="helcim_api_..."
-                      />
-                    </Field>
+                  <div className="rounded-2xl border border-slate-200 bg-slate-50/50 p-5">
+                    <div className="mb-4 flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <h4 className="text-lg font-bold text-slate-800">
+                          Helcim Payments
+                        </h4>
+                        {form.helcimEnabled ? (
+                          <span className="rounded-full bg-green-100 px-2 py-1 text-xs font-bold text-green-700">
+                            Enabled
+                          </span>
+                        ) : (
+                          <span className="rounded-full bg-slate-200 px-2 py-1 text-xs font-bold text-slate-600">
+                            Disabled
+                          </span>
+                        )}
+                      </div>
+                      <label className="relative inline-flex cursor-pointer items-center">
+                        <input
+                          type="checkbox"
+                          className="peer sr-only"
+                          checked={form.helcimEnabled}
+                          onChange={(event) =>
+                            setForm((prev) => ({
+                              ...prev,
+                              helcimEnabled: event.target.checked,
+                            }))
+                          }
+                        />
+                        <div className="peer h-6 w-11 rounded-full bg-slate-200 after:absolute after:top-[2px] after:left-[2px] after:h-5 after:w-5 after:rounded-full after:border after:border-slate-300 after:bg-white after:transition-all after:content-[''] peer-checked:bg-slate-900 peer-checked:after:translate-x-full peer-checked:after:border-white peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-slate-300"></div>
+                      </label>
+                    </div>
+
+                    <div className="space-y-4">
+                      <Field id="helcimAccountId" label="Helcim Account ID">
+                        <input
+                          id="helcimAccountId"
+                          value={form.helcimAccountId}
+                          onChange={(event) =>
+                            setForm((prev) => ({
+                              ...prev,
+                              helcimAccountId: event.target.value,
+                            }))
+                          }
+                          className={inputClass}
+                          placeholder="e.g. 123456"
+                        />
+                      </Field>
+                      <Field id="helcimToken" label="API Token">
+                        <input
+                          id="helcimToken"
+                          type="password"
+                          value={form.helcimToken}
+                          onChange={(event) =>
+                            setForm((prev) => ({
+                              ...prev,
+                              helcimToken: event.target.value,
+                            }))
+                          }
+                          className={inputClass}
+                          placeholder="helcim_api_..."
+                        />
+                      </Field>
+                    </div>
                   </div>
                 </div>
-              </div>
-            </>
-          ) : null}
+              ) : null}
+            </div>
           </section>
 
           <button
