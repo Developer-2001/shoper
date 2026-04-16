@@ -6,6 +6,7 @@ import { MoveLeft, MoveRight } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 
 import { useCartStorage } from "@/hooks/useCartStorage";
+import { shouldUseDirectGcs } from "@/lib/image-optimization";
 import {
   toAnalyticsItem,
   trackStorefrontEvent,
@@ -180,6 +181,7 @@ export function Theme1Home({
                         className="object-cover"
                         sizes="100vw"
                         priority={index === 0}
+                        unoptimized={shouldUseDirectGcs(item.imageUrl)}
                       />
                       <div className="absolute inset-0 bg-linear-to-r from-black/55 via-black/20 to-transparent" />
                       <div className="absolute bottom-4 left-4 right-4 max-w-xl text-white sm:left-8 sm:right-auto md:bottom-10 md:left-12">
@@ -276,6 +278,7 @@ export function Theme1Home({
                       fill
                       className="object-cover transition duration-300 group-hover:scale-[1.03]"
                       sizes="(max-width: 1024px) 50vw, 12vw"
+                      unoptimized={shouldUseDirectGcs(collection.imageUrl)}
                     />
                   ) : (
                     <div className="absolute inset-0 bg-linear-to-r from-slate-200 to-slate-100" />
