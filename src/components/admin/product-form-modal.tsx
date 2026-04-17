@@ -6,6 +6,8 @@ import { ChevronDown, Plus, Sparkles, X } from "lucide-react";
 
 import { CategoryDropdown } from "@/components/admin/category-dropdown";
 import { Spinner } from "@/components/admin/ui/loader";
+import { Skeleton } from "@/components/admin/ui/skeleton";
+import { cn } from "@/lib/utils";
 import { isVideoUrl } from "@/utils/media";
 
 type ProductFormState = {
@@ -81,6 +83,93 @@ export function ProductFormModal({
   onCreateCategory,
 }: ProductFormModalProps) {
   const [isMediaExpanded, setIsMediaExpanded] = useState(false);
+  const [isGeneratingDescription, setIsGeneratingDescription] = useState(false);
+  const [descriptionGenerationError, setDescriptionGenerationError] = useState<
+    string | null
+  >(null);
+  const [showValidationErrors, setShowValidationErrors] = useState(false);
+
+  const toBase64 = (file: File): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.readAsDataURL(file);
+      reader.onload = () => {
+        const result = reader.result as string;
+        resolve(result.split(",")[1]); // remove prefix
+      };
+      reader.onerror = reject;
+    });
+  };
+
+  const handleGenerateDescription = async () => {
+    const firstSavedImage = form.images.find((url) => !isVideoUrl(url)) ?? null;
+    const firstPendingImage =
+      pendingProductPreviews.find(
+        (preview) => !preview.file.type.startsWith("video/"),
+      )?.file ?? null;
+    const imageToProcess = firstSavedImage ?? firstPendingImage;
+
+    if (!form.name || !imageToProcess) {
+      setShowValidationErrors(true);
+      setDescriptionGenerationError(
+        !form.name
+          ? "Enter a product name before generating a description."
+          : "Add at least one image before generating a description.",
+      );
+      return;
+    }
+
+    setShowValidationErrors(false);
+    setDescriptionGenerationError(null);
+    setIsGeneratingDescription(true);
+
+    try {
+      let base64Image: string;
+
+      if (typeof imageToProcess === "string") {
+        const response = await fetch(imageToProcess);
+        const blob = await response.blob();
+        base64Image = await new Promise((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onloadend = () => {
+            const result = reader.result as string;
+            resolve(result.split(",")[1]);
+          };
+          reader.onerror = reject;
+          reader.readAsDataURL(blob);
+        });
+      } else {
+        base64Image = await toBase64(imageToProcess);
+      }
+      let mimeType = "image/jpeg"; // fallback
+
+      if (imageToProcess instanceof File) {
+        mimeType = imageToProcess.type;
+      }
+      const res = await fetch("/api/generate-description", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          name: form.name,
+          image: base64Image,
+          mimeType,
+        }),
+      });
+
+      const data = await res.json();
+
+      if (data.description) {
+        setForm((prev) => ({ ...prev, description: data.description }));
+      }
+    } catch (err) {
+      console.error("AI Generation Error:", err);
+      setDescriptionGenerationError("Failed to generate description");
+    } finally {
+      setIsGeneratingDescription(false);
+    }
+  };
   const priceValue = Number(form.price);
   const isPriceBelowMinimum =
     form.price.trim() !== "" &&
@@ -137,7 +226,12 @@ export function ProductFormModal({
                         }))
                       }
                       placeholder="Enter product name"
-                      className="h-11 w-full rounded-xl border border-slate-300 bg-white px-4 text-sm text-slate-900 outline-hidden transition focus:border-slate-500"
+                      className={cn(
+                        "h-11 w-full rounded-xl border bg-white px-4 text-sm text-slate-900 outline-hidden transition focus:border-slate-500",
+                        showValidationErrors && !form.name
+                          ? "border-red-500"
+                          : "border-slate-300",
+                      )}
                     />
                   </div>
 
@@ -157,31 +251,63 @@ export function ProductFormModal({
                   </div>
 
                   <div className="space-y-1.5 md:col-span-2">
-                    <label className="text-sm font-medium text-slate-700">
-                      Description
-                    </label>
-                    <textarea
-                      value={form.description}
-                      onChange={(event) =>
-                        setForm((prev) => ({
-                          ...prev,
-                          description: event.target.value,
-                        }))
-                      }
-                      placeholder="Write a short product description"
-                      className="min-h-24 w-full rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm text-slate-900 outline-hidden transition focus:border-slate-500"
-                    />
+                    <div className="flex items-center justify-between">
+                      <label className="text-sm font-medium text-slate-700">
+                        Description
+                      </label>
+                      <button
+                        type="button"
+                        onClick={handleGenerateDescription}
+                        disabled={isGeneratingDescription}
+                        className="flex items-center gap-1.5 cursor-pointer rounded-lg border border-slate-900 bg-slate-900 px-3 py-1 text-[11px] font-bold text-white transition hover:bg-slate-800 disabled:opacity-50"
+                      >
+                        <Sparkles size={12} />
+                        GENERATE
+                      </button>
+                    </div>
+                    {isGeneratingDescription ? (
+                      <Skeleton className="min-h-24 w-full rounded-xl" />
+                    ) : (
+                      <>
+                        <textarea
+                          value={form.description}
+                          onChange={(event) =>
+                            setForm((prev) => ({
+                              ...prev,
+                              description: event.target.value,
+                            }))
+                          }
+                          placeholder="Write a short product description"
+                          className="min-h-24 w-full rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm text-slate-900 outline-hidden transition focus:border-slate-500"
+                        />
+                        {descriptionGenerationError ? (
+                          <p className="mt-2 text-xs font-medium text-red-600">
+                            {descriptionGenerationError}
+                          </p>
+                        ) : null}
+                      </>
+                    )}
                   </div>
                 </div>
               </div>
 
-              <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+              <div
+                className={cn(
+                  "rounded-2xl border bg-slate-50 p-4 transition-colors",
+                  showValidationErrors &&
+                    form.images.length + pendingProductPreviews.length < 1
+                    ? "border-red-500"
+                    : "border-slate-200",
+                )}
+              >
                 <button
                   type="button"
                   onClick={() => setIsMediaExpanded((prev) => !prev)}
                   className="flex w-full items-center justify-between gap-3 text-left"
                 >
-                  <p className="text-sm font-semibold text-slate-800">Product Media</p>
+                  <p className="text-sm font-semibold text-slate-800">
+                    Product Media
+                  </p>
                   <div className="flex items-center gap-2">
                     <span className="text-xs text-slate-500">
                       {form.images.length}/{maxProductMedia}
@@ -201,135 +327,152 @@ export function ProductFormModal({
                       accept="image/*,video/*"
                       multiple
                       className="hidden"
-                      onChange={(event) => onAddPendingFiles(event.target.files)}
+                      onChange={(event) =>
+                        onAddPendingFiles(event.target.files)
+                      }
                     />
 
                     <div className="mt-3 grid gap-3 sm:grid-cols-3 lg:grid-cols-3">
                       {form.images.map((url, index) => (
-                      <div
-                        key={url}
-                        className="group relative h-44 overflow-hidden rounded-2xl border border-slate-300 bg-white"
-                      >
-                        {isVideoUrl(url) ? (
-                          <video
-                            src={url}
-                            className="h-full w-full object-cover"
-                            autoPlay
-                            muted
-                            loop
-                            playsInline
-                          />
-                        ) : (
-                          <Image
-                            src={url}
-                            alt={`product-${index + 1}`}
-                            width={220}
-                            height={160}
-                            className="h-full w-full object-contain"
-                          />
-                        )}
+                        <div
+                          key={url}
+                          className="group relative h-44 overflow-hidden rounded-2xl border border-slate-300 bg-white"
+                        >
+                          {isVideoUrl(url) ? (
+                            <video
+                              src={url}
+                              className="h-full w-full object-cover"
+                              autoPlay
+                              muted
+                              loop
+                              playsInline
+                            />
+                          ) : (
+                            <Image
+                              src={url}
+                              alt={`product-${index + 1}`}
+                              width={220}
+                              height={160}
+                              className="h-full w-full object-contain"
+                            />
+                          )}
 
-                        <div className="absolute inset-0 flex items-center justify-center gap-2 bg-black/25 opacity-100 transition lg:opacity-0 lg:group-hover:opacity-100">
-                          <button
-                            type="button"
-                            onClick={() => onOpenPreview(url)}
-                            className="rounded-lg border border-slate-900 bg-white/90 px-3 py-1.5 text-xs font-semibold text-slate-900"
-                          >
-                            View
-                          </button>
-                          <label
-                            htmlFor={`product-change-${index}`}
-                            className="cursor-pointer rounded-lg border border-slate-900 bg-white/90 px-3 py-1.5 text-xs font-semibold text-slate-900"
-                          >
-                            Change
-                          </label>
-                          {form.images.length + pendingProductPreviews.length >
-                            1 && (
+                          {index === 0 && (
+                            <div className="absolute right-2 top-2 z-10 flex items-center gap-1 rounded-md bg-indigo-600 px-2 py-0.5 text-[10px] font-bold uppercase text-white shadow-sm">
+                              <Sparkles size={10} />
+                              AI Source
+                            </div>
+                          )}
+
+                          <div className="absolute inset-0 flex items-center justify-center gap-2 bg-black/25 opacity-100 transition lg:opacity-0 lg:group-hover:opacity-100">
                             <button
                               type="button"
-                              onClick={() => onRemoveMedia(url)}
+                              onClick={() => onOpenPreview(url)}
                               className="rounded-lg border border-slate-900 bg-white/90 px-3 py-1.5 text-xs font-semibold text-slate-900"
                             >
-                              Remove
+                              View
                             </button>
-                          )}
-                        </div>
+                            <label
+                              htmlFor={`product-change-${index}`}
+                              className="cursor-pointer rounded-lg border border-slate-900 bg-white/90 px-3 py-1.5 text-xs font-semibold text-slate-900"
+                            >
+                              Change
+                            </label>
+                            {form.images.length +
+                              pendingProductPreviews.length >
+                              1 && (
+                              <button
+                                type="button"
+                                onClick={() => onRemoveMedia(url)}
+                                className="rounded-lg border border-slate-900 bg-white/90 px-3 py-1.5 text-xs font-semibold text-slate-900"
+                              >
+                                Remove
+                              </button>
+                            )}
+                          </div>
 
-                        <input
-                          id={`product-change-${index}`}
-                          type="file"
-                          accept="image/*,video/*"
-                          className="hidden"
-                          onChange={(event) => {
-                            const file = event.target.files?.[0];
-                            if (file) {
-                              onReplaceMedia(index, file);
-                            }
-                          }}
-                        />
-                      </div>
+                          <input
+                            id={`product-change-${index}`}
+                            type="file"
+                            accept="image/*,video/*"
+                            className="hidden"
+                            onChange={(event) => {
+                              const file = event.target.files?.[0];
+                              if (file) {
+                                onReplaceMedia(index, file);
+                              }
+                            }}
+                          />
+                        </div>
                       ))}
 
                       {pendingProductPreviews.map((preview, index) => (
-                      <div
-                        key={preview.url}
-                        className="group relative h-44 overflow-hidden rounded-2xl border border-amber-200 bg-white"
-                      >
-                        {isVideoUrl(preview.url) ||
-                        preview.file.type.startsWith("video/") ? (
-                          <video
-                            src={preview.url}
-                            className="h-full w-full object-cover"
-                            autoPlay
-                            muted
-                            loop
-                            playsInline
-                          />
-                        ) : (
-                          <Image
-                            src={preview.url}
-                            alt="pending product media"
-                            width={220}
-                            height={160}
-                            className="h-full w-full object-contain"
-                          />
-                        )}
-                        <div className="absolute inset-0 flex items-center justify-center gap-2 bg-black/25 opacity-100 transition lg:opacity-0 lg:group-hover:opacity-100">
-                          <button
-                            type="button"
-                            onClick={() => onOpenPreview(preview.url)}
-                            className="rounded-lg border border-slate-900 bg-white/90 px-3 py-1.5 text-xs font-semibold text-slate-900"
-                          >
-                            View
-                          </button>
-                          {form.images.length + pendingProductPreviews.length >
-                            1 && (
+                        <div
+                          key={preview.url}
+                          className="group relative h-44 overflow-hidden rounded-2xl border border-amber-200 bg-white"
+                        >
+                          {isVideoUrl(preview.url) ||
+                          preview.file.type.startsWith("video/") ? (
+                            <video
+                              src={preview.url}
+                              className="h-full w-full object-cover"
+                              autoPlay
+                              muted
+                              loop
+                              playsInline
+                            />
+                          ) : (
+                            <Image
+                              src={preview.url}
+                              alt="pending product media"
+                              width={220}
+                              height={160}
+                              className="h-full w-full object-contain"
+                            />
+                          )}
+                          <div className="absolute inset-0 flex items-center justify-center gap-2 bg-black/25 opacity-100 transition lg:opacity-0 lg:group-hover:opacity-100">
                             <button
                               type="button"
-                              onClick={() => onRemovePendingFile(index)}
+                              onClick={() => onOpenPreview(preview.url)}
                               className="rounded-lg border border-slate-900 bg-white/90 px-3 py-1.5 text-xs font-semibold text-slate-900"
                             >
-                              Remove
+                              View
                             </button>
+                            {form.images.length +
+                              pendingProductPreviews.length >
+                              1 && (
+                              <button
+                                type="button"
+                                onClick={() => onRemovePendingFile(index)}
+                                className="rounded-lg border border-slate-900 bg-white/90 px-3 py-1.5 text-xs font-semibold text-slate-900"
+                              >
+                                Remove
+                              </button>
+                            )}
+                            {!preview.file.type.startsWith("video/") && (
+                              <button
+                                type="button"
+                                onClick={(event) => {
+                                  event.stopPropagation();
+                                  onOpenAI(preview.url);
+                                }}
+                                className="flex items-center gap-1.5 rounded-lg border border-indigo-600 bg-indigo-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-indigo-700"
+                              >
+                                <Sparkles size={12} />
+                                AI
+                              </button>
+                            )}
+                          </div>
+                          {form.images.length === 0 && index === 0 && (
+                            <div className="absolute right-2 top-2 z-10 flex items-center gap-1 rounded-md bg-indigo-600 px-2 py-0.5 text-[10px] font-bold uppercase text-white shadow-sm">
+                              <Sparkles size={10} />
+                              AI Source
+                            </div>
                           )}
-                          {!preview.file.type.startsWith("video/") && (
-                            <button
-                              type="button"
-                              onClick={(event) => {
-                                event.stopPropagation();
-                                onOpenAI(preview.url);
-                              }}
-                              className="flex items-center gap-1.5 rounded-lg border border-indigo-600 bg-indigo-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-indigo-700"
-                            >
-                              <Sparkles size={12} />
-                              AI
-                            </button>
-                          )}
+                          <div className="absolute left-2 top-2 rounded-md bg-amber-500 px-2 py-0.5 text-[10px] font-bold uppercase text-white">
+                            Pending
+                          </div>
                         </div>
-                        <div className="absolute left-2 top-2 rounded-md bg-amber-500 px-2 py-0.5 text-[10px] font-bold uppercase text-white">
-                          Pending
-                        </div>
-                      </div>
                       ))}
 
                       {form.images.length + pendingProductPreviews.length <
@@ -337,7 +480,9 @@ export function ProductFormModal({
                         <button
                           type="button"
                           onClick={() =>
-                            document.getElementById("product-add-input")?.click()
+                            document
+                              .getElementById("product-add-input")
+                              ?.click()
                           }
                           className="flex h-44 flex-col items-center justify-center rounded-2xl border border-slate-300 bg-white text-slate-700 transition hover:border-slate-400"
                         >
